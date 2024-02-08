@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% block title %}<title>Des cols et 100 Cols</title>{% endblock %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+  {% load static %}
+  <script src="{% static 'menu.js' %}"></script>
+  <!-- Add additional CSS in static file -->
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">     
+  
+</head>
+<body>      
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-2">
+          {% block sidebar %}
+          {% load static %} <center><a href="{% url 'index' %}"><img src="{% static '/image/124_club-des-cent-cols.png' %}"  /></a></center>
+          <script src="{% static 'sortable.min.js' %}"></script>
+          <link rel="stylesheet" href="{% static 'css/grid.css' %}">
+                    
+          <br>                              
+          <ul class="sidebar-nav">                                                   
+                        
+            {% if countries %}  
+            <li><b><a>Cols</a></b></li>              
+              <br>
+              <select id = "country" name="country" onChange="country(this.value)">                                
+                <option value="">--- Pays ---</option>
+                {% for p in countries %}                              
+                  <option value={{p.country_code}}>{{p.country_name}}</option>                                    
+                {% endfor %}  
+              </select>   
+
+              <br><br>         
+
+              <select id = "region" name="region" onChange="region(this.value)">
+                <option value="">--- Département ---</option>  
+                {% for r in regions %}    
+                  
+                  <option value={{r.region_code}}>{{r.region_name}}</option>                     
+                  
+                  <script type="text/javascript">                                    
+
+                  region_name = "{{r.region_name}}";      
+                  region_code = "{{r.region_code}}";                                       
+                  region_country = "{{r.country_code}}";                                           
+                  region_id = "{{r.region_id}}";
+
+                  region_name_list.push(region_name);                        
+                  region_code_list.push(region_code);   
+                  region_country_list.push(region_country);   
+                  region_id_list.push(region_id);   
+                  </script>
+
+                {% endfor %}  
+                
+              </select>   
+
+              <br><br>             
+            {% endif %}  
+            <li><a href="{% url 'cols' %}">Tous les Cols</a></li>                                    
+            <li><a href="{% url 'colsok' %}">Cols franchis</a></li>            
+            <li><a href="{% url 'cols06ko' %}">Col des Alpes-Maritimes Restants</a></li>                                                                                                                    
+            <li><a href="{% url 'activity' %}">Flux des activités</a></li>                   
+            <li><a href="{% url 'userdashboard' %}">Dashboard</a></li>            
+            <li><a href="{% url 'calendar' %}">Statistiques Mensuelles</a></li>            
+           </ul>
+          {% endblock %}
+      </div>
+         <div class="col-sm-10 ">
+             {% block content %}               
+             {% endblock %}            
+         </div>
+    </div>
+  </div>
+
+
+  <script>
+    var table = document.querySelector('.massive')
+    var tbody = table.tBodies[0]
+    var rows = [].slice.call(tbody.rows, 0)
+    var fragment = document.createDocumentFragment()
+  
+    for (var k = 0; k < 50; k++) {
+      for (var i = 0; i < rows.length; i++) {
+        fragment.appendChild(rows[i].cloneNode(true))
+      }
+    }
+    tbody.innerHTML = ''
+    tbody.appendChild(fragment)
+  </script>
+  
+  <script>
+    function prepareAdvancedTable() {
+      var size_table = document.querySelector('.advanced-table')
+      var rows = size_table.tBodies[0].rows    
+      for (let i = 0; i < rows.length; i++) {
+        const date_element = rows[i].cells[2]
+        const size_element = rows[i].cells[1]
+        date_element.setAttribute('data-sort', date_element.innerText.replace(/(\d+)\/(\d+)\/(\d+)/, '$3$1$2'))
+        size_element.setAttribute('data-sort', toBytes(size_element.innerText))
+      }
+    }
+  
+    function toBytes(size) {
+      const units = [, 'k', 'm', 'g', 't']
+      const match = size.match(/(\d+\.\d+|\d+)\s*([kmgt])b?/i)
+      if (!match) return parseFloat(size)
+      const [value, unit] = match.slice(1)
+      const index = units.indexOf(unit.toLowerCase())
+      return Math.round(parseFloat(value) * Math.pow(1024, index))
+    }
+    prepareAdvancedTable()
+  </script>  
+
+</body>
+</html>

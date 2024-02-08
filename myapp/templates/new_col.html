@@ -1,0 +1,52 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nouveau Col</title>
+</head>
+<body>  
+<h2>Saisie d'un nouveau col</h2>    
+
+<form method="POST" action="">
+    {% csrf_token %} 
+
+<table>
+    <tr>
+        <td>Nom du col</td>
+        <td>{{form.col_name}} </td>    
+    </tr>
+    <tr>
+        <td>Col Code</td>
+        <td>{{form.col_code}} </td>        
+    </tr>
+    <tr>
+        <td>Altitude</td>
+        <td>{{form.col_alt}}</td>
+        
+    </tr>
+    <tr>
+        <td>Latitude</td>
+        <td>{{form.col_lat}}</td>        
+    </tr>
+    <tr>
+        <td>Longitude</td>
+        <td>{{form.col_lon}}<td>        
+    </tr>
+    <tr>
+        <td>Route/Piste/Sentier</td>
+        <td>{{form.col_type}}</td>        
+    </tr>
+</table>
+      
+    <br>
+    <input type="submit" value=Enregistrer> 
+</form> 
+ 
+</body>
+</html>
+
+{% endblock %}

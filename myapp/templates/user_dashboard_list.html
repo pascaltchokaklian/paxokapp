@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>  
+</head>
+
+<html>
+<body>
+
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <h3>Tableau de bord</h3>  
+  
+  {% if user_dashboard_list %}
+  <br />
+
+  <table>
+    <tr bgcolor="lightgrey" align="center" >
+        <td width="200">Nombre de cols franchis</td>
+        <td width="200">+ 2000m </td>
+        <td width="200">Km cette année (Bike)</td>
+        <td width="200">Km cette année (Run)</td>
+    </tr>      
+    {% for stat in user_dashboard_list %}
+      <tr align="center">
+        <td>    {{stat.set_col_count}}      </td>  
+        <td>    {{stat.set_col2000_count}}  </td>
+        <td>    {{stat.set_bike_year_km}}   </td>
+        <td>    {{stat.set_run_year_km}}    </td>
+      </tr>  
+
+    {% endfor %}
+  </table>  
+  {% else %}
+    <p>There are no Col in the Database.</p>
+  {% endif %}
+
+  <iframe        
+    width="1500"
+    height="800"
+    frameborder=0
+    src="{% url 'perform' %}"
+  >
+  </iframe> 
+
+
+{% endblock %}
+
+</body>
+</html>
+
+  

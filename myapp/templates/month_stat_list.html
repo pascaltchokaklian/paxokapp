@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+
+{% extends "base_generic.html" %}  
+{% load static %}
+
+<script src="{% static 'sortable.min.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/grid.css' %}">
+
+<head>      
+    <title>Calendar</title>
+    <meta name="charset" content="UTF-8" />
+    <meta name="author" content="Jonas Earendel" />                        
+</head>
+
+<body>
+
+
+{% block content %}
+{% if month_stat_list %}
+  <hr />
+  <h3>Statistiques mensuelles</h3>
+  <hr />
+
+  <table id = "myTable" width="100%" class="sortable n-last" >      
+    <thead>
+      <tr>
+        <th class="indicator-left">Mois</th>
+        <th class="indicator-left">Jours activité</th>
+        <th class="indicator-left">KM - Vélo</th>
+        <th class="indicator-left">Dénivelé - Vélo</th>
+        <th class="indicator-left">Temps - Vélo</th>
+        <th class="indicator-left">Nombre de cols</th>       
+        <th class="indicator-left">Plus de 2000</th>                       
+        <th class="indicator-left">Altitude max</th>                       
+      </tr>    
+    </thead>
+    <tbody>
+
+    {% for unMois in month_stat_list %}      
+    
+    <tr>      
+      <td data-sort={{unMois.yearmonth}} align="center"><strong>{{unMois.yearmonth_html }} </strong></td>
+      <td align="center">{{unMois.days_on }}         </td>
+      <td align="center">{{unMois.bike_km }}         </td>
+      <td align="center">{{unMois.bike_ascent }}     </td>
+      <td align="center">{{unMois.get_chrono_str }} </td>
+      <td align="center">{{unMois.col_count }}       </td>
+      <td align="center">{{unMois.col2000_count }}   </td>
+      <td align="center">{{unMois.top_alt_col }}     </td>
+    
+    </tr>
+          
+      {% endfor %}
+       
+    </tbody>
+  </table> 
+
+</body>
+  
+  {% else %}
+    <p>There are no Stat in the Database.</p>
+  {% endif %}
+{% endblock %}
+
+</html>

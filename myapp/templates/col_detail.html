@@ -1,0 +1,64 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+{% load static %} 
+    <hr />
+    <table>
+        <tbody>
+            <tr>            
+                <td colspan="3"><h3>{{ object.col_name }}</h3></td>
+                <td><h3>&nbsp {{ object.col_alt }} m </h3></td> 
+                <td>&nbsp[{{ object.col_code }}]</td>
+                <td><a href="{% url 'Col Map View' col_id=object.col_id %}"><img src="{% static '/image/map.png' %}"  /> Voir sur la carte</a>    </td>               
+                <td>&nbsp Latitude: {{ object.col_lat }}</td>
+                <td>&nbsp Longitude: {{ object.col_lon }}</td>                               
+            </tr>
+            <tr>                
+                <td colspan="6"><img src="{% static '/image/cols/' %}{{ object.col_code }}.jpg" height="250"></td> 
+            </tr>
+        </tbody>
+    </table>        
+    <hr />                         
+    <p> <b>Activités:</b> </p>    
+                               
+    <table id = "myTable" width="100%" class="sortable n-last" >              
+        <thead>
+            <tr>
+                <th class="indicator-left">Date</th>
+                <th class="indicator-left">Activité</th>
+                <th class="indicator-left">Distance</th>
+                <th class="indicator-left">Dénivelé</th>
+                <th class="indicator-left">Type</th>                
+            </tr>  
+        </thead>    
+        <tbody>
+                    
+            {% for key in activities %}
+                <div class="activities">                                                         
+                    <tr>                                                
+                        <td data-sort={{key.act_start_date|date:"ymd"}} >                    
+                            {{key.act_start_date|date:"d M Y" }} 
+                          </td>
+                        <td>
+                            <a href={{key.act_id}}>  {{ key.act_name }}</a> 
+                        </td>
+                        <td data-sort={{key.act_dist}}>
+                            {{key.get_act_dist_km|floatformat:2}} km
+                        </td>
+                        <td>
+                            {{key.act_den|floatformat:0}}   m
+                        </td>
+                        <td>                            
+                            {{ key.act_type }}                                                                                                                 
+                        </td>
+                    </tr>                    
+                </div>
+                                   
+            {% endfor %}    
+        </tbody>
+    </table>
+{% endblock %}  
+
+
+
+<!doctype html>

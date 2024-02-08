@@ -1,0 +1,23 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <h1>Liste des Segment</h1>
+  {% if segment_list %}
+  <table width="100%">
+    <tr>
+        <td align="center"><b>Date</td></b>      
+    </tr>    
+  
+    {% for segment in segment_list %}      
+      <tr>
+        <td style="width:8%">
+          {{segment.segment_name }}
+        </td>  
+       
+      </tr> 
+    {% endfor %}
+  </table>  
+  {% else %}
+    <p>There are no Segment in the Database.</p>
+  {% endif %}
+{% endblock %}
