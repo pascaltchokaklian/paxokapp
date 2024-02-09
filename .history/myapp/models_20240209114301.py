@@ -2,13 +2,13 @@ from django.db import models
 from .vars import display_year_month
 
 # Create your models here.
-
-class Country(models.Model):			
-	country_code = models.CharField(max_length=3, primary_key=True)
-	country_name = models.CharField(max_length=50)
-	country_lat = models.FloatField(null=True)
-	country_lon = models.FloatField(null=True)
-	code_100cols = models.CharField(max_length=3, null = True)
+#
+#class Country(models.Model):			
+#	country_code = models.CharField(max_length=3, primary_key=True)
+#	country_name = models.CharField(max_length=50)
+#	country_lat = models.FloatField(null=True)
+#	country_lon = models.FloatField(null=True)
+#	code_100cols = models.CharField(max_length=3, null = True)
 
 class Region(models.Model):			
 	region_id = models.IntegerField(auto_created=True,  primary_key=True)
@@ -292,7 +292,7 @@ class Month_stat(models.Model):
 class Activity_info(models.Model):
 	act_info_id = models.IntegerField(auto_created=True,  primary_key=True)
 	act_id = models.IntegerField(null=True)
-	info_txt = models.CharField(max_length=100, default="--")	
+	info_txt = models.CharField(max_length=100, default="-")
 
 
 	

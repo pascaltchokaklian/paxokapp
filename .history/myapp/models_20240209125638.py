@@ -289,10 +289,5 @@ class Month_stat(models.Model):
 		hms = sHeure+"h"+sMinutes
 		return hms		
 	
-class Activity_info(models.Model):
-	act_info_id = models.IntegerField(auto_created=True,  primary_key=True)
-	act_id = models.IntegerField(null=True)
-	info_txt = models.CharField(max_length=100, default="--")	
-
 
 	
