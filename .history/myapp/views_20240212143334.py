@@ -80,8 +80,7 @@ def base_map(request):
         }
 
     else:
-        #context = None
-        context = {'Strava User': 'Not Connected'}
+        context = None
                                     
     return render(request, 'index.html', context)
 
