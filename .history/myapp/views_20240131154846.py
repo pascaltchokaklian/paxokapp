@@ -536,12 +536,11 @@ class ColsDetailView(generic.DetailView):
         for cp in listColPerform:            
             pk_activity = cp.strava_id
             myActivities= Activity.objects.filter(strava_id = pk_activity)
-            if myActivities <> None: 
-                for lactivity in myActivities:                                
-                    if int(strava_user_id) == int(lactivity.strava_user_id):
-                        liste_activities.append(lactivity)                            
-                        context.update({'strava_user_id': strava_user_id})        
-                        context.update({'activities': liste_activities})        
+            for lactivity in myActivities:                                
+                if int(strava_user_id) == int(lactivity.strava_user_id):
+                    liste_activities.append(lactivity)                            
+        context.update({'strava_user_id': strava_user_id})        
+        context.update({'activities': liste_activities})        
         f_debug_trace("views.py","ColsDetailView",liste_activities)
         return context
     
