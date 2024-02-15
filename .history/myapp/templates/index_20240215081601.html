@@ -21,7 +21,6 @@
   <div class="collapse navbar-collapse" id="navbarNav">
       <!--Begin Strava Connect Button-->
       <form class="form-inline my-2 my-lg-0">
-        {% csrf_token %}
               <a href="{% url 'social:begin' 'strava' %}" class="btn btn-primary" role="button" aria-disabled="true">Connect to Strava</a>
       </form>
       <!--End Strava Connect Button-->

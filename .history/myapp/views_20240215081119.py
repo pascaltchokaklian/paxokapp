@@ -308,8 +308,13 @@ def col_map(request, col_id):
         
     return render(request, 'index.html', context)
 
+
+
+@csrf_exempt
 def act_map(request, act_id):    
-    
+
+    @csrf_protect
+
     my_strava_user = request.session.get("strava_user")    
     my_strava_user_id = get_strava_user_id(request,my_strava_user)
     

@@ -17,7 +17,6 @@ from django.db.models import Max
 from django.shortcuts import render , redirect
 from django.contrib.auth.models import User
 from social_django.models import UserSocialAuth
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
 ###################################################################
 #   Base Map
@@ -309,7 +308,6 @@ def col_map(request, col_id):
     return render(request, 'index.html', context)
 
 def act_map(request, act_id):    
-    
     my_strava_user = request.session.get("strava_user")    
     my_strava_user_id = get_strava_user_id(request,my_strava_user)
     
