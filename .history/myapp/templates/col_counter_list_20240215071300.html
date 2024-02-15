@@ -2,19 +2,31 @@
 <html lang="en">
 
 <head>      
-  <title>Liste des Cols franchis</title>
+  <title>Liste des Colsfranchis</title>
   <meta name="charset" content="UTF-8" />
   <meta name="author" content="xoka" />                        
 </head>
 
 <body>
-  
-{% extends "base_generic.html" %}
 
-{% block content %}
+  <head>      
+    <title>Liste des Cols</title>
+    <meta name="charset" content="UTF-8" />
+    <meta name="author" content="xoka" />                        
+  </head>
+  
+  <body>
+  
+  {% extends "base_generic.html" %}
+  
+  {% block content %}
+    <hr />
+    <h3>{{ col_list.count }} cols en base </h3>   
+
+
   <hr />
   {% load static %} 
-  <h3><img src="{% static '/image/medal.jpg' %}"  />{{col_counter_list.count}} cols franchis</h3>  
+  <h3><img src="{% static '/image/medal.jpg' %}"  />{{col_counter_list.count}} cols franchiss????????????</h3>  
   <hr />
   {% if col_counter_list %}  
 <table class="sortable n-last">

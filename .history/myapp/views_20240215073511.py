@@ -570,7 +570,7 @@ class User_dashboardView(generic.ListView):
     
 class PerformListView(generic.ListView):
     model = Perform     
-    context_object_name = 'perform_list'               # your own name for the list as a template    
+    context_object_name = 'Perform'               # your own name for the list as a template    
     template_name = "perform_list.html"      # Specify your own template name/location
     def get_queryset(self):                
         strava_user_id = self.request.session.get('strava_user_id')             
@@ -579,7 +579,7 @@ class PerformListView(generic.ListView):
     
 class SegmentListView(generic.ListView):        
     model = Segment   
-    context_object_name = 'segment_list'               # your own name for the list as a template    
+    context_object_name = 'Segment'               # your own name for the list as a template    
     template_name = "segment_list.html"      # Specify your own template name/location
     def get_queryset(self):                
         qsOk = Segment.objects.all()
@@ -588,8 +588,8 @@ class SegmentListView(generic.ListView):
 class MonthStatListView(generic.ListView):        
 
     model = Month_stat
-    context_object_name = 'month_stat_list'                 # your own name for the list as a template    
-    template_name = "month_stat_list.html"                  # Specify your own template name/location
+    context_object_name = 'calendar'               # your own name for the list as a template    
+    template_name = "month_stat_list.html"      # Specify your own template name/location
 
     def get_queryset(self):   
         strava_user_id = self.request.session.get('strava_user_id')             

@@ -111,8 +111,6 @@ def insert_col_perform(conn,act_id,rows):
 #############################################################################
 
 def compute_cols_by_act( conn, my_strava_user_id,myActivity_id):
-
-    f_debug_trace("col_dbtools.py","compute_cols_by_act","Begin")  
                                 
     perf = cp.objects.filter(strava_id=myActivity_id).values_list("col_code", flat=True)
                         
@@ -482,8 +480,6 @@ def set_col_count_list_this_year(strava_user_id):
     cur = conn.cursor()            
 
     sqlExec = "select count(*) as compteur, col_code from myapp_col_perform P, myapp_activity A where P.strava_id = A.strava_id	and strava_user_id = "+strava_user_id+" and act_start_date > '"+year+"' group by col_code"
-
-    f_debug_trace('set_col_count_list_this_year',sqlExec,str(year))
     cur.execute(sqlExec)    
 
     myListCompte = cur.fetchall()    

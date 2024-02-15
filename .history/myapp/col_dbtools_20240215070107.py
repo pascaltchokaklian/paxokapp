@@ -112,7 +112,7 @@ def insert_col_perform(conn,act_id,rows):
 
 def compute_cols_by_act( conn, my_strava_user_id,myActivity_id):
 
-    f_debug_trace("col_dbtools.py","compute_cols_by_act","Begin")  
+    f_debug_trace("col_dbtools.py","compute_cols_by_act","Nouveau col: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>")  
                                 
     perf = cp.objects.filter(strava_id=myActivity_id).values_list("col_code", flat=True)
                         
