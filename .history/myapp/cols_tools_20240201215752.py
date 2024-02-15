@@ -204,7 +204,7 @@ def refresh_access_token(strava_user):
         
     try:
         auth_url = "https://www.strava.com/oauth/token"
-        res = requests.get(auth_url, data=payload_refresh, verify=False)                
+        res = requests.post(auth_url, data=payload_refresh, verify=False)                
 
         myUser.access_token = res.json()['access_token']
         myUser.expire_at = res.json()['expires_at']
