@@ -24,7 +24,7 @@ SECRET_KEY = 'django-insecure--d34*jma0c$uwulyce2&h^2ypc+iw1mz8l^fgvvl0*pi)#1*4y
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS=["localhost", "127.0.0.1","centcols8-4qen8j8y.b4a.run"]
+ALLOWED_HOSTS=["localhost", "127.0.0.1","centcols8-4qen8j8y.b4a.run","node85a.containers.back4app.com"]
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
