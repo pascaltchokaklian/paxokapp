@@ -40,5 +40,5 @@ EXPOSE 8000
 # Define the entry point for the container
 #CMD ["python", "manage.py", "runserver", "127.0.0.1:8080"]
 
-CMD [ "gunicorn", "refactor.wsgi:application", "--bind", "-- timeout 300" ,  "0.0.0.0:8000" ]
+CMD [ "gunicorn", "refactor.wsgi:application", "--bind",,--timeout INT  "0.0.0.0:8000" ]
 
