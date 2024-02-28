@@ -149,10 +149,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # my App Const and Var
 #################################
 
-
-#SQLITE_PATH = '/home/xoka06/paxokapp/db.sqlite3'                           # PythonAnywhere
-SQLITE_PATH = 'C:/Users/pasca/Dev/python/centcols/paxokapp/db.sqlite3'      # Local PAXOKAPP
-
 LEVEL_COL_DEBUG = 1
 APP_CLIENT_ID = '2711'
 COUNTRY = "FRA"

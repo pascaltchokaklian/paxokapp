@@ -31,9 +31,8 @@ def base_map(request):
 
     if (str(user) != 'AnonymousUser'):
 
-        f_debug_trace("views.py","base_map",SQLITE_PATH)    
-        conn = create_connection(SQLITE_PATH)
-        
+        conn = create_connection('db.sqlite3')    
+
         my_strava_user_id = get_strava_user_id(request,user)
                                         
         # Make your map object
@@ -178,8 +177,7 @@ def connected_map(request):
         
         activities_df['polylines'] = activities_df['map.summary_polyline'].apply(polyline.decode)
 
-        f_debug_trace("views.py","connected_map",SQLITE_PATH)    
-        conn = create_connection(SQLITE_PATH)        
+        conn = create_connection('db.sqlite3')
         myColsList =  select_all_cols(conn,"00")        
                 
         for ligne in range(len(activities_df)):
@@ -287,11 +285,10 @@ def perf(request):
 
 def col_map(request, col_id):
 
-    f_debug_trace("views.py","col_map",SQLITE_PATH)    
-    conn = create_connection(SQLITE_PATH)        
-    
+    conn = create_connection('db.sqlite3')
     myColsList =  getCol(conn,col_id)     
-        
+    
+    
     for oneCol in myColsList:
         myCol = PointCol()
         myCol.setPoint(oneCol)
@@ -397,9 +394,7 @@ def act_map(request, act_id):
 
 
     ## Col Display
-    f_debug_trace("views.py","act_map",SQLITE_PATH)    
-    conn = create_connection(SQLITE_PATH)        
-    
+    conn = create_connection('db.sqlite3')
     myColsList =  getColByActivity(conn,strava_id)     
         
     for oneCol in myColsList:
@@ -528,10 +523,12 @@ class ActivityDetailView(generic.DetailView):
     context_object_name = 'activity-detail'   # your own name for the list as a template variable    
     template_name = "activity_detail.html"    # Specify your own template name/location   
                                                                             
-class ColsDetailView(generic.DetailView):
+class ColsDetailView(generic.DetailView):    
 	# specify the model to use            
     model = Col    
-    context_object_name = 'col_detail'   # your own name for the list as a template variable    
+
+    print('--------------------------------------')
+    context_object_name = 'col-detail'   # your own name for the list as a template variable    
     template_name = "col_detail.html"    # Specify your own template name/location   
 
     def get_context_data(self, **kwargs):
@@ -539,19 +536,17 @@ class ColsDetailView(generic.DetailView):
         context = super(ColsDetailView, self).get_context_data(**kwargs)
         strava_user_id = self.request.session.get('strava_user_id')            
         le_col = context["object"]        
-        f_debug_trace("views.py","le_col",le_col)    
         listColPerform = le_col.get_activities_passed()        
-        f_debug_trace("views.py","listColPerform",listColPerform)    
         liste_activities = []        
-        for cp in listColPerform:                                    
-            pk_activity = cp.strava_id                        
-            myActivities= Activity.objects.filter(strava_id = pk_activity)
-            for lactivity in myActivities:                                
-                print(lactivity.act_name)
-                if int(strava_user_id) == int(lactivity.strava_user_id):
-                    liste_activities.append(lactivity)                            
-        context.update({'strava_user_id': strava_user_id})        
-        context.update({'activities': liste_activities})        
+        for cp in listColPerform:            
+            pk_activity = cp.strava_id
+            myActivities= Activity.objects.filter(strava_id = pk_activity)            
+            for lactivity in myActivities:  
+                if isinstance(lactivity.strava_user_id, int) and isinstance(strava_user_id, int):                                        
+                    if int(strava_user_id) == int(lactivity.strava_user_id):
+                        liste_activities.append(lactivity)                            
+                        context.update({'strava_user_id': strava_user_id})        
+                        context.update({'activities': liste_activities})        
         f_debug_trace("views.py","ColsDetailView",liste_activities)
         return context
     

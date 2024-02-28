@@ -287,11 +287,10 @@ def perf(request):
 
 def col_map(request, col_id):
 
-    f_debug_trace("views.py","col_map",SQLITE_PATH)    
-    conn = create_connection(SQLITE_PATH)        
-    
+    conn = create_connection('db.sqlite3')
     myColsList =  getCol(conn,col_id)     
-        
+    
+    
     for oneCol in myColsList:
         myCol = PointCol()
         myCol.setPoint(oneCol)
@@ -397,9 +396,7 @@ def act_map(request, act_id):
 
 
     ## Col Display
-    f_debug_trace("views.py","act_map",SQLITE_PATH)    
-    conn = create_connection(SQLITE_PATH)        
-    
+    conn = create_connection('db.sqlite3')
     myColsList =  getColByActivity(conn,strava_id)     
         
     for oneCol in myColsList:

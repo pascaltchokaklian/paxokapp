@@ -472,9 +472,8 @@ def compute_month_stat(stravaUserId,yyyy_mm,formatedDay,bikeKm,BikeAsc, bikeTime
 def set_col_count_list_this_year(strava_user_id):
 
     millisecBegin = int(time.time() * 1000)        
-    
-    f_debug_trace("col_dbtools.py","set_col_count_list_this_year",SQLITE_PATH)    
-    conn = create_connection(SQLITE_PATH)
+
+    conn = create_connection('db.sqlite3')
 
     currentDateTime = datetime.datetime.now()
     

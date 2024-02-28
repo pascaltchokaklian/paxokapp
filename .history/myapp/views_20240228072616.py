@@ -31,7 +31,7 @@ def base_map(request):
 
     if (str(user) != 'AnonymousUser'):
 
-        f_debug_trace("views.py","base_map",SQLITE_PATH)    
+        f_debug_trace("col_dbtools.py","set_col_count_list_this_year",SQLITE_PATH)    
         conn = create_connection(SQLITE_PATH)
         
         my_strava_user_id = get_strava_user_id(request,user)
@@ -178,8 +178,7 @@ def connected_map(request):
         
         activities_df['polylines'] = activities_df['map.summary_polyline'].apply(polyline.decode)
 
-        f_debug_trace("views.py","connected_map",SQLITE_PATH)    
-        conn = create_connection(SQLITE_PATH)        
+        conn = create_connection('db.sqlite3')
         myColsList =  select_all_cols(conn,"00")        
                 
         for ligne in range(len(activities_df)):
@@ -287,11 +286,10 @@ def perf(request):
 
 def col_map(request, col_id):
 
-    f_debug_trace("views.py","col_map",SQLITE_PATH)    
-    conn = create_connection(SQLITE_PATH)        
-    
+    conn = create_connection('db.sqlite3')
     myColsList =  getCol(conn,col_id)     
-        
+    
+    
     for oneCol in myColsList:
         myCol = PointCol()
         myCol.setPoint(oneCol)
@@ -397,9 +395,7 @@ def act_map(request, act_id):
 
 
     ## Col Display
-    f_debug_trace("views.py","act_map",SQLITE_PATH)    
-    conn = create_connection(SQLITE_PATH)        
-    
+    conn = create_connection('db.sqlite3')
     myColsList =  getColByActivity(conn,strava_id)     
         
     for oneCol in myColsList:
