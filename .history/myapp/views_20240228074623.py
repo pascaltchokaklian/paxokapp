@@ -5,7 +5,7 @@ import requests
 import pandas as pd
 import polyline
 from .forms import ColForm
-from .models import Activity, Activity_info, Col_perform, Month_stat, Perform, Region, Segment, User_dashboard, User_var
+from .models import Activity, Col_perform, Month_stat, Perform, Region, Segment, User_dashboard, User_var
 from .models import Col, Country
 from .models import Col_counter
 from .models import Strava_user

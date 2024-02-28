@@ -52,11 +52,6 @@ class Activity(models.Model):
 		sc = self.strava_id		
 		q1 = Col_perform.objects.filter(strava_id=sc)
 		return q1
-	
-	def get_info_txt(self):
-		sc = self.strava_id		
-		q1 = Activity_info.objects.filter(strava_id=sc)
-		return q1
 						
 class Col_perform(models.Model):
 	col_perf_id = models.IntegerField(auto_created=True,  primary_key=True)
@@ -298,6 +293,7 @@ class Activity_info(models.Model):
 	act_info_id = models.IntegerField(auto_created=True,  primary_key=True)
 	act_id = models.IntegerField(null=True)
 	info_txt = models.CharField(max_length=100, default="--")	
+
 
 class Activity_info(models.Model):
 	act_info_id = models.IntegerField(auto_created=True,  primary_key=True)
