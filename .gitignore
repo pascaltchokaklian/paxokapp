@@ -1,0 +1,6 @@
+# Ignorer history,  migrations
+
+/myapp/history
+/myapp/migrations
+/myapp/__pycache__
+/myapp/templates
