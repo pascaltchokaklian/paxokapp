@@ -1,8 +1,8 @@
 from django.test import TestCase
 
-#
+###############################
 # Create your tests here.
-#
+###############################
 
 import cols_tools as ct
 import col_dbtools as cdb

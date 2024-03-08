@@ -1,4 +1,4 @@
-# Ignorer history,  migrations
+# Ignorer 
 
 myapp/migrations
 myapp/__pycache__
