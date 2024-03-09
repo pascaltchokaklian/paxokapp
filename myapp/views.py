@@ -206,6 +206,7 @@ def connected_map(request):
 
             delete_activity(conn,strava_id)
             delete_col_perform(conn,strava_id)
+            delete_activity_info(conn,strava_id)
 
             insert_activity(conn,strava_user_id,strava_id,activity_name,act_start_date, act_dist, act_den,sport_type,act_time,act_power,act_status)                
 

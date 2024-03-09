@@ -99,6 +99,12 @@ def delete_col_perform(conn, strava_id):
     cur.execute(sql, (strava_id,))
     conn.commit()
 
+def delete_activity_info(conn, strava_id):
+    cur = conn.cursor()
+    sql = 'DELETE FROM StravaMap_activity_info WHERE strava_id=?'    
+    cur.execute(sql, (strava_id,))
+    conn.commit()    
+
 #############################################################################
     
 def insert_col_perform(conn,act_id,rows):
