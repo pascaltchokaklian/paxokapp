@@ -101,7 +101,7 @@ def delete_col_perform(conn, strava_id):
 
 def delete_activity_info(conn, strava_id):
     cur = conn.cursor()
-    sql = 'DELETE FROM StravaMap_activity_info WHERE strava_id=?'    
+    sql = 'DELETE FROM myapp_activity_info WHERE strava_id=?'    
     cur.execute(sql, (strava_id,))
     conn.commit()    
 
