@@ -109,6 +109,12 @@ def getColsVisitedList(colsList: ColsList, onePoint: PointGPS ):
         distance = getDistanceBetween2Points(myColPoint,onePoint)                
         if distance < 0.250:         
             visitedList.append(myColPoint.col_code)                            
+
+        ########################################################################
+        #if oneCol.col_code == "FR-38-1021":
+        #    print("------------------------------->",oneCol.name,distance  )                        
+        ########################################################################
+                        
     return visitedList
 
 ####################################################
