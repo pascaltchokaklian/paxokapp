@@ -25,6 +25,7 @@ from social_django.models import UserSocialAuth
 def base_map(request):
 
     user = request.user # Pulls in the Strava User data        
+            
     #user = "tpascal"    
 
     f_debug_trace("views.py","base_map","user = "+str(user))
@@ -35,6 +36,9 @@ def base_map(request):
         conn = create_connection(SQLITE_PATH)
         
         my_strava_user_id = get_strava_user_id(request,user)
+        nom_prenom = get_user_names(user)
+
+        f_debug_trace("views.py","base_map/nom_prenom",nom_prenom)    
                                                 
         # Make your map object
         view_region_info =  get_user_data_values(my_strava_user_id)            
@@ -77,7 +81,8 @@ def base_map(request):
         main_map_html = main_map._repr_html_() # Get HTML for website
 
         context = {
-            "main_map":main_map_html
+            "main_map":main_map_html,
+            "user_infos":nom_prenom
         }
 
     else:
@@ -645,5 +650,6 @@ def get_strava_user_id(request,username):
     request.session['strava_user'] = str(username)
     request.session['strava_user_id'] = uid
     f_debug_trace("views.py","get_strava_user_id","strava_user_id = "+str(uid))
-
+    
     return uid
+    

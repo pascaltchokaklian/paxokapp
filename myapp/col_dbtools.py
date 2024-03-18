@@ -9,6 +9,7 @@ from refactor.settings import SQLITE_PATH
 from .models import Activity, Col, Col_counter as cc, Col_perform as cp, Country, Month_stat, Region, User_var
 from django.utils import timezone
 from .vars import f_debug_col, f_debug_trace
+from django.contrib.auth.models import User
 
 #############################################################################
 
@@ -332,10 +333,19 @@ def get_user_data_values(strava_user_id):
             view_region_code = myUser_var.view_region_code                                                                                               
             last_update = myUser_var.last_update
     values_info = [view_country_code,view_region_code,last_update]     
-    
+
     f_debug_trace('col_dbtools.py','get_user_data_values',values_info)
 
     return values_info
+
+###########################################################################################################
+
+def get_user_names(user):
+    qs_user= User.objects.filter(username=user).values()
+    myret = "Unknown User"
+    for oneOk in qs_user:
+        myret = oneOk["first_name"]+" " +oneOk["last_name"]                
+    return myret
 
 ###########################################################################################################
 
