@@ -332,7 +332,7 @@ def get_user_data_values(strava_user_id):
             view_region_code = myUser_var.view_region_code                                                                                               
             last_update = myUser_var.last_update
     values_info = [view_country_code,view_region_code,last_update]     
-
+    
     f_debug_trace('col_dbtools.py','get_user_data_values',values_info)
 
     return values_info

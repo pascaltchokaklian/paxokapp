@@ -111,7 +111,7 @@ def getColsVisitedList(colsList: ColsList, onePoint: PointGPS ):
             visitedList.append(myColPoint.col_code)                            
 
         ########################################################################
-        #if oneCol.col_code == "FR-38-1021":
+        #if oneCol.col_code == "FR-06-0963b":
         #    print("------------------------------->",oneCol.name,distance  )                        
         ########################################################################
                         

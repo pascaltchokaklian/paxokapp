@@ -35,7 +35,7 @@ def base_map(request):
         conn = create_connection(SQLITE_PATH)
         
         my_strava_user_id = get_strava_user_id(request,user)
-                                        
+                                                
         # Make your map object
         view_region_info =  get_user_data_values(my_strava_user_id)            
         continent = "EUROPE"
@@ -647,4 +647,3 @@ def get_strava_user_id(request,username):
     f_debug_trace("views.py","get_strava_user_id","strava_user_id = "+str(uid))
 
     return uid
-    
