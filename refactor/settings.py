@@ -22,9 +22,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure--d34*jma0c$uwulyce2&h^2ypc+iw1mz8l^fgvvl0*pi)#1*4y'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS=["127.0.0.1"]
+ALLOWED_HOSTS=["xoka06.eu.pythonanywhere.com","centcols.tchok.com"]
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
@@ -36,17 +36,14 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    "whitenoise.runserver_nostatic",  # new
     'django.contrib.staticfiles',
     'social_django',
-    'django.contrib.humanize',
     'myapp',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-     "whitenoise.middleware.WhiteNoiseMiddleware",  # new
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -127,20 +124,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = '/static/'
-#STATICFILES_DIRS = [BASE_DIR / "myapp/static"]  
-#STATIC_ROOT = BASE_DIR / "staticfiles"  # new
+STATIC_ROOT = '/home/xoka06/paxokapp/myapp/static'
 
-#FROM_DOMAIN = "xoka06.eu.pythonanywhere.com"
-#TO_DOMAIN = "www.tchok.com"
 
-STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
-    "staticfiles": {        
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",  # new
-    },
-}
+FROM_DOMAIN = "xoka06.eu.pythonanywhere.com"
+TO_DOMAIN = "www.tchok.com"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -152,8 +140,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #################################
 
 
-#SQLITE_PATH = '/home/xoka06/paxokapp/db.sqlite3'                           # PythonAnywhere
-SQLITE_PATH = 'C:/Users/pasca/Dev/python/centcols/paxokapp/db.sqlite3'      # Local PAXOKAPP
+SQLITE_PATH = '/home/xoka06/paxokapp/db.sqlite3'                                # PythonAnywhere
+#SQLITE_PATH = 'C:/Users/pasca/Dev/python/centcols/paxokapp/db.sqlite3'         # Local PAXOKAPP
 
 LEVEL_COL_DEBUG = 1
 APP_CLIENT_ID = '2711'
