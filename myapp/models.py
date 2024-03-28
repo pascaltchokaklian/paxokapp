@@ -1,3 +1,4 @@
+import datetime
 from django.db import models
 from .vars import display_year_month
 
@@ -203,6 +204,8 @@ class User_dashboard(models.Model):
 	col2000_count = models.IntegerField(null=True)
 	bike_year_km  = models.IntegerField(null=True)
 	run_year_km  = models.IntegerField(null=True)
+	km4s = models.IntegerField(null=True)
+	den4s = models.IntegerField(null=True)
 
 	def set_col_count(self):	
 		nbCols = Col_counter.objects.filter(strava_user_id=self.strava_user_id).count()				
@@ -234,8 +237,7 @@ class User_dashboard(models.Model):
 		return nbCols2000
 	
 	def set_bike_year_km(self):	
-		## All Activities 		
-		
+		## All Activities 				
 		lActivity = Activity.objects.filter(strava_user_id=self.strava_user_id).filter(act_start_date__gt="2024-01-01").filter(act_type="Ride")		
 		distance_BY = 0		
 		for one_act in lActivity:			
@@ -247,8 +249,7 @@ class User_dashboard(models.Model):
 		return self.bike_year_km
 	
 	def set_run_year_km(self):	
-		## All Activities 		
-		
+		## All Activities 				
 		lActivity = Activity.objects.filter(strava_user_id=self.strava_user_id).filter(act_start_date__gt="2024-01-01").filter(act_type="Run")				
 		distance_RY = 0
 		for one_act in lActivity:
@@ -258,6 +259,32 @@ class User_dashboard(models.Model):
 		self.save()
 				
 		return self.run_year_km
+	
+	def	set_km4s(self):
+		## All Activities 				
+		start_date = datetime.datetime.now() - datetime.timedelta(28)		
+		lActivity = Activity.objects.filter(strava_user_id=self.strava_user_id).filter(act_start_date__gt=start_date).filter(act_type="Ride")				
+		distance_4S = 0
+		for one_act in lActivity:
+			distance_4S = distance_4S + one_act.act_dist/1000
+					
+		self.km4s = int(distance_4S)
+		self.save()
+				
+		return self.km4s
+	
+	def	set_den4s(self):
+		## All Activities 				
+		start_date = datetime.datetime.now() - datetime.timedelta(28)		
+		lActivity = Activity.objects.filter(strava_user_id=self.strava_user_id).filter(act_start_date__gt=start_date).filter(act_type="Ride")				
+		den_4S = 0
+		for one_act in lActivity:
+			den_4S = den_4S + one_act.act_den
+					
+		self.den4s = int(den_4S)
+		self.save()
+				
+		return self.den4s
 	
 class Month_stat(models.Model):					
 	month_stat_id = models.IntegerField(auto_created=True,  primary_key=True)

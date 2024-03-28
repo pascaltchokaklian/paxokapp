@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "whitenoise.runserver_nostatic",  # new
     'django.contrib.staticfiles',
     'social_django',
+    'django.contrib.humanize',
     'myapp',
 ]
 

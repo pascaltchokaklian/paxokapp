@@ -2,6 +2,7 @@
 <html lang="en">
   
 {% load static %}
+{% load humanize %}
 <script src="{% static 'sortable.min.js' %}"></script>
 <link rel="stylesheet" href="{% static 'css/grid.css' %}">
 
@@ -45,10 +46,10 @@
           {{perform.get_segment_length|floatformat:1 }}         
         </td>    
         <td >
-          {{perform.get_segment_slope|floatformat:1 }}         
+          {{perform.get_segment_slope|floatformat:1 }}%         
         </td> 
         <td >
-          {{perform.perf_vam}}         
+          {{perform.perf_vam|intcomma}}         
         </td> 
         <td >                   
           {{perform.perf_fc}}         
