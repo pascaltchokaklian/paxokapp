@@ -29,7 +29,7 @@
         <div class="cols">      
                 
             <li>            
-                {{ col.col_code }} : <a href="{{ object.act_id }}/{{ col.get_col_id }}">  {{ col.get_col_name }} </a>                         
+                {{ col.col_code }} : <a href="{{ object.act_id }}/{{ col.get_col_id }}">  {{ col.get_col_name }} </a>  [ {{ col.get_col_count }} ]
             </li>
         </div>
     {% endfor %}
@@ -43,12 +43,8 @@
         src="{% url 'Activity Map View' act_id=object.act_id %}"
         >
     </iframe>        
-            
-    
-             
+                             
 {% endblock %}   	
-
-
 
 <!doctype html>
  

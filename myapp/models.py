@@ -76,6 +76,15 @@ class Col_perform(models.Model):
 		sc = self.col_code
 		q1 = Col.objects.filter(col_code=sc)		
 		return q1[0].col_id
+	
+	def get_col_count(self):				
+		colcode = self.col_code
+		stravaid = self.strava_id
+		q1 = Activity.objects.filter(strava_id=stravaid)
+		strava_user_id = q1[0].strava_user_id
+		q2 = Col_counter.objects.filter(col_code=colcode).filter(strava_user_id=strava_user_id)
+		ccount = q2[0].col_count
+		return ccount
 			
 class Col_counter(models.Model):
 	col_count_id = models.IntegerField(auto_created=True,  primary_key=True)

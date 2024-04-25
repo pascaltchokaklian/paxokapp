@@ -6,7 +6,7 @@ from aifc import Error
 
 from myapp import cols_tools
 from refactor.settings import SQLITE_PATH
-from .models import Activity, Col, Col_counter as cc, Col_perform as cp, Country, Month_stat, Region, User_var
+from .models import Activity, Activity_info, Col, Col_counter as cc, Col_perform as cp, Country, Month_stat, Region, User_var
 from django.utils import timezone
 from .vars import f_debug_col, f_debug_trace
 from django.contrib.auth.models import User
@@ -137,6 +137,11 @@ def compute_cols_by_act( conn, my_strava_user_id,myActivity_id):
             new_cc.strava_user_id=my_strava_user_id
             new_cc.save()            
             f_debug_trace("col_dbtools.py","compute_cols_by_act","Nouveau col: " + new_cc.get_col_name())            
+            ### log new col
+            my_Activity_info = Activity_info()
+            my_Activity_info.strava_id = myActivity_id
+            my_Activity_info.info_txt = "Nouveau col: " + new_cc.get_col_name()
+            my_Activity_info.save()
         else:
             my_cc = cc.objects.filter(col_code=colCode, strava_user_id=my_strava_user_id)            
             upd_cc = my_cc[0]
