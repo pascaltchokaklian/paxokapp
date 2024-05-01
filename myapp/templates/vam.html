@@ -1,25 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <head>      
+        <title>VAM !!!</title>
+        <meta name="charset" content="UTF-8" />
+        <meta name="author" content="xoka" />                        
+    </head>
+<body>
+    
+</body>
+
+
 <table>    
-    <tr>        
-        <td>Année</td>
-        <td>Janvier</td>
-        <td>Février</td>
-        <td>Mars</td>
-        <td>Avril</td>
-        <td>Mai</td>
-        <td>Juin</td>
-        <td>Juillet</td>
-        <td>Aout</td>
-        <td>Septembre</td>
-        <td>Octobre</td>
-        <td>Novembre</td>
-        <td>Décembre</td>            
+    <tr style="background-color: rgb(218, 218, 224)">        
+        <th>Année</th>
+        <th>Janvier</th>
+        <th>Février</th>
+        <th>Mars</th>
+        <th>Avril</th>
+        <th>Mai</th>
+        <th>Juin</th>
+        <th>Juillet</th>
+        <th>Aout</th>
+        <th>Septembre</th>
+        <th>Octobre</th>
+        <th>Novembre</th>
+        <th>Décembre</th>            
     </tr>    
     {% load myfunctions %}
         {% with firstyear=context.items|get_first_year %}
         
             {% with ly=firstyear|get_all_year %}
             {% for annee in ly %} 
-            <tr><td>{{ annee }}</td>    
+            <tr><th style="background-color: rgb(150, 150, 146)">{{ annee }}</th>    
                 {% with lm=1|get_all_monthes %}
                     {% for mois in lm %}                                        
                         <td>                             
@@ -38,7 +50,7 @@
 
 
 
-
+</html>
 
     
 
