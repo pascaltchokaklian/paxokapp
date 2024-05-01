@@ -11,7 +11,7 @@ from .models import Col_counter
 from .models import Strava_user
 from .cols_tools import *
 from .col_dbtools import *
-from .segments_tools import segment_explorer
+from .segments_tools import compute_all_vam, segment_explorer
 from .vars import get_map_center
 from django.db.models import Max
 from django.shortcuts import render , redirect
@@ -652,4 +652,12 @@ def get_strava_user_id(request,username):
     f_debug_trace("views.py","get_strava_user_id","strava_user_id = "+str(uid))
     
     return uid
-    
+
+def fVamYearView(request):
+    template = 'vam.html'
+    context_object_name = 'col_list'    # your own name for the list as a template   
+    template_name = "vam.html"          # Specify your own template name/location
+    strava_user_id = request.session.get('strava_user_id')        
+    listPerform = Perform.objects.filter(strava_user_id=strava_user_id).order_by('perf_date') 
+    computed_vam = compute_all_vam(listPerform)                                              
+    return render(request, template, {'context': computed_vam})    

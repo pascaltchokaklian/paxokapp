@@ -115,3 +115,17 @@ def save_segment_perf(segment_id, segment_strava_id, access_token, elev_differen
             myPerf.save()
                                         
     return ret
+
+def compute_all_vam(listPerform): 
+    nb_vam = dict()
+    sum_vam = dict()
+    avg_vam = dict()
+ 
+    for onePerf in listPerform:
+        datestr = str(onePerf.perf_date)   
+        datestrmore = datestr[0:7]
+        nb_vam[datestrmore]=nb_vam.get(datestrmore, 0) + 1
+        sum_vam[datestrmore]=sum_vam.get(datestrmore,0)+onePerf.perf_vam
+
+        avg_vam[datestrmore]=int(sum_vam[datestrmore]/nb_vam[datestrmore])       
+    return avg_vam

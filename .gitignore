@@ -1,6 +1,5 @@
-# Ignorer 
+# Ignorer
 
 myapp/migrations
 myapp/__pycache__
 .history/
-

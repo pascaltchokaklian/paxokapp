@@ -33,8 +33,10 @@ urlpatterns = [
     ### SEGMENTS
     path('dashboard/', User_dashboardView.as_view(), name='userdashboard'),            
     path('segment/',SegmentListView.as_view(), name='segment'),
-    path('perform/',PerformListView.as_view(), name = 'perform'),         
-    ### 
+    path('perform/',PerformListView.as_view(), name = 'perform'),
+    ### VAM
+    path('vamyear/',fVamYearView, name = 'vamyear'),         
+    ###
     path('calendar/',MonthStatListView.as_view(), name = 'calendar'),     
     ### FORM
     path('new_col/',new_col_form, name='new_col'),   

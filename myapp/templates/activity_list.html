@@ -1,8 +1,11 @@
 {% extends "base_generic.html" %}
-
+{% load extra_functions %}
 {% block content %}
 
   <h3>Flux des activités</h3>
+
+  {{ f_test }} 
+  
   
   {% if activity_list %}
   <table width="100%" class="sortable n-last">

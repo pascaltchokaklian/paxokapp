@@ -1,0 +1,45 @@
+<table>    
+    <tr>        
+        <td>Année</td>
+        <td>Janvier</td>
+        <td>Février</td>
+        <td>Mars</td>
+        <td>Avril</td>
+        <td>Mai</td>
+        <td>Juin</td>
+        <td>Juillet</td>
+        <td>Aout</td>
+        <td>Septembre</td>
+        <td>Octobre</td>
+        <td>Novembre</td>
+        <td>Décembre</td>            
+    </tr>    
+    {% load myfunctions %}
+        {% with firstyear=context.items|get_first_year %}
+        
+            {% with ly=firstyear|get_all_year %}
+            {% for annee in ly %} 
+            <tr><td>{{ annee }}</td>    
+                {% with lm=1|get_all_monthes %}
+                    {% for mois in lm %}                                        
+                        <td>                             
+                            {{ annee|makekey:mois|get_vam:context }}                            
+                        </td>                                           
+                        
+                    {% endfor %} 
+                {% endwith %}    
+            </tr>
+            {% endfor %}
+            {% endwith %}
+        
+        {% endwith %}       
+</table>
+
+
+
+
+
+
+    
+
+
