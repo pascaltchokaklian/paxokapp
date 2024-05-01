@@ -15,8 +15,8 @@
 <h2>Historique des Vitesses Ascensionnelles Moyennes </h2>
 
 <br>
-<table>    
-    <tr style="background-color: rgb(218, 218, 224)">        
+<table width="80%">    
+    <tr align="center" style="background-color: rgb(218, 218, 224)">        
         <th>Année</th>
         <th>Janvier</th>
         <th>Février</th>
@@ -36,11 +36,11 @@
         
             {% with ly=firstyear|get_all_year %}
             {% for annee in ly %} 
-            <tr><th style="background-color: rgb(150, 150, 146)">{{ annee }}</th>    
+            <tr align="center"><th style="background-color: rgb(150, 150, 146)">{{ annee }}</th>    
                 {% with lm=1|get_all_monthes %}
                     {% for mois in lm %}                                                                
                         {% with vam=annee|makekey:mois|get_vam:context %}                                                
-                        <td style="{{ vam|get_td_color }}">                            
+                        <td align="center" style="{{ vam|get_td_color }}">                            
                         {{ vam }}                            
                         </td>
                         {% endwith %}
