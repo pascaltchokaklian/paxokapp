@@ -64,4 +64,24 @@ def get_vam(cle,liste):
 def makekey(arg1, arg2):    
     return str(arg1) +"-"+ str(arg2)
 
-
+### Cell color
+@register.filter
+def get_td_color(vam):        
+    mycolor = "background-color: rgb(127, 221, 76)" # Vert absinthe
+    if vam == '': mycolor = "background-color: rgb(255, 255, 255)" # Blanc
+    else:
+        vamint = int(vam)
+        if vamint>500:
+            mycolor = "background-color: rgb(194, 247, 50)" # Vert chartreuse
+        if vamint>600:
+            mycolor = "background-color: rgb(254, 248, 108)" # Jaune Mimosa                
+        if vamint>700:
+            mycolor = "background-color: rgb(243, 214, 23)" # Safran
+        if vamint>800:
+            mycolor = "background-color: rgb(221, 152, 92)" # Ocre Rouge
+        if vamint>900:
+            mycolor = "background-color: rgb(244, 102, 27)" # Carotte
+        if vamint>1000:
+            mycolor = "background-color: rgb(231, 62, 1)" # Corail
+            
+    return mycolor
