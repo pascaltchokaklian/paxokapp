@@ -83,5 +83,7 @@ def get_td_color(vam):
             mycolor = "background-color: rgb(244, 102, 27)" # Carotte
         if vamint>1000:
             mycolor = "background-color: rgb(231, 62, 1)" # Corail
+        if vamint>1100:
+            mycolor = "background-color: rgb(246, 17, 0)" # Mon rouge
             
     return mycolor
