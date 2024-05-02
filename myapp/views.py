@@ -655,9 +655,16 @@ def get_strava_user_id(request,username):
 
 def fVamYearView(request):
     template = 'vam.html'
-    context_object_name = 'col_list'    # your own name for the list as a template   
+    context_object_name = 'vamyear'     # your own name for the list as a template   
     template_name = "vam.html"          # Specify your own template name/location
     strava_user_id = request.session.get('strava_user_id')        
     listPerform = Perform.objects.filter(strava_user_id=strava_user_id).order_by('perf_date') 
-    computed_vam = compute_all_vam(listPerform)                                              
+    computed_vam = compute_all_vam(listPerform)
+    if len(computed_vam)==0:
+        currentDateTime = datetime.datetime.now()
+        date = currentDateTime.date()
+        year = date.strftime("%Y")
+        strbegin = year+"-01"
+        strend = year+"-12"
+        computed_vam = {strbegin: 0, strend: 0}
     return render(request, template, {'context': computed_vam})    

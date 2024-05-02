@@ -14,7 +14,7 @@ def the_year(str_value):
 ### First Strava Year ###
 
 @register.filter
-def get_first_year(allitems):
+def get_first_year(allitems):    
     for i in allitems:
         print(the_year(i[0]))
         break
