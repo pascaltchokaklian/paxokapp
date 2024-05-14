@@ -1,6 +1,7 @@
 import datetime
 from django.db import models
 from .vars import display_year_month
+from django.contrib.auth.models import User
 
 # Create your models here.
 
@@ -58,6 +59,15 @@ class Activity(models.Model):
 		sc = self.strava_id		
 		q1 = Activity_info.objects.filter(strava_id=sc)
 		return q1
+	
+	def get_strava_user_name(self):
+		suid = self.strava_user_id
+		q1 = Strava_user.objects.filter(strava_user_id=suid)
+		name = q1[0].strava_user
+		q2 = User.objects.filter(username=name)
+		first_name = q2[0].first_name
+		last_name = q2[0].last_name
+		return first_name + " " + last_name
 						
 class Col_perform(models.Model):
 	col_perf_id = models.IntegerField(auto_created=True,  primary_key=True)

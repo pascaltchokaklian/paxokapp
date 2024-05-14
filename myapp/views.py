@@ -168,7 +168,8 @@ def connected_map(request):
     else:
         ze_epoc = int(ze_date.timestamp())
         un_d_epoc = 86400
-        un_jour_avant = ze_epoc - un_d_epoc    
+        un_jour_avant = ze_epoc - un_d_epoc        
+        #un_jour_avant = 1693224000
         param = {'after': un_jour_avant , "per_page": 200}
         activities_json = requests.get(activites_url, headers=header, params=param).json()
                                 
@@ -549,6 +550,14 @@ class ActivityListView(generic.ListView):
         strava_user_id = self.request.session.get('strava_user_id')    
         f_debug_trace("views.py","ActivityListView",Activity.objects.count())
         return Activity.objects.filter(strava_user_id=strava_user_id).order_by("-act_start_date")
+    
+class ActivityTeamView(generic.ListView):        
+    model = Activity
+    context_object_name = 'activity_team'   # your own name for the list as a template variable    
+    template_name = "activity_team.html"    # Specify your own template name/location
+    def get_queryset(self):                        
+        f_debug_trace("views.py","ActivityTeamView",Activity.objects.count())
+        return Activity.objects.order_by("-act_start_date")[:100]
     
 class ActivityDetailView(generic.DetailView):                       
     model = Activity        
