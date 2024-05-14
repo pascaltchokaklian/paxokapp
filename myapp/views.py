@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from django.views import generic
 from django.shortcuts import render
 import folium
@@ -338,7 +339,7 @@ def col_map(request, col_id):
         
     return render(request, 'index.html', context)
 
-def act_map(request, act_id):    
+def act_map(request, act_id):
     
     my_strava_user = request.session.get("strava_user")    
     my_strava_user_id = get_strava_user_id(request,my_strava_user)
@@ -353,7 +354,7 @@ def act_map(request, act_id):
 
     myActivity_sq = Activity.objects.all().filter(act_id = act_id)    
     access_token = "notFound"
-               
+                   
     userList = Strava_user.objects.all().filter(strava_user = user)
     for userOne in userList:
             myUser = userOne
@@ -364,7 +365,15 @@ def act_map(request, act_id):
     for myActivity in myActivity_sq:            
             strava_id =  myActivity.strava_id
             act_statut = myActivity.act_status
-
+            team_strava_user_id = myActivity.strava_user_id
+            f_debug_trace("views.py","strava_user_id = ",my_strava_user_id)                 
+                        
+    if str(my_strava_user_id) != str(team_strava_user_id):
+        ### See activity from an other
+        f_debug_trace("views.py","### See activity from an other",team_strava_user_id)     
+        return HttpResponse('')
+        
+        
     activites_url = "https://www.strava.com/api/v3//activities/"+str(strava_id)
     
     # Get activity data
