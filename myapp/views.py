@@ -532,25 +532,7 @@ class  ColsOkListView(generic.ListView):
         year = date.strftime("%Y")        
         context['annee'] = str(year)
         return context
-                
-class Cols06koListView(generic.ListView):        
-
-    model = Col
-    context_object_name = 'col_list'   # your own name for the list as a template    
-    template_name = "col_list.html"    # Specify your own template name/location
-
-    def get_queryset(self):                
-        strava_user_id = self.request.session.get('strava_user_id')    
-        qsOk = Col_counter.objects.filter(strava_user_id=strava_user_id)
-        lOk= []
-
-        for oneOk in qsOk:
-            lOk.append(oneOk.col_code)
-
-        qsCol =  Col.objects.exclude(col_code__in=lOk)
-                                   
-        return qsCol.filter(col_code__icontains='FR-06').order_by("col_alt")    
-    
+                    
 class ActivityListView(generic.ListView):        
     model = Activity
     context_object_name = 'activity_list'   # your own name for the list as a template variable    

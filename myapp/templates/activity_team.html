@@ -19,13 +19,13 @@
     <tbody>
     {% for activity in activity_team %}      
       <tr>
-        <td align="left" style="width:10%">
+        <td align="left" style="width:20%">
           {{activity.get_strava_user_name }} 
         </td>
         <td data-sort={{activity.act_start_date|date:"ymd"}} style="width:10%">
           {{activity.act_start_date|date:"d-M-Y" }} 
         </td>  
-        <td align="right">
+        <td align="right" style="width:10%">
           {{activity.get_act_dist_km|floatformat:2}} 
         </td>  
         <td align="right" style="width:10%">
