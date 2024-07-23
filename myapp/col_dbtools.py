@@ -540,12 +540,13 @@ def set_col_count_list_this_year(strava_user_id):
     for oneCount in cc.objects.filter(strava_user_id=strava_user_id):                                        
         act_id = last_passages_id.get(oneCount.col_code, None)                                      
         date_time_str = last_passages.get(oneCount.col_code, None)                                      
-        date_str = date_time_str[0:10]                                        
-        date_object = datetime.datetime.strptime(date_str, '%Y-%m-%d')
-        my_datetime = timezone.make_aware(date_object, timezone.get_current_timezone())
-        oneCount.last_passage_date = my_datetime
-        oneCount.last_act_id = act_id
-        oneCount.save()
+        if date_time_str != None:                    
+            date_str = date_time_str[0:10]                                        
+            date_object = datetime.datetime.strptime(date_str, '%Y-%m-%d')
+            my_datetime = timezone.make_aware(date_object, timezone.get_current_timezone())
+            oneCount.last_passage_date = my_datetime
+            oneCount.last_act_id = act_id
+            oneCount.save()
                                         
     millisecend = int(time.time() * 1000)
 
