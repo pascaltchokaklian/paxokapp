@@ -48,8 +48,8 @@
         <td >
           {{perform.get_segment_slope|floatformat:1 }}%         
         </td> 
-        <td >
-          {{perform.perf_vam|intcomma}}         
+        <td data-sort={{perform.perf_vam}}>
+          {{perform.perf_vam|floatformat}}         
         </td> 
         <td >                   
           {{perform.perf_fc}}         
