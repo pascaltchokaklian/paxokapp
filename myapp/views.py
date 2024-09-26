@@ -548,7 +548,11 @@ class ActivityTeamView(generic.ListView):
     template_name = "activity_team.html"    # Specify your own template name/location
     def get_queryset(self):                        
         f_debug_trace("views.py","ActivityTeamView",Activity.objects.count())
-        return Activity.objects.order_by("-act_start_date")[:100]
+        nbcount = 100
+        strava_user_id = self.request.session.get('strava_user_id') 
+        if strava_user_id == None:
+            nbcount=0
+        return Activity.objects.order_by("-act_start_date")[:nbcount]
     
 class ActivityDetailView(generic.DetailView):                       
     model = Activity        
