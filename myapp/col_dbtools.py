@@ -6,7 +6,7 @@ from aifc import Error
 
 from myapp import cols_tools
 from refactor.settings import SQLITE_PATH
-from .models import Activity, Activity_info, Col, Col_counter as cc, Col_perform as cp, Country, Month_stat, Region, User_var
+from .models import Activity, Activity_info, Col, Col_counter as cc, Col_perform as cp, Country, Month_stat, Region, Strava_user, User_dashboard, User_var
 from django.utils import timezone
 from .vars import f_debug_col, f_debug_trace
 from django.contrib.auth.models import User
@@ -349,7 +349,7 @@ def get_user_names(user):
     qs_user= User.objects.filter(username=user).values()
     myret = "Unknown User"
     for oneOk in qs_user:
-        myret = oneOk["first_name"]+" " +oneOk["last_name"]                
+        myret = oneOk["first_name"] +" " + oneOk["last_name"]                
     return myret
 
 ###########################################################################################################
@@ -612,3 +612,18 @@ def get_last_speed_activity( strava_user_id,distance,duree):
                 break
       
     return txt_ret
+
+
+#####################################################
+
+def all_users_stat():
+    all_users = Strava_user.objects.values()
+    for un_user in all_users:                
+        strava_user_Id = un_user['strava_user_id']                        
+        udsq = User_dashboard.objects.filter(strava_user_id=strava_user_Id)
+        for i in udsq:
+            print(i.col_count)
+            print(i.col2000_count)
+            print(i.bike_year_km)
+            print(i.run_year_km)
+    return all_users

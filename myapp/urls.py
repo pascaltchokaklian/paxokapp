@@ -37,6 +37,7 @@ urlpatterns = [
     path('perform/',PerformListView.as_view(), name = 'perform'),
     ### VAM
     path('vamyear/',fVamYearView, name = 'vamyear'),         
+    path('stat_list/',StatListView.as_view(), name = 'stat_list'),         
     ###
     path('calendar/',MonthStatListView.as_view(), name = 'calendar'),     
     ### FORM

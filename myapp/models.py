@@ -1,5 +1,6 @@
 import datetime
 from django.db import models
+
 from .vars import display_year_month
 from django.contrib.auth.models import User
 
@@ -226,6 +227,15 @@ class User_dashboard(models.Model):
 	km4s = models.IntegerField(null=True)
 	den4s = models.IntegerField(null=True)
 
+	def get_nom_prenom(self):		
+		ret = 'Not Found'
+		if self.strava_user_id != None:
+			all_strava_user=Strava_user.objects.filter(strava_user_id = self.strava_user_id)
+			strava_user = all_strava_user[0].strava_user
+			authuserlist = User.objects.filter(username=strava_user)
+			ret = authuserlist[0].last_name + ' ' + authuserlist[0].first_name				
+		return ret
+
 	def set_col_count(self):	
 		nbCols = Col_counter.objects.filter(strava_user_id=self.strava_user_id).count()				
 		# DB save		
@@ -304,7 +314,7 @@ class User_dashboard(models.Model):
 		self.save()
 				
 		return self.den4s
-	
+				
 class Month_stat(models.Model):					
 	month_stat_id = models.IntegerField(auto_created=True,  primary_key=True)
 	strava_user_id = models.IntegerField(null=True)

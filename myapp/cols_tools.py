@@ -1,6 +1,7 @@
 from numpy import sin, cos, arccos, pi, round
 import numpy as N
 import requests
+
 from .models import Strava_user
 from .vars import  f_debug_trace, get_app_client_id, get_app_client_secret
 import warnings

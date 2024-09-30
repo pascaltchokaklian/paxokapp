@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  
+<head>      
+    <title>The Team</title>
+    <meta name="charset" content="UTF-8" />
+    <meta name="author" content="xoka" />                        
+</head>
+
+<body>
+
+{% block content %}
+  
+  {% if stat_list %}
+  <font size="2" face="Courier New" >
+  <table id = "myTable" width="100%" class="sortable n-last" >  
+    <thead>
+      <tr>       
+        <th>---</th>       
+        <th>Nombre de Cols</th>       
+        <th>Nombre de Cols +2000m</th>       
+        <th>Km cette année ( bike )</th>       
+        <th>Km cette année ( run )</th>       
+      </tr>    
+    </thead>
+    <tbody>
+    {% for stat in stat_list %}                 
+      <tr>   
+        <td align="center">  
+          {{stat.get_nom_prenom }}
+        </td>             
+        <td align="center">
+          {{stat.col_count }}         
+        </td>    
+        <td align="center">
+          {{stat.col2000_count }}
+        </td>         
+        <td align="center">
+          {{stat.bike_year_km }}
+         </td>
+        <td align="center">
+          {{stat.run_year_km }}
+        </td>                 
+      </tr>         
+    {% endfor %}
+  </tbody>
+  </table>  
+  </font>
+  {% else %}
+    <p>There is no Stats in the Database.</p>
+  {% endif %}
+{% endblock %}
+
+</body>
+</html>
