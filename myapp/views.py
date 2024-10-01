@@ -672,14 +672,7 @@ def fVamYearView(request):
         strend = year+"-12"
         computed_vam = {strbegin: 0, strend: 0}
     return render(request, template, {'context': computed_vam})    
-
-
-def fAllUsersStats(request):
-    template = 'stat_list.html'    
-    all_users_stats = all_users_stat()        
-    return  render(request, template, {'context': all_users_stats})      
-
-
+    
 class StatListView(generic.ListView):        
     model = User_dashboard   
     context_object_name = 'stat_list'               # your own name for the list as a template    

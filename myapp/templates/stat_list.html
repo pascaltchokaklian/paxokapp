@@ -4,27 +4,34 @@
 <head>      
     <title>The Team</title>
     <meta name="charset" content="UTF-8" />
-    <meta name="author" content="xoka" />                        
+    <meta name="author" content="xoka" />                   
+    
+    {% load static %}    
+    <!-- Add additional CSS in static file -->    
+    <script src="{% static 'sortable.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/grid.css' %}">
+
 </head>
 
 <body>
 
 {% block content %}
-  
+
   {% if stat_list %}
   <font size="2" face="verdana" >
   <table id = "myTable" width="100%" class="sortable n-last" >  
     <thead>
       <tr>       
         <th>---</th>       
-        <th>Nombre de Cols</th>       
+        <th >Nombre de Cols</th>
         <th>Nombre de Cols +2000m</th>       
         <th>Km cette année ( bike )</th>       
         <th>Km cette année ( run )</th>       
       </tr>    
     </thead>
     <tbody>
-    {% for stat in stat_list %}                 
+    {% for stat in stat_list %}           
+      {% if stat.get_nom_prenom != "Not Found" %}         
       <tr>   
         <td align="left">  
           {{stat.get_nom_prenom }}
@@ -41,7 +48,8 @@
         <td align="center">
           {{stat.run_year_km }}
         </td>                 
-      </tr>         
+      </tr>            
+    {% endif %}
     {% endfor %}
   </tbody>
   </table>  
