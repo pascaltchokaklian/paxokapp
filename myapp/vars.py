@@ -1,7 +1,17 @@
+import datetime
 from refactor.settings import APP_CLIENT_ID, COLOMARS, COUNTRY, DEPARTEMENT, LEVEL_COL_DEBUG, SALTA, SOCIAL_AUTH_STRAVA_SECRET
 
 MONTHES = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"]
 
+### Classe pour afficher les Classements par Segment
+class classement:
+    def __init__(self, nomSegment,chrono,vam,place):
+        self.nomSegment = nomSegment
+        self.chrono = chrono
+        self.vam = vam
+        self.place = place
+
+### Niveau de Debug
 def f_debug_col():
     ret = False
     if LEVEL_COL_DEBUG > 0:

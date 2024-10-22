@@ -22,7 +22,7 @@ def segment_explorer(myRectangle, access_token, strava_id, strava_user_id):
     ret = 0
     
     for oneSegment in ExplorerResponse['segments']:
-
+        
         strava_id = oneSegment["id"]
         nameSegment = oneSegment["name"]
         

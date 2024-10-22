@@ -1,7 +1,7 @@
 import datetime
 from django.db import models
 
-from .vars import display_year_month
+from .vars import classement, display_year_month
 from django.contrib.auth.models import User
 
 # Create your models here.
@@ -30,11 +30,11 @@ class Col(models.Model):
 	col_lon = models.FloatField(null=True)
 	col_type = models.CharField(max_length=10, null= True)	
 
-	def get_activities_passed(self):
+	def get_activities_passed(self):		
 		sc = self.col_code		
 		q1 = Col_perform.objects.filter(col_code=sc)		
 		return q1
-	
+		
 class Activity(models.Model):
 	act_id = models.IntegerField(null=False, primary_key=True)	
 	strava_id = models.IntegerField(null=False, default=0)	
@@ -58,7 +58,7 @@ class Activity(models.Model):
 	
 	def get_info_txt(self):
 		sc = self.strava_id		
-		q1 = Activity_info.objects.filter(strava_id=sc)
+		q1 = Activity_info.objects.filter(strava_id=sc)				
 		return q1
 	
 	def get_strava_user_name(self):
@@ -69,6 +69,25 @@ class Activity(models.Model):
 		first_name = q2[0].first_name
 		last_name = q2[0].last_name
 		return first_name + " " + last_name
+			
+	def get_performances(self):
+		L = []
+		suid = self.strava_user_id
+		mydate= self.act_start_date 
+		annee = mydate.year
+		mois = mydate.month
+		jour = mydate.day		
+		qperf = Perform.objects.filter(strava_user_id=suid,perf_date__year=annee,perf_date__month=mois,perf_date__day=jour)		
+		for onePerf in qperf:	
+			chrono = datetime.timedelta(seconds=onePerf.perf_chrono)
+			vam = onePerf.perf_vam
+			place = onePerf.get_place()
+			qSegm = Segment.objects.filter(segment_id=onePerf.segment_id)
+			for oneSeg in qSegm:				
+				nomSerment = oneSeg.segment_name
+			L.append(classement(nomSerment,chrono,vam,place))		
+
+		return L 
 						
 class Col_perform(models.Model):
 	col_perf_id = models.IntegerField(auto_created=True,  primary_key=True)
@@ -209,6 +228,20 @@ class Perform(models.Model):
 		sSecondes = "{:02d}".format(secondes)	 		
 		hms = sHeure+":"+sMinutes+":"+sSecondes
 		return hms		
+	
+	def get_place(self):
+		ret = "Not Found"
+		place=0		
+		qallPerf = Perform.objects.filter(strava_user_id = self.strava_user_id, segment_id=self.segment_id).order_by('perf_chrono')
+		total = qallPerf.count()
+		for onePerf in qallPerf:
+			place+=1
+			if onePerf.perf_chrono == self.perf_chrono:
+				break
+
+		ret = str(place)+"/"+str(total)
+		return 	ret
+
 
 class User_var(models.Model):				
 	id = models.IntegerField(auto_created=True,  primary_key=True)			

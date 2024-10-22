@@ -17,7 +17,6 @@ urlpatterns = [
     path('activity/<pk>', ActivityDetailView.as_view(), name="activity-detail"),            
     path('activity/<int:act_id>/<int:col_id>/', col_map_by_act,name = "act-col"),            
     path('team', ActivityTeamView.as_view(), name='team'),        
-
     ###             
     path('cols_list/<str:pk>/', fColsListView,name='cols_list'),
     path('cols_list/<int:col_id>/', ColsDetailView.as_view(),name = "col-detail"),           

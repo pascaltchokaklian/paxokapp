@@ -15,8 +15,19 @@
         
             {%  for info in object.get_info_txt %}                 
                 <tr><td style="color:#1600da"> {{info.info_txt}} </td></tr>
-            {% endfor %}
-        
+            {% endfor %}            
+    </table>
+
+    <table class="tftable" border="0">
+        {%  for performance in object.get_performances %}                 
+                <tr><td style="color:#1600da"><b>Performances:</b></td></tr>            
+                <tr>
+                    <td width = "400px" style="color:#1600da"> {{performance.nomSegment}} </td>
+                    <td width = "100px" style="color:#1600da"> {{performance.chrono}} </td>
+                    <td width = "100px" style="color:#1600da"> {{performance.vam}} m/h</td>
+                    <td width = "100px" style="color:#1600da"> {{performance.place}} temps </td>                    
+                </tr>
+            {% endfor %}     
     </table>
                                                                
     {% if object.get_col_passed  %}
