@@ -19,8 +19,9 @@
     </table>
 
     <table class="tftable" border="0">
-        {%  for performance in object.get_performances %}                 
-                <tr><td style="color:#1600da"><b>Performances:</b></td></tr>            
+        {% if object.get_performances %} 
+        <tr><td style="color:#1600da"><b>Performances:</b></td></tr>
+            {%  for performance in object.get_performances %}                                             
                 <tr>
                     <td width = "400px" style="color:#1600da"> {{performance.nomSegment}} </td>
                     <td width = "100px" style="color:#1600da"> {{performance.chrono}} </td>
@@ -28,6 +29,7 @@
                     <td width = "100px" style="color:#1600da"> {{performance.place}} temps </td>                    
                 </tr>
             {% endfor %}     
+        {% endif %}    
     </table>
                                                                
     {% if object.get_col_passed  %}
