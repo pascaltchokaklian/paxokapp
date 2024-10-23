@@ -195,6 +195,7 @@ def connected_map(request):
             strava_id = int(activities_df['id'][ligne])        
             activity_name = activities_df['name'][ligne]              
             act_start_date = activities_df['start_date'][ligne]      
+            act_start_date10 = act_start_date[:10]
             act_dist = activities_df['distance'][ligne]      
             act_den = activities_df['total_elevation_gain'][ligne]          
             sport_type = activities_df['sport_type'][ligne]
@@ -225,17 +226,17 @@ def connected_map(request):
                         
                 my_Activity_info1 = Activity_info()
                 my_Activity_info1.strava_id = strava_id
-                my_Activity_info1.info_txt = get_last_activity_more_than(strava_user_id,act_dist)           
+                my_Activity_info1.info_txt = get_last_activity_more_than(strava_user_id,act_dist,act_start_date10)           
                 my_Activity_info1.save()
 
                 my_Activity_info2 = Activity_info()
                 my_Activity_info2.strava_id = strava_id
-                my_Activity_info2.info_txt = get_last_activity_den_than(strava_user_id,act_den)               
+                my_Activity_info2.info_txt = get_last_activity_den_than(strava_user_id,act_den,act_start_date10)               
                 my_Activity_info2.save()
 
                 my_Activity_info3 = Activity_info()
                 my_Activity_info3.strava_id = strava_id
-                my_Activity_info3.info_txt = get_last_speed_activity(strava_user_id,act_dist,act_time)    
+                my_Activity_info3.info_txt = get_last_speed_activity(strava_user_id,act_dist,act_time,act_start_date10)    
                 my_Activity_info3.save()
                                     
             for pl in activities_df['polylines'][ligne]:
