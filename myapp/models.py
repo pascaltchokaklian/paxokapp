@@ -51,7 +51,7 @@ class Activity(models.Model):
 	def get_act_dist_km(self):
 		return self.act_dist/1000
 	
-	def get_col_passed(self):
+	def get_col_passed(self):		
 		sc = self.strava_id		
 		q1 = Col_perform.objects.filter(strava_id=sc)
 		return q1

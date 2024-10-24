@@ -184,7 +184,7 @@ def connected_map(request):
         activities_df = activities_df.dropna(subset=['map.summary_polyline'])
         
         activities_df['polylines'] = activities_df['map.summary_polyline'].apply(polyline.decode)
-
+        
         f_debug_trace("views.py","connected_map",SQLITE_PATH)    
         conn = create_connection(SQLITE_PATH)        
         myColsList =  select_all_cols(conn,"00")        
@@ -252,6 +252,17 @@ def connected_map(request):
                     
             insert_col_perform(conn,strava_id, AllVisitedCols)
             compute_cols_by_act(conn,my_strava_user_id,strava_id)
+
+            #############################
+            ### Treatement des segments
+            #############################
+            
+            # Recherche des Segments
+            f_debug_trace("views.py","connected_map","Activity Segemnts Performance, strava_id ="+str(strava_id)) 
+            myRectangle = get_map_rectangle(activities_df['polylines'])
+            segment_explorer(myRectangle, access_token, strava_id, my_strava_user_id)
+
+        ### End Treatement des segments
                         
         # Plot Polylines onto Folium Map
         i=0
@@ -393,8 +404,7 @@ def act_map(request, act_id):
     
     activities_df['polylines'] = activities_df['map.summary_polyline'].apply(polyline.decode)
     
-    # Centrage de la carte
-                       
+    # Centrage de la carte                       
     centrer_point = map_center(activities_df['polylines'])           
 
     # Recherche des Segments

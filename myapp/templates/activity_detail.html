@@ -1,7 +1,7 @@
 {% extends "base_generic.html" %}
 
 {% block content %}
-    <hr />    
+    <hr>    
     <table class="tftable" border="0">
         <tr>
                 <td><h1>{{ object.act_name }}</h1></td>
@@ -33,7 +33,7 @@
     </table>
                                                                
     {% if object.get_col_passed  %}
-        <hr />        
+        <hr>        
         Nombre de Cols passés: {{ object.get_col_passed|length }}
     {% endif %}
                   
@@ -47,10 +47,10 @@
         </div>
     {% endfor %}
             
-    <hr />        
+    <hr>        
 
     <iframe        
-        width="1000"
+        width="95%"
         height="600"
         frameborder=0
         src="{% url 'Activity Map View' act_id=object.act_id %}"
