@@ -5,11 +5,12 @@ MONTHES = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","S
 
 ### Classe pour afficher les Classements par Segment
 class classement:
-    def __init__(self, nomSegment,chrono,vam,place):
+    def __init__(self, nomSegment,chrono,vam,place,percent):
         self.nomSegment = nomSegment
         self.chrono = chrono
         self.vam = vam
         self.place = place
+        self.percent = percent
 
 ### Niveau de Debug
 def f_debug_col():

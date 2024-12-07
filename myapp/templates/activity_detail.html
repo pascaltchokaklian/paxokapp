@@ -26,7 +26,8 @@
                     <td width = "400px" style="color:#1600da"> {{performance.nomSegment}} </td>
                     <td width = "100px" style="color:#1600da"> {{performance.chrono}} </td>
                     <td width = "100px" style="color:#1600da"> {{performance.vam}} m/h</td>
-                    <td width = "100px" style="color:#1600da"> {{performance.place}} temps </td>                    
+                    <td width = "100px" style="color:#1600da"> {{performance.place}} temps =</td>                    
+                    <td width = "100px" style="color:#1600da"> {{performance.percent}} % </td>                    
                 </tr>
             {% endfor %}     
         {% endif %}    
@@ -50,7 +51,7 @@
     <hr>        
 
     <iframe        
-        width="95%"
+        width="1000"
         height="600"
         frameborder=0
         src="{% url 'Activity Map View' act_id=object.act_id %}"

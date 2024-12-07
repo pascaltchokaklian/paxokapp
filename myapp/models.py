@@ -82,10 +82,11 @@ class Activity(models.Model):
 			chrono = datetime.timedelta(seconds=onePerf.perf_chrono)
 			vam = onePerf.perf_vam
 			place = onePerf.get_place()
+			percent = onePerf.get_percent()
 			qSegm = Segment.objects.filter(segment_id=onePerf.segment_id)
 			for oneSeg in qSegm:				
 				nomSerment = oneSeg.segment_name
-			L.append(classement(nomSerment,chrono,vam,place))		
+			L.append(classement(nomSerment,chrono,vam,place,percent))		
 
 		return L 
 						
@@ -240,6 +241,20 @@ class Perform(models.Model):
 				break
 
 		ret = str(place)+"/"+str(total)
+		return 	ret
+	
+	def get_percent(self):
+		ret = "Not Found"
+		place=0		
+		qallPerf = Perform.objects.filter(strava_user_id = self.strava_user_id, segment_id=self.segment_id).order_by('perf_chrono')
+		total = qallPerf.count()
+		for onePerf in qallPerf:
+			place+=1
+			if onePerf.perf_chrono == self.perf_chrono:
+				break
+
+		inInt = int(100*place/total)
+		ret = str(inInt)
 		return 	ret
 
 
