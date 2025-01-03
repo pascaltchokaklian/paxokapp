@@ -1,8 +1,6 @@
 var region_name_list = [],
     region_code_list = [],
     region_country_list = []
-    region_id_list = [],
-    year_displayed = '2024'
     
 function country(value) {              
 

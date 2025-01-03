@@ -1,7 +1,6 @@
 from numpy import sin, cos, arccos, pi, round
 import numpy as N
 import requests
-
 from .models import Strava_user
 from .vars import  f_debug_trace, get_app_client_id, get_app_client_secret
 import warnings
@@ -239,15 +238,3 @@ def get_dayson_in_month(month,days_list):
         if (month == oneDay [:6]):            
             nb_count +=1                
     return nb_count
-
-
-
-
-    
-    
-        
-    
-
-
-
-    

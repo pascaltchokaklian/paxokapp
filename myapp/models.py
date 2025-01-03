@@ -1,6 +1,5 @@
 import datetime
 from django.db import models
-
 from .vars import classement, display_year_month
 from django.contrib.auth.models import User
 
@@ -314,8 +313,12 @@ class User_dashboard(models.Model):
 		return nbCols2000
 	
 	def set_bike_year_km(self):	
-		## All Activities 				
-		lActivity = Activity.objects.filter(strava_user_id=self.strava_user_id).filter(act_start_date__gt="2024-01-01").filter(act_type="Ride")		
+		## All Activities
+		currentDateTime = datetime.datetime.now()
+		date = currentDateTime.date()
+		year = date.strftime("%Y")
+		get_first_year_day = year+'-01-01' 				
+		lActivity = Activity.objects.filter(strava_user_id=self.strava_user_id).filter(act_start_date__gt=get_first_year_day).filter(act_type="Ride")		
 		distance_BY = 0		
 		for one_act in lActivity:			
 			distance_BY = distance_BY + one_act.act_dist/1000			
@@ -327,7 +330,12 @@ class User_dashboard(models.Model):
 	
 	def set_run_year_km(self):	
 		## All Activities 				
-		lActivity = Activity.objects.filter(strava_user_id=self.strava_user_id).filter(act_start_date__gt="2024-01-01").filter(act_type="Run")				
+		currentDateTime = datetime.datetime.now()
+		date = currentDateTime.date()
+		year = date.strftime("%Y")
+		get_first_year_day = year+'-01-01'
+
+		lActivity = Activity.objects.filter(strava_user_id=self.strava_user_id).filter(act_start_date__gt=get_first_year_day).filter(act_type="Run")				
 		distance_RY = 0
 		for one_act in lActivity:
 			distance_RY = distance_RY + one_act.act_dist/1000
