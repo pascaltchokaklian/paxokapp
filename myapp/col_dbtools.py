@@ -567,7 +567,7 @@ def get_last_activity_more_than(strava_user_id, distance, dateFrom):
                 laDateStr = one_act.act_start_date.strftime("%Y-%m-%d %H:%M:%S")            
                 laDate2 = datetime.datetime.strptime(laDateStr, '%Y-%m-%d %H:%M:%S')            
                 if laDate2 < laDate1:                
-                    txt_ret = 'Plus grande sortie depuis "' + one_act.act_name + '" le '
+                    txt_ret = 'Plus longue sortie depuis "' + one_act.act_name + '" le '
                     txt_ret += str(one_act.act_start_date.day) + "/" + str(one_act.act_start_date.month) + "/" + str(one_act.act_start_date.year) + ' ( '
                     txt_ret += str(one_act.act_dist/1000) + ' Km )'
 
