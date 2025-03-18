@@ -80,6 +80,38 @@ def getDistanceBetweenPoints(latitude1, longitude1, latitude2, longitude2, unit 
         return round(distance, 2)
     if unit == 'kilometers':
         return round(distance * 1.609344, 5)        
+    
+####################################################
+ 
+def getFilterdColList(colsList: ColsList, pointsList: GPSPointsList):
+    FilteredColList = []     
+    minLat = 90
+    maxLat = -90
+    minLon = 180
+    maxLon = -180
+
+    for onePoint in pointsList:        
+        lat = onePoint[0]
+        lon = onePoint[1]
+
+        if lat < minLat :
+            minLat = lat
+
+        if lat > maxLat :
+            maxLat = lat               
+
+        if lon < minLon : 
+            minLon = lon
+
+        if lon > maxLon :
+            maxLon = lon                                  
+     
+    for oneCol in colsList:        
+        if oneCol.lat >= minLat and oneCol.lat <= maxLat and oneCol.lon >= minLon and oneCol.lon <= maxLon:
+            FilteredColList.append(oneCol)
+            ### f_debug_trace("col_tools.py","getFilterdColList",oneCol.name)
+        
+    return FilteredColList
 
 ####################################################
 

@@ -244,8 +244,10 @@ def connected_map(request):
                     myPoint = PointGPS()                
                     myPoint = pl                
                     myGPSPoints.append(myPoint)
+
+            FilteredColList = getFilterdColList(myColsList,myGPSPoints)                     
         
-            returnList = getColsVisited(myColsList,myGPSPoints)       
+            returnList = getColsVisited(FilteredColList,myGPSPoints)       
             
             for ligne in returnList:                
                 AllVisitedCols.append(ligne)            
