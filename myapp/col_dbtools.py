@@ -120,7 +120,7 @@ def insert_col_perform(conn,act_id,rows):
 
 def compute_cols_by_act( conn, my_strava_user_id,myActivity_id):
 
-    f_debug_trace("col_dbtools.py","compute_cols_by_act","Begin")  
+    ###f_debug_trace("col_dbtools.py","compute_cols_by_act","Begin")  
                                 
     perf = cp.objects.filter(strava_id=myActivity_id).values_list("col_code", flat=True)
                         
@@ -136,7 +136,7 @@ def compute_cols_by_act( conn, my_strava_user_id,myActivity_id):
             new_cc.col_count=1
             new_cc.strava_user_id=my_strava_user_id
             new_cc.save()            
-            f_debug_trace("col_dbtools.py","compute_cols_by_act","Nouveau col: " + new_cc.get_col_name())            
+            ### f_debug_trace("col_dbtools.py","compute_cols_by_act","Nouveau col: " + new_cc.get_col_name())            
             ### log new col
             my_Activity_info = Activity_info()
             my_Activity_info.strava_id = myActivity_id
@@ -147,7 +147,7 @@ def compute_cols_by_act( conn, my_strava_user_id,myActivity_id):
             upd_cc = my_cc[0]
             upd_cc.col_count=nbPassage
             upd_cc.save()
-            f_debug_trace("col_dbtools.py","compute_cols_by_act","Col Franchis: " + upd_cc.get_col_name()+'('+str(nbPassage)+')')            
+            ### f_debug_trace("col_dbtools.py","compute_cols_by_act","Col Franchis: " + upd_cc.get_col_name()+'('+str(nbPassage)+')')            
 
         lact = Activity.objects.filter(strava_id=myActivity_id)
         for act in lact:
@@ -237,7 +237,7 @@ def getActivitiesByCol(conn, strava_user_id, col_code):
 ##########################################################################################################
 
 def recompute_activity(strava_id, activities_df, strava_user):        
-    f_debug_trace("col_dbtools.py","recompute_activity",SQLITE_PATH)    
+    ### f_debug_trace("col_dbtools.py","recompute_activity",SQLITE_PATH)    
     conn = create_connection(SQLITE_PATH)
 
     AllVisitedCols = []
@@ -339,7 +339,7 @@ def get_user_data_values(strava_user_id):
             last_update = myUser_var.last_update
     values_info = [view_country_code,view_region_code,last_update]     
 
-    f_debug_trace('col_dbtools.py','get_user_data_values',values_info)
+    ### f_debug_trace('col_dbtools.py','get_user_data_values',values_info)
 
     return values_info
 
@@ -452,7 +452,7 @@ def compute_all_month_stat(my_user_id: int):
                     
     millisecEnd = int(time.time() * 1000)
 
-    f_debug_trace("col_db_tools.py","compute_all_month_stat",str(millisecEnd-millisecBegin)+" ms")
+    ### f_debug_trace("col_db_tools.py","compute_all_month_stat",str(millisecEnd-millisecBegin)+" ms")
     
     return 1
 
@@ -494,7 +494,7 @@ def set_col_count_list_this_year(strava_user_id):
 
     millisecBegin = int(time.time() * 1000)        
     
-    f_debug_trace("col_dbtools.py","set_col_count_list_this_year",SQLITE_PATH)    
+    ### f_debug_trace("col_dbtools.py","set_col_count_list_this_year",SQLITE_PATH)    
     conn = create_connection(SQLITE_PATH)
 
     currentDateTime = datetime.datetime.now()
@@ -506,7 +506,7 @@ def set_col_count_list_this_year(strava_user_id):
 
     sqlExec = "select count(*) as compteur, col_code from myapp_col_perform P, myapp_activity A where P.strava_id = A.strava_id	and strava_user_id = "+strava_user_id+" and act_start_date > '"+year+"' group by col_code"
 
-    f_debug_trace('set_col_count_list_this_year',sqlExec,str(year))
+    ### f_debug_trace('set_col_count_list_this_year',sqlExec,str(year))
     cur.execute(sqlExec)    
 
     myListCompte = cur.fetchall()    
@@ -521,7 +521,7 @@ def set_col_count_list_this_year(strava_user_id):
                                         
     millisecMid = int(time.time() * 1000)
 
-    f_debug_trace("col_db_tools.py","set_col_count_list_this_year - part 1 ",str(millisecMid-millisecBegin)+" ms")
+    ### f_debug_trace("col_db_tools.py","set_col_count_list_this_year - part 1 ",str(millisecMid-millisecBegin)+" ms")
 
     ###
 
@@ -550,7 +550,7 @@ def set_col_count_list_this_year(strava_user_id):
                                         
     millisecend = int(time.time() * 1000)
 
-    f_debug_trace("col_db_tools.py","set_col_count_list_this_year - part 2",str(millisecend-millisecMid)+" ms")
+    ### f_debug_trace("col_db_tools.py","set_col_count_list_this_year - part 2",str(millisecend-millisecMid)+" ms")
         
     return 1
 
@@ -571,7 +571,7 @@ def get_last_activity_more_than(strava_user_id, distance, dateFrom):
                     txt_ret += str(one_act.act_start_date.day) + "/" + str(one_act.act_start_date.month) + "/" + str(one_act.act_start_date.year) + ' ( '
                     txt_ret += str(one_act.act_dist/1000) + ' Km )'
 
-                    f_debug_trace("col_db_tools.py","get_last_activity_more_than",txt_ret) 
+                    ### f_debug_trace("col_db_tools.py","get_last_activity_more_than",txt_ret) 
                 
                     break
 
@@ -594,7 +594,7 @@ def get_last_activity_den_than(strava_user_id, deniv,dateFrom):
                     txt_ret += str(one_act.act_start_date.day) + "/" + str(one_act.act_start_date.month) + "/" + str(one_act.act_start_date.year)+ ' ( '
                     txt_ret += str(one_act.act_den) + ' m )'
 
-                    f_debug_trace("col_db_tools.py","get_last_activity_den_than",txt_ret) 
+                    ###f_debug_trace("col_db_tools.py","get_last_activity_den_than",txt_ret) 
                 
                     break
 
@@ -619,7 +619,7 @@ def get_last_speed_activity( strava_user_id,distance,duree,dateFrom):
                     txt_ret += str(one_act.act_start_date.day) + "/" + str(one_act.act_start_date.month) + "/" + str(one_act.act_start_date.year)+ ' ( '
                     txt_ret += str(format(one_act.act_dist/one_act.act_time*3.6,'.1f')) + ' Km/h )'
 
-                    f_debug_trace("col_db_tools.py","get_last_speed_activity",txt_ret) 
+                    ###f_debug_trace("col_db_tools.py","get_last_speed_activity",txt_ret) 
                 
                     break
       

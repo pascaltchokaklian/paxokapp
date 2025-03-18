@@ -30,7 +30,7 @@ def segment_explorer(myRectangle, access_token, strava_id, strava_user_id):
         elev_difference = oneSegment["elev_difference"]
         distance = oneSegment["distance"]/1000
         segment_id = 0 # compuuted
-        f_debug_trace("segment_tools.py","segment_explorer",nameSegment + " distance = " + str(distance) + " avg_grade = " + str(avg_grade))                        
+        ### f_debug_trace("segment_tools.py","segment_explorer",nameSegment + " distance = " + str(distance) + " avg_grade = " + str(avg_grade))                        
         ### Eligible ou Non        
         if distance >= 3 and avg_grade >= 5:                    
             # DB update
@@ -81,10 +81,11 @@ def save_segment_perf(segment_id, segment_strava_id, access_token, elev_differen
 
     try:
         if performanceResponse['message'] == "Payment Required":
-            f_debug_trace("segments_tools","save_segment_perf","Payment Required")
+            ### f_debug_trace("segments_tools","save_segment_perf","Payment Required")
             return ret
     except:
-        f_debug_trace("segments_tools","save_segment_perf","Payment OK")
+        ### f_debug_trace("segments_tools","save_segment_perf","Payment OK")
+        ret = 1
 
     ret = 1        
                             

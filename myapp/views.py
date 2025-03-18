@@ -33,13 +33,13 @@ def base_map(request):
 
     if (str(user) != 'AnonymousUser'):
 
-        f_debug_trace("views.py","base_map",SQLITE_PATH)    
+        ### f_debug_trace("views.py","base_map",SQLITE_PATH)    
         conn = create_connection(SQLITE_PATH)
         
         my_strava_user_id = get_strava_user_id(request,user)
         nom_prenom = get_user_names(user)
 
-        f_debug_trace("views.py","base_map/nom_prenom",nom_prenom)    
+        ### f_debug_trace("views.py","base_map/nom_prenom",nom_prenom)    
                                                 
         # Make your map object
         view_region_info =  get_user_data_values(my_strava_user_id)            
@@ -101,7 +101,7 @@ def connected_map(request):
     # Make your map object    
     main_map = folium.Map(location=get_map_center("EUROPE"), zoom_start = 6) # Create base map 
     user = request.user # Pulls in the Strava User data                
-    f_debug_trace("views.py","connected_map","user = "+str(user))
+    ### f_debug_trace("views.py","connected_map","user = "+str(user))
     get_strava_user_id(request,user)
     strava_login = user.social_auth.get(provider='strava') # Strava login             
                 
@@ -125,7 +125,7 @@ def connected_map(request):
         myUser.expire_at = expires
         myUser.strava_user_id = get_strava_user_id(request,user)
         myUser.save()
-        f_debug_trace("views.py","connected_map","New User = "+ str(user))
+        ### f_debug_trace("views.py","connected_map","New User = "+ str(user))
         
     else:
         for oneOk in myUser_sq:
@@ -185,7 +185,7 @@ def connected_map(request):
         
         activities_df['polylines'] = activities_df['map.summary_polyline'].apply(polyline.decode)
         
-        f_debug_trace("views.py","connected_map",SQLITE_PATH)    
+        ### f_debug_trace("views.py","connected_map",SQLITE_PATH)    
         conn = create_connection(SQLITE_PATH)        
         myColsList =  select_all_cols(conn,"00")        
                 
@@ -260,7 +260,7 @@ def connected_map(request):
             #############################
             
             # Recherche des Segments
-            f_debug_trace("views.py","connected_map","Activity Segemnts Performance, strava_id ="+str(strava_id)) 
+            ### f_debug_trace("views.py","connected_map","Activity Segemnts Performance, strava_id ="+str(strava_id)) 
             myRectangle = get_map_rectangle(activities_df['polylines'])
             segment_explorer(myRectangle, access_token, strava_id, my_strava_user_id)
 
@@ -358,12 +358,12 @@ def act_map(request, act_id):
     my_strava_user = request.session.get("strava_user")    
     my_strava_user_id = get_strava_user_id(request,my_strava_user)
     
-    f_debug_trace("col_tools.py","act_map","user : "+my_strava_user)
+    ###f_debug_trace("col_tools.py","act_map","user : "+my_strava_user)
     
     refresh_access_token(my_strava_user)
 
     user = str(request.user) # Pulls in the Strava User data                
-    f_debug_trace("views.py","act_map","user = "+user)
+    ### f_debug_trace("views.py","act_map","user = "+user)
     get_strava_user_id(request,user)
 
     myActivity_sq = Activity.objects.all().filter(act_id = act_id)    
@@ -374,7 +374,7 @@ def act_map(request, act_id):
             myUser = userOne
             access_token = myUser.access_token                
 
-    f_debug_trace("views.py","act_map","access_token = "+access_token)     
+    ### f_debug_trace("views.py","act_map","access_token = "+access_token)     
            
     for myActivity in myActivity_sq:            
             strava_id =  myActivity.strava_id
@@ -384,7 +384,7 @@ def act_map(request, act_id):
                         
     if str(my_strava_user_id) != str(team_strava_user_id):
         ### See activity from an other
-        f_debug_trace("views.py","### See activity from an other",team_strava_user_id)     
+        ### f_debug_trace("views.py","### See activity from an other",team_strava_user_id)     
         return HttpResponse('')
         
         
@@ -414,9 +414,9 @@ def act_map(request, act_id):
     segment_explorer(myRectangle, access_token, strava_id, my_strava_user_id)
                              
     # Zoom
-    f_debug_trace("col_tools.py","act_map","Call map_zoom ")
+    ### f_debug_trace("col_tools.py","act_map","Call map_zoom ")
     map_zoom = cols_tools.map_zoom(centrer_point,activities_df['polylines'])    
-    f_debug_trace("col_tools.py","act_map","After map_zoo")
+    ### f_debug_trace("col_tools.py","act_map","After map_zoo")
     
     map = folium.Map(location=centrer_point, zoom_start=map_zoom)
                                                    
@@ -447,7 +447,7 @@ def act_map(request, act_id):
 
 
     ## Col Display
-    f_debug_trace("views.py","act_map",SQLITE_PATH)    
+    ### f_debug_trace("views.py","act_map",SQLITE_PATH)    
     conn = create_connection(SQLITE_PATH)        
     
     myColsList =  getColByActivity(conn,strava_id)     
@@ -534,7 +534,7 @@ class  ColsOkListView(generic.ListView):
     
     def get_queryset(self):            
         strava_user_id = self.request.session.get('strava_user_id')    
-        f_debug_trace("views.py","ColsOkListView","strava_user_id = "+str(strava_user_id))
+        ### f_debug_trace("views.py","ColsOkListView","strava_user_id = "+str(strava_user_id))
         qsOk = Col_counter.objects.filter(strava_user_id=strava_user_id).order_by("-col_count")                                                                   
         return qsOk
     
@@ -552,7 +552,7 @@ class ActivityListView(generic.ListView):
     template_name = "activity_list.html"    # Specify your own template name/location
     def get_queryset(self):                
         strava_user_id = self.request.session.get('strava_user_id')    
-        f_debug_trace("views.py","ActivityListView",Activity.objects.count())
+        ### f_debug_trace("views.py","ActivityListView",Activity.objects.count())
         return Activity.objects.filter(strava_user_id=strava_user_id).order_by("-act_start_date")
     
 class ActivityTeamView(generic.ListView):        
@@ -560,7 +560,7 @@ class ActivityTeamView(generic.ListView):
     context_object_name = 'activity_team'   # your own name for the list as a template variable    
     template_name = "activity_team.html"    # Specify your own template name/location
     def get_queryset(self):                        
-        f_debug_trace("views.py","ActivityTeamView",Activity.objects.count())
+        ### f_debug_trace("views.py","ActivityTeamView",Activity.objects.count())
         nbcount = 100
         strava_user_id = self.request.session.get('strava_user_id') 
         if strava_user_id == None:
@@ -583,9 +583,9 @@ class ColsDetailView(generic.DetailView):
         context = super(ColsDetailView, self).get_context_data(**kwargs)
         strava_user_id = self.request.session.get('strava_user_id')            
         le_col = context["object"]        
-        f_debug_trace("views.py","le_col",le_col)    
+        ### f_debug_trace("views.py","le_col",le_col)    
         listColPerform = le_col.get_activities_passed()        
-        f_debug_trace("views.py","listColPerform",listColPerform)    
+        ### f_debug_trace("views.py","listColPerform",listColPerform)    
         liste_activities = []        
         for cp in listColPerform:                                    
             pk_activity = cp.strava_id                        
@@ -596,7 +596,7 @@ class ColsDetailView(generic.DetailView):
                     liste_activities.append(lactivity)                            
         context.update({'strava_user_id': strava_user_id})        
         context.update({'activities': liste_activities})        
-        f_debug_trace("views.py","ColsDetailView",liste_activities)
+        ### f_debug_trace("views.py","ColsDetailView",liste_activities)
         return context
     
        
@@ -661,12 +661,12 @@ def new_col_form(request):
         return render(request , 'new_col.html' , {'form' : form})    
     
 def get_strava_user_id(request,username):    
-    f_debug_trace("views.py","get_strava_user_id","username = "+str(username))
+    ### f_debug_trace("views.py","get_strava_user_id","username = "+str(username))
     user_id = User.objects.get(username=username).pk        
     uid = UserSocialAuth.objects.get(user_id=user_id).uid        
     request.session['strava_user'] = str(username)
     request.session['strava_user_id'] = uid
-    f_debug_trace("views.py","get_strava_user_id","strava_user_id = "+str(uid))
+    ### f_debug_trace("views.py","get_strava_user_id","strava_user_id = "+str(uid))
     
     return uid
 
