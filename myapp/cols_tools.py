@@ -147,7 +147,6 @@ def getColsVisitedList(colsList: ColsList, onePoint: PointGPS ):
         #       print("------------------------------->",oneCol.name,distance  )                        
         ########################################################################    
 
-
     return visitedList
 
 ####################################################
