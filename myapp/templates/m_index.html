@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+      
+    {% block favico %}
+    {% load static %}<link rel="shortcut icon" type="image/png" href="{% static '/image/favicon.png' %}">
+    {% endblock %}
+    <title>Cent Cols</title>
+
+</head>
+<body> 
+<div class="grid-container">
+
+  <div class="item1">        
+    {% load static %} 
+    <a href="{% url 'index' %}" style="float:left"><img src="{% static '/image/124_club-des-cent-cols.png' %}"  width="62" height="62"/></a>    
+    <h2 align="center">Club des Cent Cols </h2>
+    <link rel="stylesheet" href="{% static 'css/m_css.css' %}">
+  </div>
+
+  <div class="item2">
+    <ul>        
+      {% csrf_token %} <a href="{% url 'social:begin' 'strava' %}" role="button"> <img src="{% static '/image/strava.png' %}" /></a>                              
+      <li><a href="{% url 'm_activity' %}">Flux des activités</a></li>
+      <li>Tous les cols</li>
+      <li>Cols Franchis</li>
+      <li>L'équipe</li>
+      <li>Statistiques</li>      
+    </ul>
+</div>
+
+  <div class="item3">
+        
+      {% block content %}      
+      <!--Begin Map Container-->
+        <div>                      
+          Hello {{user_infos}} !!!                 
+          {{ main_map|safe }}                                   
+        </div>
+      <!--End Map Container-->
+      {% endblock %}
+     
+  </div>  
+  
+  <div class="item5"><p align = "left"><small>Version 2025.07.10</small></p></div>
+
+</body>
+</html>
+
+

@@ -40,7 +40,10 @@ urlpatterns = [
     ###
     path('calendar/',MonthStatListView.as_view(), name = 'calendar'),     
     ### FORM
-    path('new_col/',new_col_form, name='new_col'),   
+    path('new_col/',new_col_form, name='new_col'),       
+    ### m_pages
+    path('m_index/',mIndexView,name='m_index'),
+    path('m_activity',mActivityListView.as_view(), name='m_activity'),        
                     
 ]
 

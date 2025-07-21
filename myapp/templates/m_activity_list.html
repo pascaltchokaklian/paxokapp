@@ -1,0 +1,34 @@
+{% extends "m_base_generic.html" %}
+{% block content %}
+
+  {{ f_test }} 
+    
+  {% if m_activity_list %}
+  <table width="100%" class="sortable n-last">
+    <thead>
+    <tr>
+        <th class="indicator-left">Date</th>
+        <th class="indicator-left">Dist</th>        
+        <th class="indicator-left">Activité</th>                
+    </tr>    
+    </thead>
+    <tbody>
+    {% for activity in m_activity_list %}      
+      <tr>
+        <td data-sort={{activity.act_start_date|date:"ymd"}} style="width: 120px;">
+          {{activity.act_start_date|date:"d-M-Y" }} 
+        </td>  
+        <td align="right" style="width: 60px;">
+          {{activity.get_act_dist_km|floatformat:1}} 
+        </td>  
+        <td>          
+          <a href="activity/{{activity.act_id}}"> {{ activity.act_name }}</a> 
+        </td>         
+      </tr> 
+    {% endfor %}
+  </tbody>
+  </table>  
+  {% else %}
+    <p>There are no Activities in the Database.</p>
+  {% endif %}
+{% endblock %}

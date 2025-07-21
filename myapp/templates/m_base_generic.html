@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% block title %}<title>Des cols et 100 Cols</title>{% endblock %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  {% load static %}
+  <script src="{% static 'menu.js' %}"></script>
+  <!-- Add additional CSS in static file -->
+  <link rel="stylesheet" href="{% static 'css/m_css.css' %}">     
+  
+</head>
+<body>        
+    <div class="grid-container">
+      <div class="item1">        
+        {% block sidebar %}
+        {% load static %}         
+        <a href="{% url 'index' %}" style="float:left"><img src="{% static '/image/124_club-des-cent-cols.png' %}"  width="62" height="62"/></a>    
+        <h2 align="center">Club des Cent Cols </h2>
+        <script src="{% static 'sortable.min.js' %}"></script>
+        <link rel="stylesheet" href="{% static 'css/grid.css' %}">
+      </div>         
+          <br>                 
+          <div class="item2">
+          <ul>                                                   
+                        
+            {% if countries %}  
+            <li><b><a>Cols</a></b></li>              
+              <br>
+              <select id = "country" name="country" onChange="country(this.value)">                                
+                <option value="">--- Pays ---</option>
+                {% for p in countries %}                              
+                  <option value={{p.country_code}}>{{p.country_name}}</option>                                    
+                {% endfor %}  
+              </select>   
+
+              <br><br>         
+
+              <select id = "region" name="region" onChange="region(this.value)">
+                <option value="">--- Département ---</option>  
+                {% for r in regions %}    
+                  
+                  <option value={{r.region_code}}>{{r.region_name}}</option>                     
+                  
+                  <script type="text/javascript">                                    
+
+                  region_name = "{{r.region_name}}";      
+                  region_code = "{{r.region_code}}";                                       
+                  region_country = "{{r.country_code}}";                                           
+                  region_id = "{{r.region_id}}";
+
+                  region_name_list.push(region_name);                        
+                  region_code_list.push(region_code);   
+                  region_country_list.push(region_country);   
+                  region_id_list.push(region_id);   
+                  </script>
+
+                {% endfor %}  
+                
+              </select>   
+
+              <br><br>             
+            {% endif %}  
+            <li><a href="{% url 'activity' %}">Flux des activités</a></li>                   
+            <li><a href="{% url 'cols' %}">Tous les Cols</a></li>                                    
+            <li><a href="{% url 'colsok' %}">Cols franchis</a></li>                                                
+            <li><a href="{% url 'team' %}">L'Equipe</a></li>
+           </ul>
+          {% endblock %}
+          </div>                   
+      {% block content %}               
+      {% endblock %}                     
+    </div>  
+
+</body>
+</html>

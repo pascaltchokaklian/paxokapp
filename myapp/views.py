@@ -19,78 +19,107 @@ from django.shortcuts import render , redirect
 from django.contrib.auth.models import User
 from social_django.models import UserSocialAuth
 
+#####################################################################
+#   Index View All devices                                          #
+#####################################################################
+
+def mainIndexView(request,user):
+    ### f_debug_trace("views.py","base_map",SQLITE_PATH)    
+    conn = create_connection(SQLITE_PATH)
+        
+    my_strava_user_id = get_strava_user_id(request,user)
+    nom_prenom = get_user_names(user)
+
+    ### f_debug_trace("views.py","base_map/nom_prenom",nom_prenom)    
+                                                
+    # Make your map object
+    view_region_info =  get_user_data_values(my_strava_user_id)            
+    continent = "EUROPE"
+    if view_region_info[0] == "AR":
+        continent = "SOUTHAMERICA"
+    main_map = folium.Map(location=get_map_center(continent), zoom_start = 6) # Create base map
+    feature_group_Road = folium.FeatureGroup(name="Route").add_to(main_map)    
+    feature_group_Piste = folium.FeatureGroup(name="Piste").add_to(main_map)    
+    feature_group_Sentier = folium.FeatureGroup(name="Sentier").add_to(main_map)    
+    folium.LayerControl().add_to(main_map)
+                                    
+    # Les cols passés    
+    colOK = cols_effectue(conn,my_strava_user_id )    
+    listeOK = []
+    for oneCol in colOK:        
+        listeOK.append(oneCol[3])   # col_code
+        
+    # Tous les cols                
+    myColsList =  select_all_cols(conn,view_region_info)
+                
+    # Plot Cols onto Folium Map
+    for oneCol in myColsList:
+        myCol = PointCol()
+        myCol.setPoint(oneCol)
+        location = [myCol.lat,myCol.lon]
+        colColor = "red"
+        if myCol.col_code in listeOK :
+            colColor = "green"
+
+        # Surface
+        if  myCol.col_type == "R":            
+            folium.Marker(location, popup=myCol.name+" ("+str(myCol.alt)+"m)",icon=folium.Icon(color=colColor, icon="flag")).add_to(feature_group_Road)        
+        if  myCol.col_type == "P":            
+            folium.Marker(location, popup=myCol.name+" ("+str(myCol.alt)+"m)",icon=folium.Icon(color=colColor, icon="flag")).add_to(feature_group_Piste)        
+        if  myCol.col_type == "S":            
+            folium.Marker(location, popup=myCol.name+" ("+str(myCol.alt)+"m)",icon=folium.Icon(color=colColor, icon="flag")).add_to(feature_group_Sentier)        
+        
+    
+    main_map_html = main_map._repr_html_() # Get HTML for website
+
+    context = {
+        "main_map":main_map_html,
+        "user_infos":nom_prenom
+    }
+
+    return context
+
 ###################################################################
-#   Base Map
+#   PC Index View                                                 #
 ###################################################################
 
 def base_map(request):
-
+        
     user = request.user # Pulls in the Strava User data        
-            
+
     #user = "tpascal"    
 
     f_debug_trace("views.py","base_map","user = "+str(user))
 
     if (str(user) != 'AnonymousUser'):
-
-        ### f_debug_trace("views.py","base_map",SQLITE_PATH)    
-        conn = create_connection(SQLITE_PATH)
-        
-        my_strava_user_id = get_strava_user_id(request,user)
-        nom_prenom = get_user_names(user)
-
-        ### f_debug_trace("views.py","base_map/nom_prenom",nom_prenom)    
-                                                
-        # Make your map object
-        view_region_info =  get_user_data_values(my_strava_user_id)            
-        continent = "EUROPE"
-        if view_region_info[0] == "AR":
-            continent = "SOUTHAMERICA"
-        main_map = folium.Map(location=get_map_center(continent), zoom_start = 6) # Create base map
-        feature_group_Road = folium.FeatureGroup(name="Route").add_to(main_map)    
-        feature_group_Piste = folium.FeatureGroup(name="Piste").add_to(main_map)    
-        feature_group_Sentier = folium.FeatureGroup(name="Sentier").add_to(main_map)    
-        folium.LayerControl().add_to(main_map)
-                                    
-        # Les cols passés    
-        colOK = cols_effectue(conn,my_strava_user_id )    
-        listeOK = []
-        for oneCol in colOK:        
-            listeOK.append(oneCol[3])   # col_code
-            
-        # Tous les cols                
-        myColsList =  select_all_cols(conn,view_region_info)
-                    
-        # Plot Cols onto Folium Map
-        for oneCol in myColsList:
-            myCol = PointCol()
-            myCol.setPoint(oneCol)
-            location = [myCol.lat,myCol.lon]
-            colColor = "red"
-            if myCol.col_code in listeOK :
-                colColor = "green"
-
-            # Surface
-            if  myCol.col_type == "R":            
-                folium.Marker(location, popup=myCol.name+" ("+str(myCol.alt)+"m)",icon=folium.Icon(color=colColor, icon="flag")).add_to(feature_group_Road)        
-            if  myCol.col_type == "P":            
-                folium.Marker(location, popup=myCol.name+" ("+str(myCol.alt)+"m)",icon=folium.Icon(color=colColor, icon="flag")).add_to(feature_group_Piste)        
-            if  myCol.col_type == "S":            
-                folium.Marker(location, popup=myCol.name+" ("+str(myCol.alt)+"m)",icon=folium.Icon(color=colColor, icon="flag")).add_to(feature_group_Sentier)        
-            
-        
-        main_map_html = main_map._repr_html_() # Get HTML for website
-
-        context = {
-            "main_map":main_map_html,
-            "user_infos":nom_prenom
-        }
-
+        context = mainIndexView(request,user)
     else:
         #context = None
         context = {'Strava User': 'Not Connected'}
                                     
     return render(request, 'index.html', context)
+
+###################################################################
+#   Mobile Index view                                             #
+###################################################################
+
+
+def mIndexView(request):    
+        
+    user = request.user # Pulls in the Strava User data        
+
+    #user = "tpascal"    
+
+    f_debug_trace("views.py","base_map","user = "+str(user))
+
+    if (str(user) != 'AnonymousUser'):        
+        context = mainIndexView(request,user)
+    else:
+        #context = None
+        context = {'Strava User': 'Not Connected'}
+                                    
+    return render(request, 'm_index.html', context)
+
 
 ###################################################################
 #   Connected Map
@@ -322,7 +351,7 @@ def index(request):
     }
     
     # Render the HTML template index.html with the data in the context variable
-    return render(request, 'index.html', context)
+    return render(request, 'm_index.html', context)
 
 def perf(request):
                    
@@ -555,6 +584,16 @@ class ActivityListView(generic.ListView):
         ### f_debug_trace("views.py","ActivityListView",Activity.objects.count())
         return Activity.objects.filter(strava_user_id=strava_user_id).order_by("-act_start_date")
     
+class mActivityListView(generic.ListView):       
+    model = Activity
+    context_object_name = 'm_activity_list'   # your own name for the list as a template variable    
+    template_name = "m_activity_list.html"    # Specify your own template name/location
+    def get_queryset(self):                
+        strava_user_id = self.request.session.get('strava_user_id')    
+        ### f_debug_trace("views.py","ActivityListView",Activity.objects.count())
+        return Activity.objects.filter(strava_user_id=strava_user_id).order_by("-act_start_date")
+
+    
 class ActivityTeamView(generic.ListView):        
     model = Activity
     context_object_name = 'activity_team'   # your own name for the list as a template variable    
@@ -693,3 +732,10 @@ class StatListView(generic.ListView):
     def get_queryset(self):                
         qsOk = User_dashboard.objects.all().order_by('-bike_year_km')                
         return qsOk           
+    
+
+
+
+
+
+
