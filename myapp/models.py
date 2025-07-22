@@ -68,6 +68,14 @@ class Activity(models.Model):
 		first_name = q2[0].first_name
 		last_name = q2[0].last_name
 		return first_name + " " + last_name
+	
+	def get_strava_user_first_name(self):
+		suid = self.strava_user_id
+		q1 = Strava_user.objects.filter(strava_user_id=suid)
+		name = q1[0].strava_user
+		q2 = User.objects.filter(username=name)
+		first_name = q2[0].first_name		
+		return first_name
 			
 	def get_performances(self):
 		L = []
@@ -281,6 +289,15 @@ class User_dashboard(models.Model):
 			strava_user = all_strava_user[0].strava_user
 			authuserlist = User.objects.filter(username=strava_user)
 			ret = authuserlist[0].last_name + ' ' + authuserlist[0].first_name				
+		return ret
+	
+	def get_prenom(self):		
+		ret = 'Not Found'
+		if self.strava_user_id != None:
+			all_strava_user=Strava_user.objects.filter(strava_user_id = self.strava_user_id)
+			strava_user = all_strava_user[0].strava_user
+			authuserlist = User.objects.filter(username=strava_user)
+			ret = authuserlist[0].first_name				
 		return ret
 
 	def set_col_count(self):	
