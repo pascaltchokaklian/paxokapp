@@ -26,6 +26,12 @@ from social_django.models import UserSocialAuth
 def mainIndexView(request,user):
     ### f_debug_trace("views.py","base_map",SQLITE_PATH)    
     conn = create_connection(SQLITE_PATH)
+
+    user_agent = request.META['HTTP_USER_AGENT']
+
+    print('----------------------------------------------')
+    print(user_agent)
+    print('----------------------------------------------')
         
     my_strava_user_id = get_strava_user_id(request,user)
     nom_prenom = get_user_names(user)
