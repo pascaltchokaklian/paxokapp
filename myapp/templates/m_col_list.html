@@ -45,8 +45,7 @@
     <thead>
     <tr>
       <th class="indicator-left">Nom</th>
-      <th class="indicator-left">Altitude</th>
-      <th class="indicator-left">Code 100 cols</th>
+      <th class="indicator-left">Altitude</th>      
       <th class="indicator-left">Route/Piste/Sentier</th>
     </tr>  
     </thead>    
@@ -56,8 +55,7 @@
         <td>
           <a href="{{ col.col_id }}">{{ col.col_name }} </a> 
         </td>  
-        <td align="right" data-sort={{col.col_alt}}>{{col.col_alt}} m  </td>
-        <td align='center'>{{col.col_code}}</td>
+        <td align="right" data-sort={{col.col_alt}}>{{col.col_alt}} m  </td>        
         <td align='center'>{{col.col_type}}</td>
       </tr>  
     {% endfor %}
