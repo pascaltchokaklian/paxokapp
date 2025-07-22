@@ -62,13 +62,20 @@ body {
   grid-area: main;
 }
 
+.item3 a:visited{ color: #323332; text-decoration: none;}
+.item3 a:link { text-decoration: none;}
+
+.item3 a {
+  font-size: x-large;
+}
+
 .item3 > h1 {
   font-size: 30px;
   margin-bottom: 7px;
 }
 
-.item3 > p {
-  margin-bottom: 7px;
+.item3 > p {  
+  margin-bottom: 7px;  
 }
 
 .item4 {

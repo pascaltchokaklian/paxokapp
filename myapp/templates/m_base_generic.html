@@ -61,16 +61,18 @@
               </select>   
 
               <br><br>             
-            {% endif %}  
+            {% endif %}              
             <li><a href="{% url 'activity' %}">Flux des activités</a></li>                   
             <li><a href="{% url 'cols' %}">Tous les Cols</a></li>                                    
             <li><a href="{% url 'colsok' %}">Cols franchis</a></li>                                                
-            <li><a href="{% url 'team' %}">L'Equipe</a></li>
+            <li><a href="{% url 'team' %}">L'Equipe</a></li>            
            </ul>
           {% endblock %}
-          </div>                   
+          </div>                          
+      <div class="item3">          
       {% block content %}               
       {% endblock %}                     
+      </div>   
     </div>  
 
 </body>
