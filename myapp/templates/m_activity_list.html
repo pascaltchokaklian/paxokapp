@@ -4,7 +4,7 @@
   {{ f_test }} 
     
   {% if m_activity_list %}
-  <table width="100%" class="sortable n-last">
+  <table class="sortable n-last">
     <thead>
     <tr>
         <th class="indicator-left">Date</th>
@@ -21,7 +21,7 @@
         <td align="right" style="width: 60px;">
           {{activity.get_act_dist_km|floatformat:1}} 
         </td>  
-        <td>          
+        <td>
           <a href="activity/{{activity.act_id}}"> {{ activity.act_name }}</a> 
         </td>         
       </tr> 
