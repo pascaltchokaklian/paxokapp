@@ -560,6 +560,25 @@ class ColsListView(generic.ListView):
         context['countries'] = Country.objects.all()
         context['regions'] = Region.objects.all().order_by("region_code")          
         return context
+    
+##########################################################################    
+
+class mColsListView(generic.ListView):    
+
+    model = Col
+    context_object_name = 'm_col_list'   # your own name for the list as a template    
+    template_name = "m_col_list.html"    # Specify your own template name/location
+
+    def get_queryset(self):        
+        return Col.objects.all().order_by("col_alt")
+        
+    def get_context_data(self, **kwargs):
+        context = super(mColsListView, self).get_context_data(**kwargs)
+        context['countries'] = Country.objects.all()
+        context['regions'] = Region.objects.all().order_by("region_code")          
+        return context
+    
+##########################################################################   
               
 class  ColsOkListView(generic.ListView):        
 

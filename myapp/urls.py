@@ -43,7 +43,8 @@ urlpatterns = [
     path('new_col/',new_col_form, name='new_col'),       
     ### m_pages
     path('m_index/',mIndexView,name='m_index'),
-    path('m_activity',mActivityListView.as_view(), name='m_activity'),        
+    path('m_activity/',mActivityListView.as_view(), name='m_activity'),        
+    path('m_cols/', mColsListView.as_view(), name='m_cols'),
                     
 ]
 

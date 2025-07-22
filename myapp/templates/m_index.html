@@ -23,7 +23,7 @@
     <ul>        
       {% csrf_token %} <a href="{% url 'social:begin' 'strava' %}" role="button"> <img src="{% static '/image/strava.png' %}" /></a>                              
       <li><a href="{% url 'm_activity' %}">Flux des activités</a></li>
-      <li>Tous les cols</li>
+      <li><a href="{% url 'm_cols' %}">Tous les Cols</a></li>      
       <li>Cols Franchis</li>
       <li>L'équipe</li>      
     </ul>
