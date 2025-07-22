@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  
+<head>      
+    <title>The Team</title>
+    <meta name="charset" content="UTF-8" />
+    <meta name="author" content="xoka" />                   
+    
+    {% load static %}    
+    <!-- Add additional CSS in static file -->    
+    <script src="{% static 'sortable.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/grid.css' %}">
+
+</head>
+
+<body>
+
+{% block content %}
+
+  {% if m_stat_list %}
+  <font size="2" face="verdana" >
+  <table id = "myTable" width="100%" class="sortable n-last" >  
+    <thead>
+      <tr>       
+        <th>---</th>       
+        <th >Nombre de Cols</th>
+        <th>Nombre de Cols +2000m</th>       
+        <th>Km cette année ( bike )</th>               
+      </tr>    
+    </thead>
+    <tbody>
+    {% for stat in m_stat_list %}           
+      {% if stat.get_nom_prenom != "Not Found" %}         
+      <tr>   
+        <td align="left">  
+          {{stat.get_nom_prenom }}
+        </td>             
+        <td align="center">
+          {{stat.col_count }}         
+        </td>    
+        <td align="center">
+          {{stat.col2000_count }}
+        </td>         
+        <td align="center">
+          {{stat.bike_year_km }}
+         </td>
+                 
+      </tr>            
+    {% endif %}
+    {% endfor %}
+  </tbody>
+  </table>  
+  </font>
+  {% else %}
+    <p>There is no Stats in the Database.</p>
+  {% endif %}
+{% endblock %}
+
+</body>
+</html>

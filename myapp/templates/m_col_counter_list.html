@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+
+<head>      
+  <title>Liste des Cols franchis</title>
+  <meta name="charset" content="UTF-8" />
+  <meta name="author" content="xoka" />                        
+</head>
+
+<body>
+  
+{% extends "m_base_generic.html" %}
+
+{% block content %}
+  <hr />
+  {% load static %} 
+  <h3><img src="{% static '/image/medal.jpg' %}"  />{{m_col_counter_list.count}} cols franchis</h3>  
+  <hr />
+  {% if m_col_counter_list %}  
+<table class="sortable n-last">
+  <br/>
+    <thead>
+    <tr>         
+        <th class="indicator-left">Nom</th>        
+        <th class="indicator-left">Altitude</th>     
+        <th class="indicator-left">Nombre de passages</th>     
+        <th class="indicator-left">Nombre de passages {{ annee }}</th>                     
+    </tr>  
+    </thead>    
+    <tbody>
+                    
+    {% for colc in m_col_counter_list %}                
+    <tr>      
+      <td>        
+          <a href="{{ colc.get_col_id }}">{{ colc.get_col_name }}</a> 
+      </td>  
+      <td align="center">
+        {{colc.get_col_alt}}
+      </td>             
+      <td align="center">
+        {{colc.col_count}}
+      </td>
+      <td align="center">
+        {{colc.year_col_count}}        
+      </td>            
+    {% endfor %}
+  </tbody>
+  </table> 
+  {% else %}
+    <p>There is no Col in the Database.</p>
+  {% endif %}
+{% endblock %}
+
+</body>
+</html>

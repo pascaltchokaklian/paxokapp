@@ -455,7 +455,7 @@ def act_map(request, act_id):
     
     map = folium.Map(location=centrer_point, zoom_start=map_zoom)
                                                    
-    #kw = {
+    # kw = {
     #   "color": "blue",
     #   "line_cap": "round",
     #   "fill": True,
@@ -545,7 +545,11 @@ def fColsListView(request,**kwargs):
     return render (request, template, {'col_list':listeCols , 'country':country_name , 'region':region_name })
     
 ##########################################################################    
-    
+#                               Liste des cols                           #
+##########################################################################    
+
+### Vue PC ###
+
 class ColsListView(generic.ListView):    
 
     model = Col
@@ -561,8 +565,8 @@ class ColsListView(generic.ListView):
         context['regions'] = Region.objects.all().order_by("region_code")          
         return context
     
-##########################################################################    
-
+### Vue Mobile ###
+    
 class mColsListView(generic.ListView):    
 
     model = Col
@@ -579,7 +583,11 @@ class mColsListView(generic.ListView):
         return context
     
 ##########################################################################   
-              
+#                               Cols Franchis                            #
+##########################################################################   
+
+### Vue PC ###              
+
 class  ColsOkListView(generic.ListView):        
 
     model = Col
@@ -600,6 +608,34 @@ class  ColsOkListView(generic.ListView):
         context['annee'] = str(year)
         return context
                     
+### Vue Mobile ###
+
+class  mColsOkListView(generic.ListView):        
+
+    model = Col
+    context_object_name = 'm_col_counter_list'      # your own name for the list as a template    
+    template_name = "m_col_counter_list.html"       # Specify your own template name/location
+    
+    def get_queryset(self):            
+        strava_user_id = self.request.session.get('strava_user_id')    
+        ### f_debug_trace("views.py","ColsOkListView","strava_user_id = "+str(strava_user_id))
+        qsOk = Col_counter.objects.filter(strava_user_id=strava_user_id).order_by("-col_count")                                                                   
+        return qsOk
+    
+    def get_context_data(self, **kwargs):
+        context = super(mColsOkListView, self).get_context_data(**kwargs)
+        currentDateTime = datetime.datetime.now()
+        date = currentDateTime.date()
+        year = date.strftime("%Y")        
+        context['annee'] = str(year)
+        return context
+
+#########################################################################   
+#                       Liste des activités                             #
+#########################################################################   
+
+### Vue PC ###              
+
 class ActivityListView(generic.ListView):        
     model = Activity
     context_object_name = 'activity_list'   # your own name for the list as a template variable    
@@ -609,6 +645,8 @@ class ActivityListView(generic.ListView):
         ### f_debug_trace("views.py","ActivityListView",Activity.objects.count())
         return Activity.objects.filter(strava_user_id=strava_user_id).order_by("-act_start_date")
     
+### Vue Mobile ###
+
 class mActivityListView(generic.ListView):       
     model = Activity
     context_object_name = 'm_activity_list'   # your own name for the list as a template variable    
@@ -619,6 +657,12 @@ class mActivityListView(generic.ListView):
         return Activity.objects.filter(strava_user_id=strava_user_id).order_by("-act_start_date")
 
     
+#############################################################################################
+#                                          L'Equipe                                         #
+#############################################################################################
+
+### Vue PC ###              
+
 class ActivityTeamView(generic.ListView):        
     model = Activity
     context_object_name = 'activity_team'   # your own name for the list as a template variable    
@@ -630,6 +674,22 @@ class ActivityTeamView(generic.ListView):
         if strava_user_id == None:
             nbcount=0
         return Activity.objects.order_by("-act_start_date")[:nbcount]
+    
+### Vue Mobile ###
+
+class mActivityTeamView(generic.ListView):        
+    model = Activity
+    context_object_name = 'm_activity_team'   # your own name for the list as a template variable    
+    template_name = "m_activity_team.html"    # Specify your own template name/location
+    def get_queryset(self):                        
+        ### f_debug_trace("views.py","ActivityTeamView",Activity.objects.count())
+        nbcount = 100
+        strava_user_id = self.request.session.get('strava_user_id') 
+        if strava_user_id == None:
+            nbcount=0
+        return Activity.objects.order_by("-act_start_date")[:nbcount]
+
+#############################################################################################
     
 class ActivityDetailView(generic.DetailView):                       
     model = Activity        
@@ -750,6 +810,12 @@ def fVamYearView(request):
         computed_vam = {strbegin: 0, strend: 0}
     return render(request, template, {'context': computed_vam})    
     
+########################################################################################################
+#                                         Statistiques                                                 #
+########################################################################################################
+
+###     Vue PC
+
 class StatListView(generic.ListView):        
     model = User_dashboard   
     context_object_name = 'stat_list'               # your own name for the list as a template    
@@ -759,7 +825,15 @@ class StatListView(generic.ListView):
         return qsOk           
     
 
+###     Vue Mobile    
 
+class mStatListView(generic.ListView):        
+    model = User_dashboard   
+    context_object_name = 'm_stat_list'               # your own name for the list as a template    
+    template_name = "m_stat_list.html"                # Specify your own template name/location
+    def get_queryset(self):                
+        qsOk = User_dashboard.objects.all().order_by('-bike_year_km')                
+        return qsOk           
 
 
 

@@ -1,0 +1,47 @@
+{% extends "m_base_generic.html" %}
+{% block content %}
+
+  <h3>L'Equipe</h3>
+
+  <iframe        
+    width=100%
+    height="250"
+    frameborder=0
+    src="{% url 'm_stat_list' %}"
+>
+</iframe> 
+    
+  {% if m_activity_team %}
+  <h4>Activités</h4>
+  <table width="100%" class="sortable n-last">
+    <thead>
+    <tr>
+        <th class="indicator-left">---</th>
+        <th class="indicator-left">Date</th>
+        <th class="indicator-left">Distance</th>        
+        <th class="indicator-left">Activité</th>                
+    </tr>    
+    </thead>
+    <tbody>
+    {% for activity in m_activity_team %}      
+      <tr>
+        <td align="left" style="width:20%">
+          {{activity.get_strava_user_name }} 
+        </td>
+        <td data-sort={{activity.act_start_date|date:"ymd"}} style="width:10%">
+          {{activity.act_start_date|date:"d-M-Y" }} 
+        </td>  
+        <td align="right" style="width:10%">
+          {{activity.get_act_dist_km|floatformat:2}} 
+        </td>         
+        <td>          
+          <a href="activity/{{activity.act_id}}"> {{ activity.act_name }}</a> 
+        </td>          
+      </tr> 
+    {% endfor %}
+  </tbody>
+  </table>  
+  {% else %}
+    <p>There are no Activities in the Database.</p>
+  {% endif %}
+{% endblock %}

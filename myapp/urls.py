@@ -26,10 +26,7 @@ urlpatterns = [
     ###        
     path('colsok/', ColsOkListView.as_view(), name='colsok'),                           
     path('colsok/<pk>/', ColsDetailView.as_view(),name = "col-detail"),           
-    path('colsok/<int:col_id>/<int:act_id>/', act_map_by_col, name = "col-act"),                                  
-    ###    
-    path('cols06ko/<pk>/', ColsDetailView.as_view(),name = "col-detail"),                           
-    path('cols06ok/<int:col_id>/<int:act_id>/', act_map_by_col, name = "col-act"),    
+    path('colsok/<int:col_id>/<int:act_id>/', act_map_by_col, name = "col-act"),                                      
     ### SEGMENTS
     path('dashboard/', User_dashboardView.as_view(), name='userdashboard'),            
     path('segment/',SegmentListView.as_view(), name='segment'),
@@ -45,6 +42,9 @@ urlpatterns = [
     path('m_index/',mIndexView,name='m_index'),
     path('m_activity/',mActivityListView.as_view(), name='m_activity'),        
     path('m_cols/', mColsListView.as_view(), name='m_cols'),
+    path('m_colsok/', mColsOkListView.as_view(), name='m_colsok'),                           
+    path('m_team', mActivityTeamView.as_view(), name='m_team'),         
+    path('m_stat_list/',mStatListView.as_view(), name = 'm_stat_list'),         
                     
 ]
 

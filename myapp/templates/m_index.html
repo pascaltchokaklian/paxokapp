@@ -14,7 +14,7 @@
 
   <div class="item1">        
     {% load static %} 
-    <a href="{% url 'index' %}" style="float:left"><img src="{% static '/image/124_club-des-cent-cols.png' %}"  width="62" height="62"/></a>    
+    <a href="{% url 'm_index' %}" style="float:left"><img src="{% static '/image/124_club-des-cent-cols.png' %}"  width="62" height="62"/></a>    
     <h2 align="center">Club des Cent Cols </h2>
     <link rel="stylesheet" href="{% static 'css/m_css.css' %}">
   </div>
@@ -24,8 +24,8 @@
       {% csrf_token %} <a href="{% url 'social:begin' 'strava' %}" role="button"> <img src="{% static '/image/strava.png' %}" /></a>                              
       <li><a href="{% url 'm_activity' %}">Flux des activités</a></li>
       <li><a href="{% url 'm_cols' %}">Tous les Cols</a></li>      
-      <li>Cols Franchis</li>
-      <li>L'équipe</li>      
+      <li><a href="{% url 'm_colsok' %}">Cols franchis</a></li>            
+      <li><a href="{% url 'm_team' %}">L'Equipe</a></li>      
     </ul>
 </div>
 
