@@ -613,7 +613,7 @@ class  ColsOkListView(generic.ListView):
 class  mColsOkListView(generic.ListView):        
 
     model = Col
-    context_object_name = 'm_col_counter_list'      # your own name for the list as a template    
+    context_object_name = 'col_counter_list'      # your own name for the list as a template    
     template_name = "m_col_counter_list.html"       # Specify your own template name/location
     
     def get_queryset(self):            

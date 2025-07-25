@@ -14,9 +14,9 @@
 {% block content %}
   <hr />
   {% load static %} 
-  <h3>{{m_col_counter_list.count}} cols franchis</h3>  
+  <h3>{{col_counter_list.count}} cols franchis</h3>  
   <hr />
-  {% if m_col_counter_list %}  
+  {% if col_counter_list %}  
 <table class="sortable n-last">
   <br/>
     <thead>
@@ -24,12 +24,12 @@
         <th class="indicator-left">Passages</th>
         <th class="indicator-left">Nom</th>        
         <th class="indicator-left">Altitude</th>                  
-        <th class="indicator-left">Passages {{ annee }}</th>                     
+        <th class="indicator-left">En {{ annee }}</th>                     
     </tr>  
     </thead>    
     <tbody>
                     
-    {% for colc in m_col_counter_list %}                
+    {% for colc in col_counter_list %}                
     <tr>      
       <td align="center">
         {{colc.col_count}}
