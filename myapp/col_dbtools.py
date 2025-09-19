@@ -72,11 +72,11 @@ def select_all_cols(conn, region_info):
 
 #############################################################################
     
-def insert_activity (conn, strava_user_id, strava_id, act_name, act_start_date, act_dist, act_den, act_type, act_time, act_power, act_status):
+def insert_activity (conn, strava_user_id, strava_id, act_name, act_start_date, act_dist, act_den, act_type, act_time, act_power, act_status, act_normal_power ):
     try:
         cur = conn.cursor()
-        sql = "INSERT INTO myapp_activity (strava_user_id, strava_id, act_name, act_start_date, act_dist, act_den, act_type, act_time, act_power, act_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        value = (strava_user_id, strava_id, act_name, act_start_date, act_dist, act_den, act_type, act_time, act_power, act_status)
+        sql = "INSERT INTO myapp_activity (strava_user_id, strava_id, act_name, act_start_date, act_dist, act_den, act_type, act_time, act_power, act_status, act_normal_power) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        value = (strava_user_id, strava_id, act_name, act_start_date, act_dist, act_den, act_type, act_time, act_power, act_status, act_normal_power)
         
         cur.execute(sql, value)
         conn.commit()

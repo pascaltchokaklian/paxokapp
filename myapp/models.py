@@ -46,9 +46,16 @@ class Activity(models.Model):
 	act_time = models.IntegerField(null=True)	
 	act_power = models.IntegerField(null=True)
 	act_status = models.IntegerField(null=True)
+	act_normal_power = models.IntegerField(null=True)
 
 	def get_act_dist_km(self):
 		return self.act_dist/1000
+	
+	def get_act_den(self):
+		return self.act_den
+	
+	def get_act_normal_power(self):
+		return self.act_normal_power
 	
 	def get_col_passed(self):		
 		sc = self.strava_id		
@@ -193,6 +200,7 @@ class Segment(models.Model):
 	slope =  models.FloatField(null=True)
 	lenght = models.FloatField(null=True)
 	ascent = models.FloatField(null=True)
+	ascent = models.FloatField(null=True)
 
 class Perform(models.Model):
 	perform_id = models.IntegerField(auto_created=True,  primary_key=True)
@@ -204,6 +212,7 @@ class Perform(models.Model):
 	perf_vam = models.IntegerField(null=False)
 	perf_fc = models.IntegerField(null=False)
 	perf_fcmax = models.IntegerField(null=False)
+	perf_power = models.IntegerField(null=True)
 
 	def get_segment_name(self):		
 		sid = self.segment_id

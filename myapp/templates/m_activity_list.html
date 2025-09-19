@@ -15,13 +15,13 @@
     <tbody>
     {% for activity in m_activity_list %}      
       <tr>
-        <td data-sort={{activity.act_start_date|date:"ymd"}} style="width: 120px;">
-          {{activity.act_start_date|date:"d-M-Y" }} 
+        <td data-sort={{activity.act_start_date|date:"ymd"}} style="width: 60px;">
+          {{activity.act_start_date|date:"d-M" }} 
         </td>  
         <td align="right" style="width: 60px;">
           {{activity.get_act_dist_km|floatformat:1}} 
         </td>  
-        <td style="width: 800px;">
+        <td >
           <a href="./{{activity.act_id}}"> {{ activity.act_name }}</a>           
         </td>         
       </tr> 

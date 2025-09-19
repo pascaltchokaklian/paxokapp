@@ -240,6 +240,11 @@ def connected_map(request):
             except:
                 act_power=0
 
+            try: 
+                act_noral_power = int(activities_df['weighted_average_watts'][ligne])
+            except:
+                act_noral_power=0                                
+                        
             act_status = 1
             strava_user_id = get_strava_user_id(request,user)
             
@@ -250,8 +255,8 @@ def connected_map(request):
             delete_activity(conn,strava_id)
             delete_col_perform(conn,strava_id)
             delete_activity_info(conn,strava_id)
-
-            insert_activity(conn,strava_user_id,strava_id,activity_name,act_start_date, act_dist, act_den,sport_type,act_time,act_power,act_status)                
+                        
+            insert_activity(conn,strava_user_id,strava_id,activity_name,act_start_date, act_dist, act_den,sport_type,act_time,act_power,act_status,act_noral_power)                
 
             #####################
             #  Activity infos   #             

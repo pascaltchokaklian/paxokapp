@@ -13,6 +13,7 @@
         <th class="indicator-left">Date</th>
         <th class="indicator-left">Distance</th>
         <th class="indicator-left">Dénivelé</th>
+        <th class="indicator-left">Puissance</th>
         <th class="indicator-left">Activité</th>        
         <th class="indicator-left">Type</th>        
     </tr>    
@@ -28,6 +29,9 @@
         </td>  
         <td align="right" style="width:10%">
           {{activity.act_den|floatformat:0}}   
+        </td>
+        <td align="right" style="width:10%">
+          {{activity.act_normal_power|floatformat:0}}   
         </td>
         <td>          
           <a href="activity/{{activity.act_id}}"> {{ activity.act_name }}</a> 

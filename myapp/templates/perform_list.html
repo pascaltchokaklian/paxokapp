@@ -30,6 +30,7 @@
         <th class="indicator-left">PENTE</th>
         <th class="indicator-left">VAM</th>
         <th class="indicator-left">FC</th>       
+        <th class="indicator-left">Puissance</th>       
         <th class="indicator-left">Chrono</th>                       
       </tr>    
     </thead>
@@ -53,6 +54,9 @@
         </td> 
         <td >                   
           {{perform.perf_fc}}         
+        </td>         
+        <td >                   
+          {{perform.perf_power|default_if_none:"--"}}         
         </td>         
         <td data-sort={{perform.perf_chrono}}>                   
           {{perform.get_chrono_str}}         

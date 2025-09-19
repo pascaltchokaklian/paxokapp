@@ -27,6 +27,7 @@ def segment_explorer(myRectangle, access_token, strava_id, strava_user_id):
         nameSegment = oneSegment["name"]
         
         avg_grade = oneSegment["avg_grade"]
+        normal_power = oneSegment["avg_grade"]
         elev_difference = oneSegment["elev_difference"]
         distance = oneSegment["distance"]/1000
         segment_id = 0 # compuuted
@@ -41,7 +42,7 @@ def segment_explorer(myRectangle, access_token, strava_id, strava_user_id):
                     segment_id = oneSegment.segment_id
             else:
                 # INSERT                                
-                segment = Segment(strava_segment_id=strava_id,activity_type="riding", segment_name=nameSegment, slope=avg_grade,lenght=distance,ascent=elev_difference)
+                segment = Segment(strava_segment_id=strava_id,activity_type="riding", segment_name=nameSegment, slope=avg_grade,lenght=distance,ascent=elev_difference,power=normal_power)
                 segment.save()
                 # Find the new key
                 segment_list = Segment.objects.all().filter(strava_segment_id = strava_id)
@@ -93,6 +94,7 @@ def save_segment_perf(segment_id, segment_strava_id, access_token, elev_differen
         
         fc_avg = 0
         fc_max = 0
+        power = 0
         idPerf = onePerf["id"]
         temps = onePerf["elapsed_time"]
         myDate = onePerf["start_date"]
@@ -106,13 +108,18 @@ def save_segment_perf(segment_id, segment_strava_id, access_token, elev_differen
             fc_max = onePerf["max_heartrate"]	            
         except:                        
             ret = 3
-                             				        
+                                         				        
         vam = int(3600*elev_difference/temps)
+
+        try:
+            power =  onePerf["average_watts"]
+        except:            
+            ret = 4    
 
         # DB Insert New One          
         perf_list = Perform.objects.all().filter(strava_perf_id = idPerf).all()
         if len(perf_list) == 0 :
-            myPerf = Perform( strava_perf_id = idPerf, segment_id = segment_id, perf_date = myDate, perf_chrono = temps, perf_vam = vam, perf_fc = fc_avg, perf_fcmax = fc_max, strava_user_id = strava_user_id)
+            myPerf = Perform( strava_perf_id = idPerf, segment_id = segment_id, perf_date = myDate, perf_chrono = temps, perf_vam = vam, perf_fc = fc_avg, perf_fcmax = fc_max, strava_user_id = strava_user_id,power = power)
             myPerf.save()
                                         
     return ret
