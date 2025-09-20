@@ -119,7 +119,7 @@ def save_segment_perf(segment_id, segment_strava_id, access_token, elev_differen
         # DB Insert New One          
         perf_list = Perform.objects.all().filter(strava_perf_id = idPerf).all()
         if len(perf_list) == 0 :
-            myPerf = Perform( strava_perf_id = idPerf, segment_id = segment_id, perf_date = myDate, perf_chrono = temps, perf_vam = vam, perf_fc = fc_avg, perf_fcmax = fc_max, strava_user_id = strava_user_id,power = power)
+            myPerf = Perform( strava_perf_id = idPerf, segment_id = segment_id, perf_date = myDate, perf_chrono = temps, perf_vam = vam, perf_fc = fc_avg, perf_fcmax = fc_max, strava_user_id = strava_user_id,perf_power = power)
             myPerf.save()
                                         
     return ret
