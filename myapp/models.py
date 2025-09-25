@@ -200,7 +200,7 @@ class Segment(models.Model):
 	slope =  models.FloatField(null=True)
 	lenght = models.FloatField(null=True)
 	ascent = models.FloatField(null=True)
-	ascent = models.FloatField(null=True)
+	power = models.FloatField(null=True)
 
 class Perform(models.Model):
 	perform_id = models.IntegerField(auto_created=True,  primary_key=True)
