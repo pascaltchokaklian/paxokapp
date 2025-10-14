@@ -297,7 +297,9 @@ def get_country_region(code_paysregion):
 def get_country_from_code(code):        
     ### TODO PT 
     if code == "AR":
-        code = "ARG"        
+        code = "ARG"
+    if code == "ES":
+        code = "ESP"                
     return Country.objects.get(pk=code).country_name
 
 ###########################################################################################################
