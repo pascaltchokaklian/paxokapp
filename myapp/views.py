@@ -566,7 +566,7 @@ class ColsListView(generic.ListView):
         
     def get_context_data(self, **kwargs):
         context = super(ColsListView, self).get_context_data(**kwargs)
-        context['countries'] = Country.objects.all()
+        context['countries'] = Country.objects.all().order_by("country_name")
         context['regions'] = Region.objects.all().order_by("region_code")          
         return context
     
@@ -583,7 +583,7 @@ class mColsListView(generic.ListView):
         
     def get_context_data(self, **kwargs):
         context = super(mColsListView, self).get_context_data(**kwargs)
-        context['countries'] = Country.objects.all()
+        context['countries'] = Country.objects.all().order_by("country_name")
         context['regions'] = Region.objects.all().order_by("region_code")          
         return context
     
