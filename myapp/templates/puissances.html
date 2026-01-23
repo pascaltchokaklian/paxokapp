@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+
+{% extends "base_generic.html" %}  
+{% load static %}
+
+<head>      
+    <title>Puissances</title>
+    <meta name="charset" content="UTF-8" />
+</head>
+
+<body>
+
+{% block content %}
+  {% if chart %}
+    
+  <img src= "data:image/png;base64, {{chart|safe}}"/>
+ 
+  {% endif %}
+{% endblock %}
+
+</html>

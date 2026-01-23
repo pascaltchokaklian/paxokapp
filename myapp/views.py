@@ -12,12 +12,14 @@ from .models import Col_counter
 from .models import Strava_user
 from .cols_tools import *
 from .col_dbtools import *
+from .graph import *
 from .segments_tools import compute_all_vam, segment_explorer
 from .vars import get_map_center
 from django.db.models import Max
 from django.shortcuts import render , redirect
 from django.contrib.auth.models import User
 from social_django.models import UserSocialAuth
+from django.db.models import Q
 
 #####################################################################
 #   Index View All devices                                          #
@@ -840,6 +842,21 @@ class mStatListView(generic.ListView):
         qsOk = User_dashboard.objects.all().order_by('-bike_year_km')                
         return qsOk           
 
+########################################################################################################
+#                                         Puissances                                                   #
+########################################################################################################
 
+def puissancesView(request):
+    template = 'puissances.html' 
+    strava_user_id = request.session.get('strava_user_id')        
+    QueryPower = Activity.objects.filter(act_normal_power__gte=1).filter(strava_user_id=strava_user_id)    
+    x = []
+    y = []
+    for oneActivity in QueryPower:
+        if oneActivity.act_normal_power!='' and oneActivity.act_dist!='':
+            x.append(oneActivity.act_dist/1000)    
+            y.append(oneActivity.act_normal_power)            
+    chart = get_plot(x,y)
+    return render (request, template,   {'chart': chart})
 
 

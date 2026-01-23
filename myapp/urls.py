@@ -36,6 +36,8 @@ urlpatterns = [
     path('stat_list/',StatListView.as_view(), name = 'stat_list'),         
     ###
     path('calendar/',MonthStatListView.as_view(), name = 'calendar'),     
+    ### Puissances
+    path('puissances/',puissancesView, name = 'puissances'),     
     ### FORM
     path('new_col/',new_col_form, name='new_col'),       
     ### m_pages
