@@ -852,11 +852,13 @@ def puissancesView(request):
     QueryPower = Activity.objects.filter(act_normal_power__gte=1).filter(strava_user_id=strava_user_id)    
     x = []
     y = []
+    n = []
     for oneActivity in QueryPower:
         if oneActivity.act_normal_power!='' and oneActivity.act_dist!='':
             x.append(oneActivity.act_dist/1000)    
             y.append(oneActivity.act_normal_power)            
-    chart = get_plot(x,y)
+            n.append(oneActivity.act_name)
+    chart = get_plot(x,y,n)
     return render (request, template,   {'chart': chart})
 
 
