@@ -41,7 +41,7 @@
           <a>{{perform.perf_date|date:"d M Y" }}</a>            
         </td>
         <td>
-          <a>{{perform.get_segment_name }}</a>         
+          <a href="{{perform.segment_id}}">  {{perform.get_segment_name }}</a>                   
         </td>                  
         <td >
           {{perform.get_segment_length|floatformat:1 }}         

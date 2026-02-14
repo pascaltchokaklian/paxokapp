@@ -20,6 +20,7 @@ from django.shortcuts import render , redirect
 from django.contrib.auth.models import User
 from social_django.models import UserSocialAuth
 from django.db.models import Q
+from .myfunctions import *
 
 #####################################################################
 #   Index View All devices                                          #
@@ -860,5 +861,41 @@ def puissancesView(request):
             n.append(oneActivity.act_name)
     chart = get_plot(x,y,n)
     return render (request, template,   {'chart': chart})
+
+########################################################################################################
+#                                   Historique d'un Segment                                            #
+########################################################################################################
+
+def fSegmentHistoView(request,**kwargs):
+    template = 'segment_histo.html'
+    strava_user_id = request.session.get('strava_user_id')        
+    segment_id = kwargs['segment_id']        
+    segment_name = 'Not Found'
+    Qrysegment = Segment.objects.filter(segment_id=segment_id)
+    ## Segment Name
+    for one_segment in Qrysegment:
+        segment_name =  one_segment.segment_name
+    ## Perf list by year            
+    QueryPerf = Perform.objects.filter(segment_id=segment_id).filter(strava_user_id=strava_user_id).order_by("-perf_date")        
+    byYear = get_pr_by_year(QueryPerf)           
+    l_annee = []
+    l_chrono = []
+    s_chrono = []
+    for one in byYear:        
+        if one[0] not in l_annee:                        
+            l_annee.append(one[0])                
+            l_chrono.append(one[1]) 
+            s_chrono.append(get_chrono_str(one[1]))
+        else:            
+            annee_index = l_annee.index(one[0])            
+            if one[1]<l_chrono[annee_index]:            
+                l_annee[annee_index]=one[0]
+                l_chrono[annee_index]=one[1]                                             
+                s_chrono[annee_index]=get_chrono_str(one[1])
+
+    zipped = zip(l_annee, s_chrono)        
+    print("zipped")
+    print(zipped)
+    return render (request, template, {'seg_name': segment_name , 'perf': zipped} )
 
 

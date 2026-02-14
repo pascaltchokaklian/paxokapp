@@ -31,6 +31,7 @@ urlpatterns = [
     path('dashboard/', User_dashboardView.as_view(), name='userdashboard'),            
     path('segment/',SegmentListView.as_view(), name='segment'),
     path('perform/',PerformListView.as_view(), name = 'perform'),
+    path('perform/<int:segment_id>',fSegmentHistoView, name = 'perform_histo'), 
     ### VAM
     path('vamyear/',fVamYearView, name = 'vamyear'),         
     path('stat_list/',StatListView.as_view(), name = 'stat_list'),         

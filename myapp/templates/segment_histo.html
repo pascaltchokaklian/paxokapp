@@ -1,0 +1,64 @@
+{% block content %}
+
+<head>
+    <meta charset="UTF-8">
+    <title>Historique des Performances</title>
+
+<head>
+<style>
+table {
+  border-collapse: collapse;
+  width: 30%;
+}
+
+th, td {
+  text-align: left;
+  padding: 6px;
+}
+
+tr:nth-child(even) {
+  background-color: #3c3d3d3d;
+}
+</style>
+
+</head>
+
+</head>
+
+
+  {% if perf %}
+    <HR>    
+    <tr>            
+    <td colspan="3"><h3>{{seg_name}}</h3></td>               
+    </tr>        
+    <HR>
+    <table class="sortable n-last">    
+    <thead>
+    <tr>
+        <th class="indicator-left">Année</th>
+        <th class="indicator-left">Chrono</th>                
+    </tr>    
+    </thead>
+    <tbody>
+
+    {% for annee, chrono in perf %}
+    <tr>
+        <td>
+          {{ annee }}
+        </td>  
+        <td>
+          {{ chrono }}
+        </td>                
+      </tr> 
+    {% endfor %}  
+    </tbody>
+    </table>      
+  
+  {% else %}
+    <p>There are no Performance in the Database.</p>
+  {% endif %}
+   
+{% endblock %}  
+
+
+
