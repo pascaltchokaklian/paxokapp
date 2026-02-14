@@ -871,10 +871,12 @@ def fSegmentHistoView(request,**kwargs):
     strava_user_id = request.session.get('strava_user_id')        
     segment_id = kwargs['segment_id']        
     segment_name = 'Not Found'
+    strava_segment_id = 0
     Qrysegment = Segment.objects.filter(segment_id=segment_id)
     ## Segment Name
     for one_segment in Qrysegment:
         segment_name =  one_segment.segment_name
+        strava_segment_id = one_segment.strava_segment_id
     ## Perf list by year            
     QueryPerf = Perform.objects.filter(segment_id=segment_id).filter(strava_user_id=strava_user_id).order_by("-perf_date")        
     byYear = get_pr_by_year(QueryPerf)           
@@ -896,6 +898,6 @@ def fSegmentHistoView(request,**kwargs):
     zipped = zip(l_annee, s_chrono)        
     print("zipped")
     print(zipped)
-    return render (request, template, {'seg_name': segment_name , 'perf': zipped} )
+    return render (request, template, {'seg_name': segment_name , 'strava_segment_id': strava_segment_id , 'perf': zipped} )
 
 
