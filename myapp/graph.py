@@ -23,7 +23,6 @@ def get_plot(x,y,n):
     top10Km = top_10_biggest(x)
     top10Watt = top_10_biggest(y)
 
-
     plt.switch_backend('AGG')    
     plt.figure(figsize=(15,8))
     plt.title('Puissances')
