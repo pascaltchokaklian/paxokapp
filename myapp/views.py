@@ -542,8 +542,6 @@ def fUserDetail(request,**kwargs):
     template = "user_detail.html"      
 
     strava_user_id = kwargs['strava_user_id']
- 
-    ###set_col_count_list_this_year(str(strava_user_id))
 
     mydashBoard = User_dashboard.objects.filter(strava_user_id = strava_user_id)
     for onDS in mydashBoard:
@@ -551,11 +549,12 @@ def fUserDetail(request,**kwargs):
         onDS.set_run_year_km()
         onDS.set_col_count()
         onDS.set_col2000_count()
-
     
-    myReq =Strava_user.objects.filter(strava_user_id=strava_user_id)
-    
-    return render (request,template, {'Strava_User':myReq })
+    theUser =Strava_user.objects.filter(strava_user_id=strava_user_id)
+    listActivities = Activity.objects.filter(strava_user_id=strava_user_id).order_by('-act_start_date')[:10]
+    listColsOk = Col_counter.objects.filter(strava_user_id=strava_user_id).order_by("-col_count")[:10]                                                                   
+            
+    return render (request,template, {'Strava_User':theUser, 'listAct': listActivities, 'ColsOk': listColsOk})
 
 #########################################################################################  
 

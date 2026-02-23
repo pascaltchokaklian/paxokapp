@@ -13,4 +13,73 @@
 </table>                                                                        
 <hr>        
 
+<table width="50%" class="sortable n-last">
+    <thead>
+    <tr>
+        <th class="indicator-left">Date</th>
+        <th class="indicator-left">Distance</th>
+        <th class="indicator-left">Dénivelé</th>        
+        <th class="indicator-left">Activité</th>        
+        <th class="indicator-left">Type</th>        
+    </tr>    
+    </thead>
+    <tbody>
+    {% if listAct %}          
+    {% for activity in listAct %}      
+      <tr>
+        <td data-sort={{activity.act_start_date|date:"ymd"}}>
+          {{activity.act_start_date|date:"d-M-Y" }} 
+        </td>  
+        <td align="right">
+          {{activity.get_act_dist_km|floatformat:2}} 
+        </td>  
+        <td align="right" style="width:10%">
+          {{activity.act_den|floatformat:0}}   
+        </td>       
+        <td>          
+          {{ activity.act_name }}
+        </td>  
+        <td>          
+          {{ activity.act_type }}
+        </td>  
+      </tr> 
+    {% endfor %}
+    {% endif %}
+  </tbody>
+  </table>                  
+
+<table class="sortable n-last">
+  <br/>
+    <thead>
+    <tr>         
+        <th class="indicator-left">Col</th>        
+        <th class="indicator-left">Altitude</th>     
+        <th class="indicator-left">Nombre de passages</th>     
+        <th class="indicator-left">Cette année</th>                     
+    </tr>  
+    </thead>    
+    <tbody>
+                    
+
+    {% if ColsOk %}          
+    {% for colc in ColsOk %}                        
+    <tr>
+      <td>        
+         {{ colc.get_col_name }}
+      </td>        
+      <td align="center">
+        {{colc.get_col_alt}}
+      </td>             
+      <td align="center">
+        {{colc.col_count}}
+      </td>
+      <td align="center">
+        {{colc.year_col_count}}        
+      </td>            
+    </tr>
+    {% endfor %}
+  </tbody>
+  </table> 
+{% endif %}
+
 {% endblock %}      
