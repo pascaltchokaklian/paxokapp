@@ -538,6 +538,27 @@ def fActivitiesListView(request, col_code):
     
 ##########################################################################    
 
+def fUserDetail(request,**kwargs):        
+    template = "user_detail.html"      
+
+    strava_user_id = kwargs['strava_user_id']
+ 
+    ###set_col_count_list_this_year(str(strava_user_id))
+
+    mydashBoard = User_dashboard.objects.filter(strava_user_id = strava_user_id)
+    for onDS in mydashBoard:
+        onDS.set_bike_year_km()
+        onDS.set_run_year_km()
+        onDS.set_col_count()
+        onDS.set_col2000_count()
+
+    
+    myReq =Strava_user.objects.filter(strava_user_id=strava_user_id)
+    
+    return render (request,template, {'Strava_User':myReq })
+
+#########################################################################################  
+
 def fColsListView(request,**kwargs):        
 
     template = 'cols_list.html' 

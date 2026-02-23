@@ -35,6 +35,8 @@ urlpatterns = [
     ### VAM
     path('vamyear/',fVamYearView, name = 'vamyear'),         
     path('stat_list/',StatListView.as_view(), name = 'stat_list'),         
+    ### Users
+    path('strava_user/<int:strava_user_id>',fUserDetail,name='strava_user-detail'),
     ###
     path('calendar/',MonthStatListView.as_view(), name = 'calendar'),     
     ### Puissances
