@@ -21,6 +21,7 @@ def get_graph():
 ### get_plot
 
 def get_plot(x,y,n):
+
     tsize=len(x)     
     top10Km = top_10_biggest(x)
     top10Watt = top_10_biggest(y)
@@ -64,7 +65,7 @@ def get_plot(x,y,n):
 ### get_plot_all
 
 def get_plot_all(x,y,n):
-             
+                     
     plt.switch_backend('AGG')    
     plt.figure(figsize=(15,8))
     plt.title('Puissances Equipe vélo')            
@@ -79,9 +80,10 @@ def get_plot_all(x,y,n):
 
         plt.annotate(txt, (x[i], y[i]))            
             
-        plt.xlabel('Distance (Km)')
-        plt.ylabel('Puissance (Watt)') 
-        plt.tight_layout()
-        graph = get_graph()
+    plt.xlabel('Distance (Km)')
+    plt.ylabel('Puissance (Watt)') 
+    plt.tight_layout()
+
+    graph = get_graph()
 
     return graph
