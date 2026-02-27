@@ -1,5 +1,7 @@
 import datetime
 from django.db import models
+
+from myapp.myfunctions import premieres_lettres
 from .vars import classement, display_year_month
 from django.contrib.auth.models import User
 
@@ -75,6 +77,15 @@ class Activity(models.Model):
 		first_name = q2[0].first_name
 		last_name = q2[0].last_name
 		return first_name + " " + last_name
+	
+	def get_user_acronyme(self):
+		suid = self.strava_user_id
+		q1 = Strava_user.objects.filter(strava_user_id=suid)
+		name = q1[0].strava_user
+		q2 = User.objects.filter(username=name)
+		first_name = q2[0].first_name
+		last_name = q2[0].last_name
+		return premieres_lettres(first_name) + premieres_lettres (last_name)
 	
 	def get_strava_user_first_name(self):
 		suid = self.strava_user_id

@@ -13,10 +13,16 @@
 
 {% block content %}
   {% if chart %}
-    
-  <img src= "data:image/png;base64, {{chart|safe}}"/>
- 
+    <img src= "data:image/png;base64, {{chart|safe}}"/> 
   {% endif %}
+
+  {% if chartAll %}
+    <img src= "data:image/png;base64, {{chartAll|safe}}"/> 
+  {% endif %}
+
+
 {% endblock %}
+
+</body>
 
 </html>

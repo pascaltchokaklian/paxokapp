@@ -1,3 +1,6 @@
+import hashlib
+import colorsys
+
 def get_pr_by_year(listePerformance):                     
     all=[]
     bestYear=[]
@@ -25,5 +28,25 @@ def get_chrono_str(myTime):
 		hms = sHeure+":"+sMinutes+":"+sSecondes
 		return hms		
 
+def premieres_lettres(chaine):
+    mots = chaine.split('-')
+    return ''.join(mot[0] for mot in mots if mot)
 
+def couleur_depuis_mot(mot):
+    """
+    Retourne une couleur RGB (format matplotlib : valeurs entre 0 et 1)
+    basée de manière stable sur un mot.
+    """
+    # Hash stable
+    h = int(hashlib.md5(mot.encode("utf-8")).hexdigest(), 16)
+
+    # Teinte basée sur le hash (0 → 1)
+    hue = (h % 360) / 360.0
+
+    # Paramètres ajustables
+    saturation = 0.65
+    value = 0.85
+
+    r, g, b = colorsys.hsv_to_rgb(hue, saturation, value)
+    return (r, g, b)
 

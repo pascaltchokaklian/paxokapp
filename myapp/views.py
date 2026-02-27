@@ -869,6 +869,7 @@ class mStatListView(generic.ListView):
 
 def puissancesView(request):
     template = 'puissances.html' 
+    # Mes Puissances
     strava_user_id = request.session.get('strava_user_id')        
     QueryPower = Activity.objects.filter(act_normal_power__gte=1).filter(strava_user_id=strava_user_id)    
     x = []
@@ -880,7 +881,20 @@ def puissancesView(request):
             y.append(oneActivity.act_normal_power)            
             n.append(oneActivity.act_name)
     chart = get_plot(x,y,n)
-    return render (request, template,   {'chart': chart})
+
+    # Puissances All
+    QueryAllPower = Activity.objects.filter(act_normal_power__gte=1).filter(act_type='Ride')
+    x = []
+    y = []
+    n = []
+    for oneActivity in QueryAllPower:
+        if oneActivity.act_normal_power!='' and oneActivity.act_dist!='':
+            x.append(oneActivity.act_dist/1000)    
+            y.append(oneActivity.act_normal_power)            
+            n.append(oneActivity.get_user_acronyme())                    
+    chartAll = get_plot_all(x,y,n)
+
+    return render (request, template, {'chart':chart ,'chartAll':chartAll})
 
 ########################################################################################################
 #                                   Historique d'un Segment                                            #

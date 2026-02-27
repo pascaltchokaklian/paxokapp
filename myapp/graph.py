@@ -3,6 +3,8 @@ import base64
 from io import BytesIO
 import heapq
 
+from myapp.myfunctions import couleur_depuis_mot
+
 def top_10_biggest(numbers):
     return heapq.nlargest(10, numbers)
 
@@ -16,16 +18,16 @@ def get_graph():
     buffer.close()
     return graph
 
-def get_plot(x,y,n):
+### get_plot
 
-    tsize=len(x)
-     
+def get_plot(x,y,n):
+    tsize=len(x)     
     top10Km = top_10_biggest(x)
     top10Watt = top_10_biggest(y)
 
     plt.switch_backend('AGG')    
     plt.figure(figsize=(15,8))
-    plt.title('Puissances')
+    plt.title('Mes Puissances')
 
     mycolor = []
     
@@ -36,7 +38,7 @@ def get_plot(x,y,n):
         else:
             mycolor.append('blue')                
 
-    plt.scatter(x, y, color= mycolor)
+    plt.scatter(x, y, color=mycolor)
             
     for i, txt in enumerate(n):
 
@@ -56,5 +58,30 @@ def get_plot(x,y,n):
     plt.ylabel('Puissance (Watt)') 
     plt.tight_layout()
     graph = get_graph()
+
+    return graph
+
+### get_plot_all
+
+def get_plot_all(x,y,n):
+             
+    plt.switch_backend('AGG')    
+    plt.figure(figsize=(15,8))
+    plt.title('Puissances Equipe vélo')            
+
+    mycolor = []    
+    for txt in enumerate(n):        
+        mycolor.append(couleur_depuis_mot(txt[1]))            
+
+    plt.scatter(x, y, color=mycolor)
+                
+    for i, txt in enumerate(n):
+
+        plt.annotate(txt, (x[i], y[i]))            
+            
+        plt.xlabel('Distance (Km)')
+        plt.ylabel('Puissance (Watt)') 
+        plt.tight_layout()
+        graph = get_graph()
 
     return graph
