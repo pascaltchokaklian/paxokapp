@@ -228,6 +228,7 @@ def connected_map(request):
         myColsList =  select_all_cols(conn,"00")        
                 
         for ligne in range(len(activities_df)):
+            trainer = activities_df['trainer'][ligne]   ### 1 if HomeTrainer        
             AllVisitedCols = []
             myGPSPoints = []        
             strava_id = int(activities_df['id'][ligne])        
@@ -258,8 +259,12 @@ def connected_map(request):
             delete_activity(conn,strava_id)
             delete_col_perform(conn,strava_id)
             delete_activity_info(conn,strava_id)
+
+            act_trainer = 0
+            if trainer == 1:
+                act_trainer = 1
                         
-            insert_activity(conn,strava_user_id,strava_id,activity_name,act_start_date, act_dist, act_den,sport_type,act_time,act_power,act_status,act_noral_power)                
+            insert_activity(conn,strava_user_id,strava_id,activity_name,act_start_date, act_dist, act_den,sport_type,act_time,act_power,act_status,act_noral_power, act_trainer)                
 
             #####################
             #  Activity infos   #             
@@ -871,7 +876,7 @@ def puissancesView(request):
     template = 'puissances.html' 
     # Mes Puissances
     strava_user_id = request.session.get('strava_user_id')        
-    QueryPower = Activity.objects.filter(act_normal_power__gte=1).filter(strava_user_id=strava_user_id)    
+    QueryPower = Activity.objects.filter(act_normal_power__gte=1).filter(strava_user_id=strava_user_id)
     x = []
     y = []
     n = []
@@ -883,7 +888,7 @@ def puissancesView(request):
     chart = get_plot(x,y,n)
 
     # Puissances All
-    QueryAllPower = Activity.objects.filter(act_normal_power__gte=1).filter(act_type='Ride')
+    QueryAllPower = Activity.objects.filter(act_normal_power__gte=1).filter(act_type='Ride').exclude(act_trainer=1)    
     x = []
     y = []
     n = []

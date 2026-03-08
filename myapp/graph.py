@@ -40,19 +40,25 @@ def get_plot(x,y,n):
             mycolor.append('blue')                
 
     plt.scatter(x, y, color=mycolor)
-            
+                
     for i, txt in enumerate(n):
 
         # text sur les 10 dernieres
         if i>tsize-10:
             plt.annotate(txt, (x[i], y[i]))
 
-        # text sur les meilleures puissances 
-        if y[i] >= top10Watt[9]:
+        # text sur les meilleures puissances         
+
+        mySize = len(top10Watt)
+        
+        if mySize>10:
+            mySize=10
+
+        if y[i] >= top10Watt[mySize-1]:
             plt.annotate(txt, (x[i], y[i]))
 
         # text sur les plus longues        
-        if x[i] >= top10Km[9]:
+        if x[i] >= top10Km[mySize-1]:
             plt.annotate(txt, (x[i], y[i]))            
     
     plt.xlabel('Distance (Km)')

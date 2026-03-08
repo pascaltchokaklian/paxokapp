@@ -72,11 +72,11 @@ def select_all_cols(conn, region_info):
 
 #############################################################################
     
-def insert_activity (conn, strava_user_id, strava_id, act_name, act_start_date, act_dist, act_den, act_type, act_time, act_power, act_status, act_normal_power ):
+def insert_activity (conn, strava_user_id, strava_id, act_name, act_start_date, act_dist, act_den, act_type, act_time, act_power, act_status, act_normal_power, act_trainer ):
     try:
         cur = conn.cursor()
-        sql = "INSERT INTO myapp_activity (strava_user_id, strava_id, act_name, act_start_date, act_dist, act_den, act_type, act_time, act_power, act_status, act_normal_power) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        value = (strava_user_id, strava_id, act_name, act_start_date, act_dist, act_den, act_type, act_time, act_power, act_status, act_normal_power)
+        sql = "INSERT INTO myapp_activity (strava_user_id, strava_id, act_name, act_start_date, act_dist, act_den, act_type, act_time, act_power, act_status, act_normal_power, act_trainer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        value = (strava_user_id, strava_id, act_name, act_start_date, act_dist, act_den, act_type, act_time, act_power, act_status, act_normal_power, act_trainer)
         
         cur.execute(sql, value)
         conn.commit()
@@ -534,7 +534,7 @@ def set_col_count_list_this_year(strava_user_id):
     
     last_passages = {}
     last_passages_id = {}
-
+    
     for one_passage in myListPass:                                                        
         last_passages[one_passage[1]] = one_passage[0]  # act_start_date
         last_passages_id[one_passage[1]] = one_passage[2]  # id activity
