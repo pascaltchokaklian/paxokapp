@@ -783,7 +783,7 @@ class PerformListView(generic.ListView):
     template_name = "perform_list.html"                 # Specify your own template name/location
     def get_queryset(self):                
         strava_user_id = self.request.session.get('strava_user_id')             
-        perfList = Perform.objects.filter(strava_user_id=strava_user_id).order_by("-perf_vam")
+        perfList = Perform.objects.filter(strava_user_id=strava_user_id).order_by("-perf_date")
         return perfList
     
 class SegmentListView(generic.ListView):        
