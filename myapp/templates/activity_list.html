@@ -15,7 +15,8 @@
         <th class="indicator-left">Dénivelé</th>
         <th class="indicator-left">Puissance</th>
         <th class="indicator-left">Activité</th>        
-        <th class="indicator-left">Type</th>        
+        <th class="indicator-left">Type</th>       
+        <th class="indicator-left">Trainer</th>      
     </tr>    
     </thead>
     <tbody>
@@ -38,6 +39,9 @@
         </td>  
         <td>          
           <a > {{ activity.act_type }}</a> 
+        </td>  
+        <td align="center">
+          {% if activity.act_trainer == 1 %}Oui{% else %}&nbsp;{% endif %}
         </td>  
       </tr> 
     {% endfor %}
