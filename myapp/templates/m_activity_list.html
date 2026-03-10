@@ -9,6 +9,7 @@
     <tr>
         <th class="indicator-left">Date</th>
         <th class="indicator-left">Dist</th>        
+        <th class="indicator-left">Ratio</th>
         <th class="indicator-left">Activité</th>               
         <th class="indicator-left">Trainer</th>      
     </tr>    
@@ -22,11 +23,14 @@
         <td align="right" style="width: 60px;">
           {{activity.get_act_dist_km|floatformat:1}} 
         </td>  
+        <td align="right" style="width: 60px;">
+          {{activity.get_den_dist_ratio|default:"-"|floatformat:1}} 
+        </td>
         <td >
           <a href="./{{activity.act_id}}"> {{ activity.act_name }}</a>           
         </td>        
         <td align="center">
-          {% if activity.act_trainer == 1 %}Oui{% else %}&nbsp;{% endif %}
+          {% if activity.act_trainer == 1 %}X{% else %}&nbsp;{% endif %}
         </td>        
       </tr>
     {% endfor %}

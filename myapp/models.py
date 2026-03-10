@@ -54,6 +54,11 @@ class Activity(models.Model):
 	def get_act_dist_km(self):
 		return self.act_dist/1000
 	
+	def get_den_dist_ratio(self):
+		if self.act_type == "Ride" and self.act_dist and self.act_dist > 0:
+			return round(self.act_den / (self.act_dist / 1000), 1)
+		return None
+	
 	def get_act_den(self):
 		return self.act_den
 	

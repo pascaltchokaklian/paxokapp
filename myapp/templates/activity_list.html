@@ -13,6 +13,7 @@
         <th class="indicator-left">Date</th>
         <th class="indicator-left">Distance</th>
         <th class="indicator-left">Dénivelé</th>
+        <th class="indicator-left">Ratio Dén./Dist.</th>
         <th class="indicator-left">Puissance</th>
         <th class="indicator-left">Activité</th>        
         <th class="indicator-left">Type</th>       
@@ -32,7 +33,10 @@
           {{activity.act_den|floatformat:0}}   
         </td>
         <td align="right" style="width:10%">
-          {{activity.act_normal_power|floatformat:0}}   
+          {{activity.get_den_dist_ratio|default:"-"|floatformat:1}}   
+        </td>
+        <td align="right" style="width:10%">
+          {% if activity.act_normal_power is not None and activity.act_normal_power != 0 %}{{activity.act_normal_power|floatformat:0}}{% else %}-{% endif %}   
         </td>
         <td>          
           <a href="activity/{{activity.act_id}}"> {{ activity.act_name }}</a> 
@@ -41,7 +45,7 @@
           <a > {{ activity.act_type }}</a> 
         </td>  
         <td align="center">
-          {% if activity.act_trainer == 1 %}Oui{% else %}&nbsp;{% endif %}
+          {% if activity.act_trainer == 1 %}X{% else %}&nbsp;{% endif %}
         </td>  
       </tr> 
     {% endfor %}

@@ -7,8 +7,7 @@ def get_pr_by_year(listePerformance):
     for onePerf in listePerformance:        
         my_year=onePerf.perf_date.year        
         myChrono = onePerf.perf_chrono
-        all.append([my_year,myChrono])            
-    
+        all.append([my_year,myChrono])                
     return all
 
 def get_chrono_str(myTime):				
