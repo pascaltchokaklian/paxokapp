@@ -76,16 +76,29 @@ def get_plot_all(x,y,n):
     plt.figure(figsize=(15,8))
     plt.title('Puissances Equipe vélo')            
 
-    mycolor = []    
-    for txt in enumerate(n):        
-        mycolor.append(couleur_depuis_mot(txt[1]))            
+    # determine a color for each point based on the user name
+    colors = []    
+    for name in n:
+        colors.append(couleur_depuis_mot(name))            
 
-    plt.scatter(x, y, color=mycolor)
-                
-    for i, txt in enumerate(n):
+    plt.scatter(x, y, color=colors)
 
-        plt.annotate(txt, (x[i], y[i]))            
-            
+    # build a legend mapping each unique name to its color
+    unique = {}
+    for name, color in zip(n, colors):
+        if name not in unique:
+            unique[name] = color
+
+    if unique:
+        from matplotlib.lines import Line2D
+        handles = [Line2D([0],[0], marker='o', color='w', markerfacecolor=c, markersize=8)
+                   for c in unique.values()]
+        labels = list(unique.keys())
+        # place legend below the axes, spanning the width
+        plt.legend(handles, labels, title='Utilisateur', loc='upper center',
+                   bbox_to_anchor=(0.5, -0.15), ncol=min(5, len(labels)))
+
+    # annotations removed; colors are explained by legend
     plt.xlabel('Distance (Km)')
     plt.ylabel('Puissance (Watt)') 
     plt.tight_layout()

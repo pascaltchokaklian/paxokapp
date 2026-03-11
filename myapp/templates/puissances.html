@@ -12,14 +12,45 @@
 <body>
 
 {% block content %}
-  {% if chart %}
-    <img src= "data:image/png;base64, {{chart|safe}}"/> 
-  {% endif %}
+  <style>
+    .tabs { margin-top: 1em; }
+    .tab-button { padding: 8px 16px; cursor: pointer; border: 1px solid #ccc; background:#f1f1f1; display:inline-block; }
+    .tab-button.active { background:#ddd; }
+    .tab-content { display: none; margin-top:1em; }
+    .tab-content.active { display: block; }
+  </style>
 
-  {% if chartAll %}
-    <img src= "data:image/png;base64, {{chartAll|safe}}"/> 
-  {% endif %}
+  <div class="tabs">
+    <div class="tab-button active" data-tab="my">Mes puissances</div>
+    <div class="tab-button" data-tab="all">Puissances équipe</div>
+  </div>
 
+  <div id="tab-my" class="tab-content active">
+    {% if chart %}
+      <img src="data:image/png;base64, {{chart|safe}}" />
+    {% else %}
+      <p>Aucun graphique disponible.</p>
+    {% endif %}
+  </div>
+
+  <div id="tab-all" class="tab-content">
+    {% if chartAll %}
+      <img src="data:image/png;base64, {{chartAll|safe}}" />
+    {% else %}
+      <p>Aucun graphique disponible.</p>
+    {% endif %}
+  </div>
+
+  <script>
+    document.querySelectorAll('.tab-button').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-button').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+  </script>
 
 {% endblock %}
 
