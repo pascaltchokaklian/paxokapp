@@ -6,3 +6,4 @@ polyline
 requests
 python-dotenv
 gunicorn
+django-user-agents

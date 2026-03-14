@@ -22,6 +22,64 @@ from social_django.models import UserSocialAuth
 from django.db.models import Q
 from .myfunctions import *
 
+
+def is_mobile_user_agent(request):
+    """Return True when the request looks like it's coming from a mobile device.
+
+    If django-user-agents is installed and enabled, use the provided parser (more accurate).
+    Otherwise fallback to a basic UA substring check.
+    """
+
+    # Prefer django-user-agents when available (more reliable than simple substring checks)
+    ua = getattr(request, "user_agent", None)
+    if ua is not None:
+        return ua.is_mobile or ua.is_tablet
+
+    ua_string = request.META.get("HTTP_USER_AGENT", "").lower()
+    return any(tok in ua_string for tok in ("mobile", "android", "iphone", "ipad", "phone", "blackberry", "windows phone"))
+
+
+class MobileTemplateMixin:
+    """Mixin to automatically pick mobile templates and context keys.
+
+    - If the request is from a mobile user-agent (or force_mobile is set), it will look for a template
+      with the same name prefixed by "m_".
+    - It also exposes a mobile context key (prefixed with "m_") so existing mobile templates that
+      expect e.g. "m_activity_list" can keep working.
+    """
+
+    mobile_prefix = "m_"
+    force_mobile = False
+
+    def is_mobile(self):
+        if getattr(self, "force_mobile", False):
+            return True
+        if self.kwargs.get("force_mobile"):
+            return True
+        return is_mobile_user_agent(self.request)
+
+    def _mobile_template_name(self, template_name):
+        if "/" in template_name:
+            head, tail = template_name.rsplit("/", 1)
+            return f"{head}/{self.mobile_prefix}{tail}"
+        return f"{self.mobile_prefix}{template_name}"
+
+    def get_template_names(self):
+        names = super().get_template_names()
+        if self.is_mobile():
+            mobile_names = [self._mobile_template_name(name) for name in names]
+            # fallback to desktop templates if mobile template isn't found
+            return mobile_names + names
+        return names
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.is_mobile() and getattr(self, "context_object_name", None):
+            mobile_key = f"m_{self.context_object_name}"
+            context.setdefault(mobile_key, context.get(self.context_object_name))
+        return context
+
+
 #####################################################################
 #   Index View All devices                                          #
 #####################################################################
@@ -92,42 +150,20 @@ def mainIndexView(request,user):
 #   PC Index View                                                 #
 ###################################################################
 
-def base_map(request):
-        
-    user = request.user # Pulls in the Strava User data        
+def base_map(request, force_mobile=False):
+    user = request.user  # Pulls in the Strava User data
 
-    #user = "tpascal"    
-
-    f_debug_trace("views.py","base_map","user = "+str(user))
-
-    if (str(user) != 'AnonymousUser'):
-        context = mainIndexView(request,user)
-    else:
-        #context = None
-        context = {'Strava User': 'Not Connected'}
-                                    
-    return render(request, 'index.html', context)
-
-###################################################################
-#   Mobile Index view                                             #
-###################################################################
-
-
-def mIndexView(request):    
-        
-    user = request.user # Pulls in the Strava User data        
-
-    #user = "tpascal"    
+    # user = "tpascal"
 
     f_debug_trace("views.py","base_map","user = "+str(user))
 
-    if (str(user) != 'AnonymousUser'):        
-        context = mainIndexView(request,user)
+    if str(user) != 'AnonymousUser':
+        context = mainIndexView(request, user)
     else:
-        #context = None
-        context = {'Strava User': 'Not Connected'}
-                                    
-    return render(request, 'm_index.html', context)
+        context = {"Strava User": "Not Connected"}
+
+    template = "m_index.html" if force_mobile or is_mobile_user_agent(request) else "index.html"
+    return render(request, template, context)
 
 
 ###################################################################
@@ -565,7 +601,7 @@ def fUserDetail(request,**kwargs):
 
 def fColsListView(request,**kwargs):        
 
-    template = 'cols_list.html' 
+    template = 'm_cols_list.html' if is_mobile_user_agent(request) else 'cols_list.html'
             
     code_paysregion = kwargs['pk']        
     
@@ -581,9 +617,7 @@ def fColsListView(request,**kwargs):
 #                               Liste des cols                           #
 ##########################################################################    
 
-### Vue PC ###
-
-class ColsListView(generic.ListView):    
+class ColsListView(MobileTemplateMixin, generic.ListView):    
 
     model = Col
     context_object_name = 'col_list'   # your own name for the list as a template    
@@ -593,24 +627,7 @@ class ColsListView(generic.ListView):
         return Col.objects.all().order_by("col_alt")
         
     def get_context_data(self, **kwargs):
-        context = super(ColsListView, self).get_context_data(**kwargs)
-        context['countries'] = Country.objects.all().order_by("country_name")
-        context['regions'] = Region.objects.all().order_by("region_code")          
-        return context
-    
-### Vue Mobile ###
-    
-class mColsListView(generic.ListView):    
-
-    model = Col
-    context_object_name = 'm_col_list'   # your own name for the list as a template    
-    template_name = "m_col_list.html"    # Specify your own template name/location
-
-    def get_queryset(self):        
-        return Col.objects.all().order_by("col_alt")
-        
-    def get_context_data(self, **kwargs):
-        context = super(mColsListView, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context['countries'] = Country.objects.all().order_by("country_name")
         context['regions'] = Region.objects.all().order_by("region_code")          
         return context
@@ -621,7 +638,7 @@ class mColsListView(generic.ListView):
 
 ### Vue PC ###              
 
-class  ColsOkListView(generic.ListView):        
+class ColsOkListView(MobileTemplateMixin, generic.ListView):        
 
     model = Col
     context_object_name = 'col_counter_list'              # your own name for the list as a template    
@@ -641,49 +658,17 @@ class  ColsOkListView(generic.ListView):
         context['annee'] = str(year)
         return context
                     
-### Vue Mobile ###
-
-class  mColsOkListView(generic.ListView):        
-
-    model = Col
-    context_object_name = 'col_counter_list'      # your own name for the list as a template    
-    template_name = "m_col_counter_list.html"       # Specify your own template name/location
-    
-    def get_queryset(self):            
-        strava_user_id = self.request.session.get('strava_user_id')    
-        ### f_debug_trace("views.py","ColsOkListView","strava_user_id = "+str(strava_user_id))
-        qsOk = Col_counter.objects.filter(strava_user_id=strava_user_id).order_by("-col_count")                                                                   
-        return qsOk
-    
-    def get_context_data(self, **kwargs):
-        context = super(mColsOkListView, self).get_context_data(**kwargs)
-        currentDateTime = datetime.datetime.now()
-        date = currentDateTime.date()
-        year = date.strftime("%Y")        
-        context['annee'] = str(year)
-        return context
-
 #########################################################################   
 #                       Liste des activités                             #
 #########################################################################   
 
 ### Vue PC ###              
 
-class ActivityListView(generic.ListView):        
+class ActivityListView(MobileTemplateMixin, generic.ListView):        
     model = Activity
     context_object_name = 'activity_list'   # your own name for the list as a template variable    
     template_name = "activity_list.html"    # Specify your own template name/location
-    def get_queryset(self):                
-        strava_user_id = self.request.session.get('strava_user_id')    
-        ### f_debug_trace("views.py","ActivityListView",Activity.objects.count())
-        return Activity.objects.filter(strava_user_id=strava_user_id).order_by("-act_start_date")
-    
-### Vue Mobile ###
 
-class mActivityListView(generic.ListView):       
-    model = Activity
-    context_object_name = 'm_activity_list'   # your own name for the list as a template variable    
-    template_name = "m_activity_list.html"    # Specify your own template name/location
     def get_queryset(self):                
         strava_user_id = self.request.session.get('strava_user_id')    
         ### f_debug_trace("views.py","ActivityListView",Activity.objects.count())
@@ -696,24 +681,11 @@ class mActivityListView(generic.ListView):
 
 ### Vue PC ###              
 
-class ActivityTeamView(generic.ListView):        
+class ActivityTeamView(MobileTemplateMixin, generic.ListView):        
     model = Activity
     context_object_name = 'activity_team'   # your own name for the list as a template variable    
     template_name = "activity_team.html"    # Specify your own template name/location
-    def get_queryset(self):                        
-        ### f_debug_trace("views.py","ActivityTeamView",Activity.objects.count())
-        nbcount = 100
-        strava_user_id = self.request.session.get('strava_user_id') 
-        if strava_user_id == None:
-            nbcount=0
-        return Activity.objects.order_by("-act_start_date")[:nbcount]
-    
-### Vue Mobile ###
 
-class mActivityTeamView(generic.ListView):        
-    model = Activity
-    context_object_name = 'm_activity_team'   # your own name for the list as a template variable    
-    template_name = "m_activity_team.html"    # Specify your own template name/location
     def get_queryset(self):                        
         ### f_debug_trace("views.py","ActivityTeamView",Activity.objects.count())
         nbcount = 100
@@ -849,21 +821,10 @@ def fVamYearView(request):
 
 ###     Vue PC
 
-class StatListView(generic.ListView):        
+class StatListView(MobileTemplateMixin, generic.ListView):        
     model = User_dashboard   
     context_object_name = 'stat_list'               # your own name for the list as a template    
     template_name = "stat_list.html"                # Specify your own template name/location
-    def get_queryset(self):                
-        qsOk = User_dashboard.objects.all().order_by('-bike_year_km')                
-        return qsOk           
-    
-
-###     Vue Mobile    
-
-class mStatListView(generic.ListView):        
-    model = User_dashboard   
-    context_object_name = 'm_stat_list'               # your own name for the list as a template    
-    template_name = "m_stat_list.html"                # Specify your own template name/location
     def get_queryset(self):                
         qsOk = User_dashboard.objects.all().order_by('-bike_year_km')                
         return qsOk           

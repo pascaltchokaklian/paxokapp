@@ -43,17 +43,17 @@ urlpatterns = [
     path('puissances/',puissancesView, name = 'puissances'),     
     ### FORM
     path('new_col/',new_col_form, name='new_col'),       
-    ### m_pages
-    path('m_index/',mIndexView,name='m_index'),
-    path('m_activity/',mActivityListView.as_view(), name='m_activity'),                      
+    ### m_pages (mobile shortcuts)
+    path('m_index/', base_map, {'force_mobile': True}, name='m_index'),
+    path('m_activity/', ActivityListView.as_view(force_mobile=True), name='m_activity'),                      
     path('m_activity/<pk>', ActivityDetailView.as_view(), name="activity-detail"),            
-    path('m_cols/', mColsListView.as_view(), name='m_cols'),
+    path('m_cols/', ColsListView.as_view(force_mobile=True), name='m_cols'),
     path('m_cols/<pk>/', ColsDetailView.as_view(), name = "col-detail"),                           
-    path('m_colsok/', mColsOkListView.as_view(), name='m_colsok'),                           
+    path('m_colsok/', ColsOkListView.as_view(force_mobile=True), name='m_colsok'),                           
     path('m_colsok/<pk>/', ColsDetailView.as_view(),name = "col-detail"),        
-    path('m_team/', mActivityTeamView.as_view(), name='m_team'),
+    path('m_team/', ActivityTeamView.as_view(force_mobile=True), name='m_team'),
     path('m_team/activity/<pk>', ActivityDetailView.as_view(), name="activity-detail"),     
-    path('m_stat_list/',mStatListView.as_view(), name = 'm_stat_list'),     
+    path('m_stat_list/', StatListView.as_view(force_mobile=True), name = 'm_stat_list'),     
 
 ]
 

@@ -40,12 +40,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'social_django',
     'django.contrib.humanize',
+    'django_user_agents',
     'myapp',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django_user_agents.middleware.UserAgentMiddleware',
      "whitenoise.middleware.WhiteNoiseMiddleware",  # new
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
