@@ -22,26 +22,26 @@
   <table id = "myTable" width="100%" class="sortable n-last" >  
     <thead>
       <tr>       
-        <th>---</th>       
-        <th >Nb Cols</th>
-        <th>+2000m</th>       
-        <th>Km cette année</th>               
+        <th style="width:25%">---</th>       
+        <th>Cols</th>
+        <th>2000</th>
+        <th>{% now "Y" %} [km]</th>               
       </tr>    
     </thead>
     <tbody>
     {% for stat in m_stat_list %}           
-      {% if stat.get_nom_prenom != "Not Found" %}         
+      {% if stat.get_nom_initiale != "Not Found" %}         
       <tr>   
-        <td align="left">  
-          {{stat.get_nom_prenom }}
+        <td align="left" style="width:25%">  
+          {{stat.get_nom_initiale }}
         </td>             
-        <td align="center">
+        <td align="left">
           {{stat.col_count }}         
         </td>    
-        <td align="center">
+        <td align="left">
           {{stat.col2000_count }}
         </td>         
-        <td align="center">
+        <td align="left">
           {{stat.bike_year_km }}
          </td>
                  

@@ -18,21 +18,21 @@
     <tr>
         <th class="indicator-left">---</th>
         <th class="indicator-left">Date</th>
-        <th class="indicator-left">Distance</th>        
+        <th class="indicator-left">Dist.</th>        
         <th class="indicator-left">Activité</th>                
     </tr>    
     </thead>
     <tbody>
     {% for activity in m_activity_team %}      
       <tr>
-        <td align="left" style="width:10%">
-          {{activity.get_strava_user_first_name }} 
+        <td align="left" style="width:6%">
+          {{ activity.get_user_acronyme }}
         </td>
         <td data-sort={{activity.act_start_date|date:"ymd"}} style="width:10%">
-          {{activity.act_start_date|date:"d-M-Y" }} 
+          {{activity.act_start_date|date:"d-M" }} 
         </td>  
         <td align="right" style="width:10%">
-          {{activity.get_act_dist_km|floatformat:2}} 
+          {{activity.get_act_dist_km|floatformat:0}} 
         </td>         
         <td>          
           <a href="activity/{{activity.act_id}}"> {{ activity.act_name }}</a> 

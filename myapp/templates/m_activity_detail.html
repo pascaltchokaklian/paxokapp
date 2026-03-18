@@ -1,0 +1,35 @@
+{% extends "m_base_generic.html" %}
+
+{% block content %}
+<div class="activity-detail-container">
+    <div class="cols-list">
+        {% if object.get_col_passed %}
+            <hr>
+            Nombre de Cols passés: {{ object.get_col_passed|length }}
+        {% endif %}
+
+        {% for col in object.get_col_passed %}
+            <div class="cols">
+                <li>
+                    {{ col.col_code }} : <a href="{{ object.act_id }}/{{ col.get_col_id }}">  {{ col.get_col_name }} </a>  [ {{ col.get_col_count }} ]
+                </li>
+            </div>
+        {% endfor %}
+
+        <hr>
+    </div>
+
+    <div class="map-container">
+        <iframe
+            width="100%"
+            height="100%"
+            frameborder="0"
+            src="{% url 'Activity Map View' act_id=object.act_id %}"
+            style="border: none;"
+        >
+        </iframe>
+    </div>
+</div>        
+                             
+{% endblock %}
+ 

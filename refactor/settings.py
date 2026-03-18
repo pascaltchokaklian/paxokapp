@@ -25,6 +25,8 @@ SECRET_KEY = 'django-insecure--d34*jma0c$uwulyce2&h^2ypc+iw1mz8l^fgvvl0*pi)#1*4y
 DEBUG = True
 
 ALLOWED_HOSTS=["127.0.0.1"]
+#ALLOWED_HOSTS = ['*']
+#ALLOWED_HOSTS = ['centcols.tchok.com']
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
@@ -69,7 +71,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-            ],                
+            ],
         },
     },
 ]
@@ -129,7 +131,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = '/static/'
-#STATICFILES_DIRS = [BASE_DIR / "myapp/static"]  
+#STATICFILES_DIRS = [BASE_DIR / "myapp/static"]
 #STATIC_ROOT = BASE_DIR / "staticfiles"  # new
 
 #FROM_DOMAIN = "xoka06.eu.pythonanywhere.com"
@@ -139,7 +141,7 @@ STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
-    "staticfiles": {        
+    "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",  # new
     },
 }

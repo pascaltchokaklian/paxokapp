@@ -31,7 +31,7 @@
           <a href="strava_user/{{activity.strava_user_id}}">{{activity.get_strava_user_name }}</a>
         </td>
         <td data-sort={{activity.act_start_date|date:"ymd"}} style="width:10%">
-          {{activity.act_start_date|date:"d-M-Y" }} 
+          {{activity.act_start_date|date:"d-M" }} 
         </td>  
         <td align="right" style="width:10%">
           {{activity.get_act_dist_km|floatformat:2}} 

@@ -46,7 +46,7 @@ urlpatterns = [
     ### m_pages (mobile shortcuts)
     path('m_index/', base_map, {'force_mobile': True}, name='m_index'),
     path('m_activity/', ActivityListView.as_view(force_mobile=True), name='m_activity'),                      
-    path('m_activity/<pk>', ActivityDetailView.as_view(), name="activity-detail"),            
+    path('m_activity/<pk>', ActivityDetailView.as_view(force_mobile=True), name="activity-detail"),            
     path('m_cols/', ColsListView.as_view(force_mobile=True), name='m_cols'),
     path('m_cols/<pk>/', ColsDetailView.as_view(), name = "col-detail"),                           
     path('m_colsok/', ColsOkListView.as_view(force_mobile=True), name='m_colsok'),                           

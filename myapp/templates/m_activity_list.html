@@ -4,14 +4,13 @@
   {{ f_test }} 
     
   {% if m_activity_list %}
-  <table class="sortable n-last">
+  <table width="100%" class="sortable n-last">
     <thead>
     <tr>
         <th class="indicator-left">Date</th>
         <th class="indicator-left">Dist</th>        
         <th class="indicator-left">Ratio</th>
-        <th class="indicator-left">Activité</th>               
-        <th class="indicator-left">Trainer</th>      
+        <th class="indicator-left">Activité</th>                       
     </tr>    
     </thead>
     <tbody>
@@ -28,10 +27,7 @@
         </td>
         <td >
           <a href="./{{activity.act_id}}"> {{ activity.act_name }}</a>           
-        </td>        
-        <td align="center">
-          {% if activity.act_trainer == 1 %}X{% else %}&nbsp;{% endif %}
-        </td>        
+        </td>                
       </tr>
     {% endfor %}
   </tbody>

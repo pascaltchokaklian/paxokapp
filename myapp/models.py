@@ -326,13 +326,19 @@ class User_dashboard(models.Model):
 			ret = authuserlist[0].last_name + ' ' + authuserlist[0].first_name				
 		return ret
 	
-	def get_prenom(self):		
+	def get_nom_initiale(self):
+		"""Retourne : Nom + première lettre du prénom (ex: Dupont J)"""
 		ret = 'Not Found'
 		if self.strava_user_id != None:
 			all_strava_user=Strava_user.objects.filter(strava_user_id = self.strava_user_id)
 			strava_user = all_strava_user[0].strava_user
 			authuserlist = User.objects.filter(username=strava_user)
-			ret = authuserlist[0].first_name				
+			last = authuserlist[0].last_name
+			first = authuserlist[0].first_name
+			if first:
+				ret = f"{last} {first[0]}"
+			else:
+				ret = last
 		return ret
 
 	def set_col_count(self):	

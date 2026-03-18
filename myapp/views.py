@@ -696,7 +696,7 @@ class ActivityTeamView(MobileTemplateMixin, generic.ListView):
 
 #############################################################################################
     
-class ActivityDetailView(generic.DetailView):                       
+class ActivityDetailView(MobileTemplateMixin, generic.DetailView):                       
     model = Activity        
     context_object_name = 'activity-detail'   # your own name for the list as a template variable    
     template_name = "activity_detail.html"    # Specify your own template name/location   
