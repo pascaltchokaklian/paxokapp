@@ -19,7 +19,6 @@ from django.db.models import Max
 from django.shortcuts import render , redirect
 from django.contrib.auth.models import User
 from social_django.models import UserSocialAuth
-from django.db.models import Q
 from .myfunctions import *
 
 
@@ -104,7 +103,7 @@ def mainIndexView(request,user):
     continent = "EUROPE"
     if view_region_info[0] == "AR":
         continent = "SOUTHAMERICA"
-    main_map = folium.Map(location=get_map_center(continent), zoom_start = 6) # Create base map
+    main_map = folium.Map(location=get_map_center(continent), zoom_start = 6, tiles='CartoDB voyager')  # Create base map
     feature_group_Road = folium.FeatureGroup(name="Route").add_to(main_map)    
     feature_group_Piste = folium.FeatureGroup(name="Piste").add_to(main_map)    
     feature_group_Sentier = folium.FeatureGroup(name="Sentier").add_to(main_map)    
@@ -173,7 +172,7 @@ def base_map(request, force_mobile=False):
 def connected_map(request):
         
     # Make your map object    
-    main_map = folium.Map(location=get_map_center("EUROPE"), zoom_start = 6) # Create base map 
+    main_map = folium.Map(location=get_map_center("EUROPE"), zoom_start = 6, tiles='CartoDB voyager') # Create base map 
     user = request.user # Pulls in the Strava User data                
     ### f_debug_trace("views.py","connected_map","user = "+str(user))
     get_strava_user_id(request,user)
@@ -424,7 +423,7 @@ def col_map(request, col_id):
         myCol.setPoint(oneCol)
         col_location = [myCol.lat,myCol.lon]
         colColor = "blue"
-        map = folium.Map(col_location, zoom_start=15)
+        map = folium.Map(col_location, zoom_start=15, tiles='CartoDB voyager')
         myPopup = myCol.name+" ("+str(myCol.alt)+"m)"
         folium.Marker(col_location, popup=myPopup,icon=folium.Icon(color=colColor, icon="flag")).add_to(map)      
 
@@ -502,7 +501,7 @@ def act_map(request, act_id):
     map_zoom = cols_tools.map_zoom(centrer_point,activities_df['polylines'])    
     ### f_debug_trace("col_tools.py","act_map","After map_zoo")
     
-    map = folium.Map(location=centrer_point, zoom_start=map_zoom)
+    map = folium.Map(location=centrer_point, zoom_start=map_zoom, tiles='CartoDB voyager')
                                                    
     # kw = {
     #   "color": "blue",
@@ -700,6 +699,81 @@ class ActivityDetailView(MobileTemplateMixin, generic.DetailView):
     model = Activity        
     context_object_name = 'activity-detail'   # your own name for the list as a template variable    
     template_name = "activity_detail.html"    # Specify your own template name/location   
+
+    def get_template_names(self):
+        """Sélectionne le bon template selon si c'est une requête mobile"""
+        request_path = self.request.path
+        if '/m_activity/' in request_path:
+            return ['m_activity_detail.html']
+        return ['activity_detail.html']
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        activity = self.get_object()
+        
+        # Vérifier si c'est une requête mobile
+        is_mobile = '/m_activity/' in self.request.path
+        
+        if is_mobile:
+            try:
+                user = self.request.user
+                if str(user) != 'AnonymousUser':
+                    # Récupérer le token Strava
+                    user_list = Strava_user.objects.all().filter(strava_user=user)
+                    if user_list:
+                        access_token = user_list[0].access_token
+                        header = {'Authorization': f'Bearer {access_token}'}
+                        
+                        # Récupérer les données de l'activité depuis Strava
+                        activites_url = f"https://www.strava.com/api/v3/activities/{activity.strava_id}"
+                        activities_json = requests.get(activites_url, headers=header).json()
+                        
+                        # Essayer d'abord la polyline détaillée (avec altitudes)
+                        polyline_data = None
+                        if 'map' in activities_json:
+                            # Préférer la polyline détaillée qui contient les altitudes
+                            if 'polyline_detailed' in activities_json['map'] and activities_json['map']['polyline_detailed']:
+                                polyline_data = activities_json['map']['polyline_detailed']
+                            elif 'summary_polyline' in activities_json['map']:
+                                polyline_data = activities_json['map']['summary_polyline']
+                        
+                        if polyline_data:
+                            decoded_polyline = polyline.decode(polyline_data)
+                            
+                            # Essayer de récupérer les altitudes via l'API streams
+                            try:
+                                streams_url = f"https://www.strava.com/api/v3/activities/{activity.strava_id}/streams"
+                                streams_params = {'keys': 'latlng,altitude,distance', 'key_by_type': 'true'}
+                                streams_json = requests.get(streams_url, headers=header, params=streams_params).json()
+                                
+                                if 'altitude' in streams_json and 'latlng' in streams_json:
+                                    altitude_data = streams_json.get('altitude', {}).get('data', [])
+                                    latlng_data = streams_json.get('latlng', {}).get('data', [])
+                                    
+                                    # Combiner les données : ajouter l'altitude à chaque point
+                                    if altitude_data and latlng_data:
+                                        decoded_polyline_with_alt = [
+                                            (point[0], point[1], altitude_data[i] if i < len(altitude_data) else 0)
+                                            for i, point in enumerate(latlng_data)
+                                        ]
+                                        decoded_polyline = decoded_polyline_with_alt
+                            except Exception as e:
+                                f_debug_trace("views.py", "ActivityDetailView.streams", f"Streams API error: {str(e)}")
+                                pass
+                            
+                            # Générer le graphique d'altitude
+                            altitude_graph = get_altitude_profile_graph(
+                                decoded_polyline, 
+                                total_elevation=activity.act_den,
+                                total_distance=activity.get_act_dist_km()
+                            )
+                            if altitude_graph:
+                                context['altitude_graph'] = altitude_graph
+            except Exception as e:
+                f_debug_trace("views.py", "ActivityDetailView.get_context_data", f"Error: {str(e)}")
+                pass
+        
+        return context   
                                                                             
 class ColsDetailView(generic.DetailView):
 	# specify the model to use            
@@ -899,5 +973,80 @@ def fSegmentHistoView(request,**kwargs):
     print("zipped")
     print(zipped)
     return render (request, template, {'seg_name': segment_name , 'strava_segment_id': strava_segment_id , 'perf': zipped} )
+
+def m_act_map(request, act_id):
+    """Vue pour afficher la carte d'une activité en mode mobile"""
+    my_strava_user = request.session.get("strava_user")    
+    my_strava_user_id = get_strava_user_id(request, my_strava_user)
+    
+    refresh_access_token(my_strava_user)
+
+    user = str(request.user)
+    get_strava_user_id(request, user)
+
+    myActivity_sq = Activity.objects.all().filter(act_id=act_id)    
+    access_token = "notFound"
+                   
+    userList = Strava_user.objects.all().filter(strava_user=user)
+    for userOne in userList:
+        myUser = userOne
+        access_token = myUser.access_token
+
+    for myActivity in myActivity_sq:            
+        strava_id = myActivity.strava_id
+        act_statut = myActivity.act_status
+        team_strava_user_id = myActivity.strava_user_id
+                        
+    if str(my_strava_user_id) != str(team_strava_user_id):
+        return HttpResponse('')
+        
+    activites_url = f"https://www.strava.com/api/v3/activities/{strava_id}"
+    header = {'Authorization': f'Bearer {access_token}'}            
+    param = {'id': strava_id}
+    
+    activities_json = requests.get(activites_url, headers=header, params=param).json()
+    activity_df_list = [pd.json_normalize(activities_json)]
+    
+    activities_df = pd.concat(activity_df_list)        
+    activities_df = activities_df.dropna(subset=['map.summary_polyline'])
+    activities_df['polylines'] = activities_df['map.summary_polyline'].apply(polyline.decode)
+    
+    # Centrage et zoom de la carte
+    centrer_point = map_center(activities_df['polylines'])           
+    map_zoom = cols_tools.map_zoom(centrer_point, activities_df['polylines'])    
+    
+    map = folium.Map(location=centrer_point, zoom_start=map_zoom, tiles='CartoDB voyager')
+
+    # Afficher la polyline
+    myGPSPoints = []
+    
+    for pl in activities_df['polylines']:
+        if len(pl) > 0:
+            folium.PolyLine(locations=pl, color='red').add_to(map)                
+            myPoint = PointGPS()                
+            myPoint = pl                            
+            myGPSPoints.append(myPoint)
+
+    # Afficher les cols
+    conn = create_connection(SQLITE_PATH)        
+    myColsList = getColByActivity(conn, strava_id)     
+        
+    for oneCol in myColsList:
+        myCol = PointCol()
+        myCol.setPoint(oneCol)
+        col_location = [myCol.lat, myCol.lon]
+        colColor = "blue"        
+        mypopup = myCol.name + " (" + str(myCol.alt) + "m)"
+        folium.Marker(col_location, popup=mypopup, icon=folium.Icon(color=colColor, icon="flag")).add_to(map)      
+                   
+    # Return HTML version of map
+    map_html = map._repr_html_()
+    
+    context = {
+        "main_map": map_html,
+        "activity": Activity.objects.get(act_id=act_id)
+    }
+
+    return render(request, "m_activity_map.html", context)
 
 

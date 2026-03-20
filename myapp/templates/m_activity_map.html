@@ -1,0 +1,22 @@
+{% block content %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3>{{ activity.act_name }}</h3>
+        <a href="{% url 'activity-detail' pk=activity.act_id %}" title="Retour" style="font-size: 20px; text-decoration: none; color: red;">✕</a>
+    </div>
+    
+    <div style="width: 100%; height: 500px; border: 1px solid #ccc;">
+        {{ main_map|safe }}
+    </div>
+    
+    <div style="margin-top: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 5px;">
+        <p><strong>Distance:</strong> {{ activity.get_act_dist_km|floatformat:2 }} km</p>
+        <p><strong>Dénivelé:</strong> {{ activity.act_den }} m</p>
+        <p><strong>Type:</strong> {{ activity.act_type }}</p>
+        <p><strong>Date:</strong> {{ activity.act_start_date|date:"d M Y" }}</p>
+    </div>
+    
+    <div style="margin-top: 10px; text-align: center;">
+        <a href="{% url 'activity-detail' pk=activity.act_id %}" style="color: blue; text-decoration: underline;">← Retour au détail</a>
+    </div>
+
+{% endblock %}

@@ -1,3 +1,6 @@
+from cmath import asin, sqrt
+
+from matplotlib.pylab import cos, radians, sin
 import matplotlib.pyplot as plt
 import base64
 from io import BytesIO
@@ -7,6 +10,116 @@ from myapp.myfunctions import couleur_depuis_mot
 
 def top_10_biggest(numbers):
     return heapq.nlargest(10, numbers)
+
+def haversine_distance(lat1, lon1, lat2, lon2):
+    """
+    Calcule la distance en km entre deux points GPS en utilisant la formule Haversine
+    """
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+    
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    r = 6371  # Rayon terrestre en km
+    
+    return c * r
+
+def get_altitude_profile_graph(decoded_polyline, total_elevation=None, total_distance=None):
+    """
+    Crée un graphique de profil d'altitudes à partir d'une polyline décodée
+    decoded_polyline: liste de tuples (lat, lon) ou (lat, lon, elevation)
+    total_elevation: dénivelé total en mètres (optionnel)
+    total_distance: distance totale en km (optionnel)
+    """
+    
+    if not decoded_polyline or len(decoded_polyline) == 0:
+        return None
+        
+    plt.switch_backend('AGG')
+    fig, ax = plt.subplots(figsize=(14, 6))
+    
+    distances = [0]  # Distance cumulée
+    elevations = []
+    
+    total_dist = 0
+    has_elevation_data = False
+    
+    # Vérifier si les points ont les altitudes (tuples de 3 éléments)
+    if len(decoded_polyline[0]) >= 3:
+        has_elevation_data = True
+    
+    # Extraire les altitudes et calculer les distances cumulées
+    for i, point in enumerate(decoded_polyline):
+        if len(point) >= 3:
+            elevation = point[2]
+        else:
+            # Pas d'altitude disponible dans la polyline
+            elevation = 0
+        
+        elevations.append(elevation)
+        
+        if i > 0:
+            prev_point = decoded_polyline[i-1]
+            lat1, lon1 = prev_point[0], prev_point[1]
+            lat2, lon2 = point[0], point[1]
+            
+            dist = haversine_distance(lat1, lon1, lat2, lon2)
+            total_dist += dist
+            distances.append(total_dist)
+        elif i == 0 and len(decoded_polyline) > 1:
+            distances.append(0)
+    
+    # Créer le graphique
+    if len(distances) > 1:
+        # S'assurer que les listes ont la même taille
+        min_len = min(len(distances), len(elevations))
+        distances = distances[:min_len]
+        elevations = elevations[:min_len]
+        
+        if has_elevation_data and any(e != 0 for e in elevations):
+            # Données d'altitude disponibles
+            ax.plot(distances, elevations, color='steelblue', linewidth=2.5)
+            ax.fill_between(distances, elevations, alpha=0.3, color='steelblue')
+            ax.set_ylabel('Altitude (m)', fontsize=12)
+        else:
+            # Pas de données d'altitude précises, créer un graphique avec le dénivelé total
+            if total_elevation and total_elevation > 0:
+                # Créer un profil approximatif basé sur le dénivelé total
+                avg_gradient = total_elevation / total_dist if total_dist > 0 else 0
+                approx_elevations = [i * avg_gradient for i in range(len(distances))]
+                ax.plot(distances, approx_elevations, color='lightblue', linewidth=2, linestyle='--', label='Profil estimé')
+                ax.fill_between(distances, approx_elevations, alpha=0.2, color='lightblue')
+                ax.set_ylabel('Altitude (m - estimée)', fontsize=12)
+                ax.legend()
+            else:
+                # Afficher simplement la distance
+                ax.plot(distances, [0] * len(distances), color='gray', linewidth=1)
+                ax.set_ylabel('Distance (km)', fontsize=12)
+        
+        ax.set_xlabel('Distance (km)', fontsize=12)
+        ax.set_title('Profil d\'altitudes', fontsize=14, fontweight='bold')
+        ax.grid(True, alpha=0.3)
+        fig.tight_layout()
+        
+        # Sauvegarder le graphique en base64
+        buffer = BytesIO()
+        fig.savefig(buffer, format='png')
+        buffer.seek(0)
+        image_png = buffer.getvalue()
+        graph = base64.b64encode(image_png)
+        graph = graph.decode('utf-8')
+        buffer.close()
+        
+        plt.close(fig)
+        return graph
+    
+    plt.close(fig)
+    return None
+
+
+
+
 
 def get_graph():
     buffer = BytesIO()
