@@ -49,7 +49,7 @@ urlpatterns = [
     path('m_activity/<pk>', ActivityDetailView.as_view(force_mobile=True), name="activity-detail"),            
     path('m_cols/', ColsListView.as_view(force_mobile=True), name='m_cols'),
     path('m_cols/<pk>/', ColsDetailView.as_view(), name = "col-detail"),                           
-    path('m_colsok/', ColsOkListView.as_view(force_mobile=True), name='m_colsok'),                           
+    path('m_colsok/', mColsOkListView.as_view(), name='m_colsok'),                           
     path('m_colsok/<pk>/', ColsDetailView.as_view(),name = "col-detail"),        
     path('m_team/', ActivityTeamView.as_view(force_mobile=True), name='m_team'),
     path('m_team/activity/<pk>', ActivityDetailView.as_view(), name="activity-detail"),     
