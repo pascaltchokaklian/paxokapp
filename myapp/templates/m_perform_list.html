@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  
+{% extends "m_base_generic.html" %}
+
+{% load static %}
+{% load humanize %}
+<script src="{% static 'sortable.min.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/grid.css' %}">
+
+<head>      
+    <title>Dashboard</title>
+    <meta name="charset" content="UTF-8" />
+    <meta name="author" content="xoka" />                        
+    <style>
+        .grid-container {
+            padding: 0;
+            height: 100vh;
+            gap: 0;
+        }
+        .item2 {
+            display: none;
+        }
+        .item3 {
+            grid-area: menu main main main main right;
+            height: 100%;
+            overflow: auto;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+{% block content %}
+
+<h3 >Liste des Performances
+  <br>
+</h3> 
+
+  {% if perform_list %}
+  <table id = "myTable" width="100%" class="sortable n-last" >  
+    <thead>
+      <tr>
+        <th class="indicator-left">DATE </th>
+        <th class="indicator-left">SEGMENT </th>
+        <th class="indicator-left">LONG</th>
+        <th class="indicator-left">%</th>        
+        <th class="indicator-left">FC</th>       
+        <th class="indicator-left">PWR</th>       
+        <th class="indicator-left">Chrono</th>                       
+      </tr>    
+    </thead>
+    <tbody>
+    {% for perform in perform_list %}                 
+      <tr>
+        <td data-sort={{perform.perf_date|date:"ymd"}} >          
+          <a>{{perform.perf_date|date:"d/m/y" }}</a>            
+        </td>
+        <td>
+          <a href="{% url 'm_perform_histo' perform.segment_id %}" style="color: #333333;">  {{perform.get_segment_name|truncatechars:16  }}</a>                   
+        </td>                  
+        <td >
+          {{perform.get_segment_length|floatformat:1 }}         
+        </td>    
+        <td >
+          {{perform.get_segment_slope|floatformat:1 }}%         
+        </td>         
+        <td >                   
+          {{perform.perf_fc}}         
+        </td>         
+        <td >                   
+          {{perform.perf_power|default_if_none:"--"}}         
+        </td>         
+        <td data-sort={{perform.perf_chrono}}>                   
+          {{perform.get_chrono_str}}         
+        </td>                 
+      </tr>         
+    {% endfor %}
+  </tbody>
+  </table>  
+  {% else %}
+    <p>There is no Perf in the Database.</p>
+  {% endif %}
+{% endblock %}
+
+</body>
+</html>
+
+<script>
+function myFunction(col) {
+  var input, filter, table, tr, td, i;
+  inputY = document.getElementById("myInputY");
+  inputN = document.getElementById("myInputN");
+  filterY = inputY.value.toUpperCase();  
+  filterN = inputN.value.toUpperCase();  
+  if(col==0) {
+    filter = filterY;
+    inputN.value = "" ;
+  }
+  if(col==1) {
+    filter = filterN;
+    inputY.value = "" ;
+  }
+  table = document.getElementById("myTable");
+  tr = table.getElementsByTagName("tr");
+  for (i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td")[col];
+    if (td) {
+      if (td.innerHTML.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }       
+  }
+}
+</script>

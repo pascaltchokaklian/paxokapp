@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  
+{% extends "m_base_generic.html" %}
+
+{% load static %}
+{% load humanize %}
+<script src="{% static 'sortable.min.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/grid.css' %}">
+
+<head>      
+    <title>Historique des Performances</title>
+    <meta name="charset" content="UTF-8" />
+    <meta name="author" content="xoka" />                        
+    <style>
+        .grid-container {
+            padding: 0;
+            height: 100vh;
+            gap: 0;
+        }
+        .item2 {
+            display: none;
+        }
+        .item3 {
+            grid-area: menu main main main main right;
+            height: 100%;
+            overflow: auto;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            text-align: left;
+            padding: 6px;
+        }
+        tr:nth-child(even) {
+            background-color: #3c3d3d3d;
+        }
+    </style>
+</head>
+
+<body>
+
+{% block content %}
+
+<h3>Historique des Performances</h3>
+
+  {% if perf %}
+    <HR>    
+    <tr>            
+    <td colspan="3"><h3> <a href="https://www.strava.com/segments/{{strava_segment_id}}" target="_blank" rel="noopener noreferrer"> {{seg_name}} </a> </h3></td>       
+    
+    </tr>        
+    <HR>
+    <table class="sortable n-last">    
+    <thead>
+      
+    <tr>
+        <th class="indicator-left">Année</th>
+        <th class="indicator-left">Chrono</th>                        
+    </tr>    
+    </thead>
+    <tbody>
+
+    {% for annee, chrono in perf %}
+    <tr>
+        <td>
+          {{ annee }}
+        </td>  
+        <td>
+          {{ chrono }}
+        </td>                
+      </tr> 
+    {% endfor %}  
+    </tbody>
+    </table>      
+  
+  {% else %}
+    <p>Aucune performance trouvée.</p>
+  {% endif %}
+   
+{% endblock %}
+
+</body>
+</html>  
+
+
+

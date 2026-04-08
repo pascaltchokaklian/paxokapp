@@ -21,9 +21,9 @@
   <br/>
     <thead>
     <tr>         
-        <th class="indicator-left">Passages</th>
-        <th class="indicator-left">Nom</th>        
-        <th class="indicator-left">Altitude</th>                          
+        <th class="indicator-left">Nb</th>
+        <th class="indicator-left">Col</th>        
+        <th class="indicator-left">Alt.</th>                          
     </tr>  
     </thead>    
     <tbody>
@@ -31,10 +31,10 @@
     {% for colc in col_counter_list %}                
     <tr>      
       <td align="center">
-        {{colc.col_count}} ({{colc.year_col_count}})
+        {{colc.col_count}}
       </td>
       <td>        
-          <a href="{{ colc.get_col_id }}">{{ colc.get_col_name }}</a> 
+          <a href="{{ colc.get_col_id }}" style="color: #333333;">{{ colc.get_col_name }}</a> 
       </td>  
       <td align="center">
         {{colc.get_col_alt}}

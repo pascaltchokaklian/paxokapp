@@ -55,6 +55,8 @@ urlpatterns = [
     path('m_team/', ActivityTeamView.as_view(force_mobile=True), name='m_team'),
     path('m_team/activity/<pk>', ActivityDetailView.as_view(), name="activity-detail"),     
     path('m_stat_list/', StatListView.as_view(force_mobile=True), name = 'm_stat_list'),     
+    path('m_perform_list/', PerformListView.as_view(force_mobile=True), name = 'm_perform_list'),     
+    path('m_perform/<int:segment_id>',fSegmentHistoView, name = 'm_perform_histo'),
 
 ]
 

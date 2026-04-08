@@ -823,7 +823,7 @@ class User_dashboardView(generic.ListView):
         myQs = User_dashboard.objects.filter(strava_user_id=strava_user_id)
         return myQs
     
-class PerformListView(generic.ListView):
+class PerformListView(MobileTemplateMixin, generic.ListView):
     model = Perform     
     context_object_name = 'perform_list'                # your own name for the list as a template    
     template_name = "perform_list.html"                 # Specify your own template name/location
@@ -831,6 +831,15 @@ class PerformListView(generic.ListView):
         strava_user_id = self.request.session.get('strava_user_id')             
         perfList = Perform.objects.filter(strava_user_id=strava_user_id).order_by("-perf_date")
         return perfList
+
+def m_perform_list(request):
+    """Vue pour afficher la liste des performances en mode mobile"""
+    strava_user_id = request.session.get('strava_user_id')             
+    perfList = Perform.objects.filter(strava_user_id=strava_user_id).order_by("-perf_date")
+    context = {
+        'perform_list': perfList
+    }
+    return render(request, 'm_perform_list.html', context)
     
 class SegmentListView(generic.ListView):        
     model = Segment   
@@ -941,7 +950,7 @@ def puissancesView(request):
 ########################################################################################################
 
 def fSegmentHistoView(request,**kwargs):
-    template = 'segment_histo.html'
+    template = 'm_segment_histo.html' if is_mobile_user_agent(request) else 'segment_histo.html'
     strava_user_id = request.session.get('strava_user_id')        
     segment_id = kwargs['segment_id']        
     segment_name = 'Not Found'

@@ -10,21 +10,12 @@
                 <td><h4>{{ object.act_start_date|date:"d M Y" }}</h4></td>
         </tr>
         <tr>
-                <td><h5>{{ object.act_type }} - Strava ID: {{ object.strava_id }}</h5></td>
-        </tr>
-        <tr>
                 <td><h4>Distance: {{ object.get_act_dist_km|floatformat:2 }} km</h4></td>
         </tr>
         <tr>
                 <td><h4>Dénivelé: {{ object.act_den }} m</h4></td>
         </tr>
-        <tr>
-                <td><h4>Ratio: {{ object.get_elevation_ratio|floatformat:1 }} m/km</h4></td>
-        </tr>
-        
-        {% for info in object.get_info_txt %}
-            <tr><td style="color:#1600da">{{ info.info_txt }}</td></tr>
-        {% endfor %}
+
     </table>
 
     <hr>

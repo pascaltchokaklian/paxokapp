@@ -18,7 +18,7 @@
     {% for activity in m_activity_list %}      
       <tr>
         <td data-sort={{activity.act_start_date|date:"ymd"}}>
-          {{activity.act_start_date|date:"d-M" }} 
+          {{activity.act_start_date|date:"d/m" }} 
         </td>  
         <td align="right">
           {{activity.get_act_dist_km|floatformat:1}} 
