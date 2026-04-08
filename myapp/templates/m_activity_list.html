@@ -1,37 +1,36 @@
+<!doctype html>
+<html lang="en">
+
+<head>      
+  <title>Liste des Activités</title>
+  <meta name="charset" content="UTF-8" />
+  <meta name="author" content="xoka" />                        
+</head>
+
+<body>
+
 {% extends "m_base_generic.html" %}
 {% block content %}
-
-  {{ f_test }} 
-    
+      
   {% if m_activity_list %}
-  <table width="100%" class="sortable n-last">
-    <thead>
-    <tr>
-        <th class="indicator-left">Date</th>
-        <th class="indicator-left">Dist</th>        
-        <th class="indicator-left">Ratio</th>
-        <th class="indicator-left">Activité</th>                       
-    </tr>    
-    </thead>
-    <tbody>
+  <table width="100%" class="sortable n-last">            
+    
     {% for activity in m_activity_list %}      
       <tr>
-        <td data-sort={{activity.act_start_date|date:"ymd"}} style="width: 60px;">
+        <td data-sort={{activity.act_start_date|date:"ymd"}}>
           {{activity.act_start_date|date:"d-M" }} 
         </td>  
-        <td align="right" style="width: 60px;">
+        <td align="right">
           {{activity.get_act_dist_km|floatformat:1}} 
-        </td>  
-        <td align="right" style="width: 60px;">
-          {{activity.get_den_dist_ratio|default:"-"|floatformat:1}} 
-        </td>
-        <td >
-          <a href="./{{activity.act_id}}"> {{ activity.act_name }}</a>           
+        </td>          
+        <td style=>
+          <a href="./{{activity.act_id}}" style="color: #333333;"> {{ activity.act_name|truncatechars:22 }}</a>           
         </td>                
       </tr>
     {% endfor %}
-  </tbody>
+  
   </table>  
+</body>  
   {% else %}
     <p>There are no Activities in the Database.</p>
   {% endif %}
