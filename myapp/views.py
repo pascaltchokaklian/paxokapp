@@ -920,7 +920,7 @@ def puissancesView(request):
     template = 'puissances.html' 
     # Mes Puissances
     strava_user_id = request.session.get('strava_user_id')        
-    QueryPower = Activity.objects.filter(act_normal_power__gte=1).filter(strava_user_id=strava_user_id)
+    QueryPower = Activity.objects.filter(act_normal_power__gte=1).exclude(act_show_power=0).filter(strava_user_id=strava_user_id)
     x = []
     y = []
     n = []
@@ -932,7 +932,7 @@ def puissancesView(request):
     chart = get_plot(x,y,n)
 
     # Puissances All
-    QueryAllPower = Activity.objects.filter(act_normal_power__gte=1).filter(act_type='Ride').exclude(act_trainer=1)    
+    QueryAllPower = Activity.objects.filter(act_normal_power__gte=1).exclude(act_show_power=0).filter(act_type='Ride').exclude(act_trainer=1)    
     x = []
     y = []
     n = []

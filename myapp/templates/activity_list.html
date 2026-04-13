@@ -32,10 +32,10 @@
         <td align="right" style="width:10%">
           {{activity.act_den|floatformat:0}}   
         </td>
-        <td align="right" style="width:10%">
+        <td align="right" style="width:10%;" class="{% if activity.get_den_dist_ratio > 20 %}text-danger{% endif %}">
           {{activity.get_den_dist_ratio|default:"-"|floatformat:1}}   
         </td>
-        <td align="right" style="width:10%; {% if activity.act_normal_power and activity.act_normal_power > 175 %}color: red;{% endif %}">
+        <td align="right" style="width:10%;" class="{% if activity.act_normal_power and activity.act_normal_power > 175 %}text-danger{% endif %}">
           {% if activity.act_normal_power is not None and activity.act_normal_power != 0 %}{{activity.act_normal_power|floatformat:0}}{% else %}-{% endif %}   
         </td>
         <td>          

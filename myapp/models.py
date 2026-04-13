@@ -50,6 +50,7 @@ class Activity(models.Model):
 	act_status = models.IntegerField(null=True)
 	act_normal_power = models.IntegerField(null=True)
 	act_trainer = models.IntegerField(null=True)
+	act_show_power = models.IntegerField(null=True)
 
 	def get_act_dist_km(self):
 		return self.act_dist/1000
