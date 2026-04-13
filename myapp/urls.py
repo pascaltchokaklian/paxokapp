@@ -15,6 +15,7 @@ urlpatterns = [
     ###    
     path('activity', ActivityListView.as_view(), name='activity'),        
     path('activity/<pk>', ActivityDetailView.as_view(), name="activity-detail"),            
+    path('activity/<int:act_id>/export-txt/', export_activity_text, name='activity-export-txt'),
     path('activity/<int:act_id>/<int:col_id>/', col_map_by_act,name = "act-col"),
     path('team', ActivityTeamView.as_view(), name='team'),        
     ###             

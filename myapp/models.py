@@ -148,40 +148,21 @@ class Col_perform(models.Model):
 		q2 = Col_counter.objects.filter(col_code=colcode).filter(strava_user_id=strava_user_id)
 		ccount = q2[0].col_count
 		return ccount
-			
-class Col_counter(models.Model):
-	col_count_id = models.IntegerField(auto_created=True,  primary_key=True)
-	col_code = models.CharField(max_length=20, default="-")
-	strava_user_id	= models.IntegerField(null=False)
-	col_count = models.IntegerField(null=False)	
-	year_col_count = models.IntegerField(null=False, default=0)	
-	last_passage_date = models.DateTimeField(null=True)
-	last_act_id = models.IntegerField(null=True)
 
-	def get_col_name(self):		
+	def get_col_alt(self):
 		sc = self.col_code
-		q1 = Col.objects.filter(col_code=sc)		
-		return q1[0].col_name
-	
-	def get_col_id(self):		
-		sc = self.col_code
-		q1 = Col.objects.filter(col_code=sc)				
-		return q1[0].col_id
-	
-	def get_col_alt(self):		
-		sc = self.col_code
-		q1 = Col.objects.filter(col_code=sc)		
-		return q1[0].col_alt
-		
+		q1 = Col.objects.filter(col_code=sc)
+		return q1[0].col_alt if q1 else None
+
 	def get_country_name(self):		
 		sc = self.col_code[0:2]			
 		q1 = Country.objects.filter(code_100cols=sc)		
 		return q1[0].country_name
 	
 	def get_region_name(self):		
-		sc = self.col_code[0:2]				
-		q1 = Country.objects.filter(code_100cols=sc)				
-		country_code = q1[0].country_code		
+		sc = self.col_code[0:2]			
+		q1 = Country.objects.filter(code_100cols=sc)			
+		country_code = q1[0].country_code	
 		rc = self.col_code[3:5]
 		#TODO
 		if country_code == "ARG":
@@ -193,9 +174,18 @@ class Col_counter(models.Model):
 		return region_name
 	
 	def get_country_region_code(self):		
-		sc = self.col_code[0:5]						
+		sc = self.col_code[0:5]				
 		return sc
-								
+
+class Col_counter(models.Model):
+	col_count_id = models.IntegerField(auto_created=True,  primary_key=True)
+	col_code = models.CharField(max_length=20, null=False, default="-")
+	strava_user_id = models.IntegerField(null=False, default=0)
+	col_count = models.IntegerField(null=True)
+	year_col_count = models.IntegerField(null=True)
+	last_passage_date = models.DateTimeField(null=True)
+	last_act_id = models.IntegerField(null=True)
+	
 class Strava_user(models.Model):	
 	id = models.IntegerField(auto_created=True,  primary_key=True)
 	strava_user_id = models.IntegerField(null=True)

@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from django.views import generic
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 import folium
 import requests
 import pandas as pd
@@ -774,6 +774,59 @@ class ActivityDetailView(MobileTemplateMixin, generic.DetailView):
                 pass
         
         return context   
+
+
+def export_activity_text(request, act_id):
+    activity = get_object_or_404(Activity, act_id=act_id)
+    lines = []
+    lines.append(f"Activité: {activity.act_name or ''}")
+    lines.append(f"Date: {activity.act_start_date.strftime('%d-%m-%Y %H:%M') if activity.act_start_date else ''}")
+    lines.append(f"Strava ID: {activity.strava_id}")
+    lines.append(f"Type: {activity.act_type or ''}")
+    if activity.act_dist:
+        lines.append(f"Distance: {activity.get_act_dist_km():.2f} km")
+    else:
+        lines.append("Distance: -")
+    lines.append(f"Dénivelé: {activity.act_den or 0} m")
+    ratio = activity.get_den_dist_ratio()
+    lines.append(f"Ratio Dén./Dist.: {ratio if ratio is not None else '-'}")
+    lines.append(f"Puissance normale: {activity.act_normal_power if activity.act_normal_power else '-'}")
+    lines.append(f"Trainer: {'Oui' if activity.act_trainer == 1 else 'Non'}")
+    lines.append("")
+    lines.append("Infos:")
+    info_items = activity.get_info_txt()
+    if info_items:
+        for info in info_items:
+            lines.append(f"- {info.info_txt}")
+    else:
+        lines.append("- Aucune information disponible")
+    perf_items = activity.get_performances()
+    if perf_items:
+        lines.append("")
+        lines.append("Performances:")
+        for perf in perf_items:
+            lines.append(f"- {perf.nomSegment} | chrono {perf.chrono} | vam {perf.vam} | place {perf.place} | {perf.percent}%")
+    col_items = activity.get_col_passed()
+    if col_items:
+        lines.append("")
+        lines.append("Cols passés:")
+        for col in col_items:
+            lines.append(f"- {col.get_col_name()} ({col.col_code}) [{col.get_col_count()}]")
+    
+    # Section des nouveaux cols à la fin
+    col_items = activity.get_col_passed()
+    if col_items:
+        lines.append("")
+        lines.append("Déclaration 100 Cols:")
+        for col in col_items:
+            col_alt = col.get_col_alt() or "-"
+            col_date = activity.act_start_date.strftime("%d-%m-%Y") if activity.act_start_date else "-"
+            lines.append(f"{col.col_code};{col.get_col_name()};{col_alt};{col_date}")
+    
+    content = "\n".join(lines)
+    response = HttpResponse(content, content_type='text/plain; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="activity_{activity.act_id}.txt"'
+    return response
                                                                             
 class ColsDetailView(generic.DetailView):
 	# specify the model to use            
