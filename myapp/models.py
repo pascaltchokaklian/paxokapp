@@ -186,6 +186,16 @@ class Col_counter(models.Model):
 	last_passage_date = models.DateTimeField(null=True)
 	last_act_id = models.IntegerField(null=True)
 	
+	def get_col_name(self):
+		sc = self.col_code
+		q1 = Col.objects.filter(col_code=sc)
+		return q1[0].col_name if q1 else None
+	
+	def get_col_alt(self):
+		sc = self.col_code
+		q1 = Col.objects.filter(col_code=sc)
+		return q1[0].col_alt if q1 else None
+	
 class Strava_user(models.Model):	
 	id = models.IntegerField(auto_created=True,  primary_key=True)
 	strava_user_id = models.IntegerField(null=True)
