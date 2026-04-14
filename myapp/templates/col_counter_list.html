@@ -36,7 +36,7 @@
     {% for colc in col_counter_list %}                
     <tr>      
       <td>        
-          <a href="{{ colc.get_col_id }}">{{ colc.get_col_name }}</a> 
+          <a href="/cols/{{ colc.get_col_id }}">{{ colc.get_col_name }}</a> 
       </td>  
       <td>
         {{ colc.col_code }}

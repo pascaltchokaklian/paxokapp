@@ -185,6 +185,11 @@ class Col_counter(models.Model):
 	year_col_count = models.IntegerField(null=True)
 	last_passage_date = models.DateTimeField(null=True)
 	last_act_id = models.IntegerField(null=True)
+
+	def get_col_id(self):
+		sc = self.col_code
+		q1 = Col.objects.filter(col_code=sc)
+		return q1[0].col_id if q1 else None
 	
 	def get_col_name(self):
 		sc = self.col_code
