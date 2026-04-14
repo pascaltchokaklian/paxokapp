@@ -33,11 +33,11 @@
 
 {% block content %}
   <hr />
-  <h3>{{ m_col_list.count }} cols en base</h3>  
+  <h3>{{ col_list.count }} cols en base</h3>  
   <hr />
   {% load static %} 
   <a href="{% url 'index' %}"><img src="{% static '/image/map.png' %}"  /> Voir sur la carte</a>   
-  {% if m_col_list %}
+  {% if col_list %}
   <br/><br/>
   <input type="text" size="10" id="myInputCol" onkeyup="myFunction(0)" placeholder="Rechercher..">
   <br/><br/>
@@ -50,10 +50,10 @@
     </tr>  
     </thead>    
     <tbody>
-    {% for col in m_col_list %}
+    {% for col in col_list %}
       <tr>
         <td>
-          <a href="{{ col.col_id }}" style="color: #333333;">{{ col.col_name }} </a> 
+          <a href="/cols/{{ col.col_id }}" style="color: #333333;">{{ col.col_name }} </a> 
         </td>  
         <td align="right" data-sort={{col.col_alt}}>{{col.col_alt}} m  </td>        
         <td align='center'>{{col.col_type}}</td>

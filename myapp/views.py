@@ -600,9 +600,7 @@ def fUserDetail(request,**kwargs):
 
 def fColsListView(request,**kwargs):        
 
-    template = 'm_cols_list.html' if is_mobile_user_agent(request) else 'cols_list.html'
-            
-    code_paysregion = kwargs['pk']        
+    template = 'm_col_list.html' if is_mobile_user_agent(request) else 'cols_list.html'
     
     listeCols = Col.objects.filter(col_code__icontains=code_paysregion).order_by("col_alt")
     country_region = get_country_region(code_paysregion)           
