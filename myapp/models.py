@@ -182,7 +182,7 @@ class Col_counter(models.Model):
 	col_code = models.CharField(max_length=20, null=False, default="-")
 	strava_user_id = models.IntegerField(null=False, default=0)
 	col_count = models.IntegerField(null=True)
-	year_col_count = models.IntegerField(null=True)
+	year_col_count = models.IntegerField(null=True, default=0)
 	last_passage_date = models.DateTimeField(null=True)
 	last_act_id = models.IntegerField(null=True)
 

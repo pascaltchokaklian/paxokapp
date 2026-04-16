@@ -132,9 +132,10 @@ def compute_cols_by_act( conn, my_strava_user_id,myActivity_id):
                 
         if exists==0:
             new_cc = cc()
-            new_cc.col_code=colCode
-            new_cc.col_count=1
-            new_cc.strava_user_id=my_strava_user_id
+            new_cc.col_code = colCode
+            new_cc.col_count = 1
+            new_cc.year_col_count = 0
+            new_cc.strava_user_id = my_strava_user_id
             new_cc.save()            
             ### f_debug_trace("col_dbtools.py","compute_cols_by_act","Nouveau col: " + new_cc.get_col_name())            
             ### log new col
@@ -192,7 +193,7 @@ def getCol(conn,col_id):
 
 def getColByActivity(conn,strava_id):
     cur = conn.cursor()    
-    cur.execute("select col_name,col_alt,col_lat,col_lon,P.col_code from myapp_col_perform P, myapp_col C where P.col_code = C.col_code and strava_id = "+str(strava_id))
+    cur.execute("select col_name,col_alt,col_lat,col_lon,P.col_code from myapp_col_perform P, myapp_col C where P.col_code = C.col_code and strava_id = "+str(strava_id) + " order by  col_alt")
         
     rows = cur.fetchall()
     

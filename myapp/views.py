@@ -38,6 +38,47 @@ def is_mobile_user_agent(request):
     return any(tok in ua_string for tok in ("mobile", "android", "iphone", "ipad", "phone", "blackberry", "windows phone"))
 
 
+def build_strava_description(conn, strava_id):
+    cols = getColByActivity(conn, strava_id)
+    
+    if not cols:
+        return "Cols passés : aucun col identifié"
+    
+    description = "Cols passés durant cette activité:\n"
+    
+    cols_list = []
+    for col in cols:
+        col_name = col.name        
+        col_alt = ' - '
+        if col.alt:
+            col_alt = str(col.alt)            
+
+        cols_list.append(col_name + ' [' + col_alt + ']')
+        
+    description += "\n".join(cols_list)
+                
+    return description[:1000]
+
+
+def update_strava_activity_description(access_token, strava_id, description):
+    if not access_token or not description:
+        return False
+
+    activities_url = f"https://www.strava.com/api/v3/activities/{strava_id}"
+    headers = {'Authorization': f'Bearer {access_token}'}
+    payload = {'description': description}
+
+    try:
+        res = requests.put(activities_url, headers=headers, data=payload)
+        if res.status_code != 200:
+            f_debug_trace("views.py", "update_strava_activity_description", f"status={res.status_code} body={res.text}")
+            return False
+        return True
+    except Exception as e:
+        f_debug_trace("views.py", "update_strava_activity_description", str(e))
+        return False
+
+
 class MobileTemplateMixin:
     """Mixin to automatically pick mobile templates and context keys.
 
@@ -338,6 +379,9 @@ def connected_map(request):
             insert_col_perform(conn,strava_id, AllVisitedCols)
             compute_cols_by_act(conn,my_strava_user_id,strava_id)
 
+            description = build_strava_description(conn, strava_id)
+            update_strava_activity_description(access_token, strava_id, description)
+
             #############################
             ### Treatement des segments
             #############################
@@ -602,6 +646,7 @@ def fColsListView(request,**kwargs):
 
     template = 'm_col_list.html' if is_mobile_user_agent(request) else 'cols_list.html'
     
+    code_paysregion = kwargs.get('code_paysregion', '')
     listeCols = Col.objects.filter(col_code__icontains=code_paysregion).order_by("col_alt")
     country_region = get_country_region(code_paysregion)           
     country_name = get_country_from_code(country_region[0])    
@@ -686,7 +731,7 @@ def colsok_map(request):
             if col_alt < 1000:
                 color = "green"
             elif col_alt <= 2000:
-                color = "blue"
+                color = "orange"
             else:
                 color = "red"
             
