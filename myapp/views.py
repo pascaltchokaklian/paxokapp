@@ -654,6 +654,53 @@ class ColsOkListView(MobileTemplateMixin, generic.ListView):
         year = date.strftime("%Y")        
         context['annee'] = str(year)
         return context
+
+#########################################################################   
+#                       Carte des Cols Franchis                         #
+#########################################################################   
+
+def colsok_map(request):
+    """Affiche une carte avec les cols franchis en bleu"""
+    strava_user_id = request.session.get('strava_user_id')
+    
+    # Récupérer tous les cols franchis de l'utilisateur
+    cols_franchis = Col_counter.objects.filter(strava_user_id=strava_user_id)
+    
+    # Initialiser la carte avec un centre par défaut
+    map_center = [45.5, 5.0]  # Centre en France par défaut
+    colsok_map = folium.Map(location=map_center, zoom_start=6, tiles='CartoDB voyager')
+    
+    # Ajouter un marqueur pour chaque col franchi
+    for col_counter in cols_franchis:
+        col_lat = col_counter.get_col_lat()
+        col_lon = col_counter.get_col_lon()
+        col_name = col_counter.get_col_name()
+        col_alt = col_counter.get_col_alt()
+        
+        # Vérifier que les coordonnées existent
+        if col_lat and col_lon:
+            location = [col_lat, col_lon]
+            popup_text = f"{col_name} ({col_alt}m)"
+            folium.Marker(
+                location,
+                popup=popup_text,
+                tooltip=col_name,
+                icon=folium.Icon(color="blue", icon="flag")
+            ).add_to(colsok_map)
+    
+    colsok_map_html = colsok_map._repr_html_()
+    
+    # Déterminer le template à utiliser selon le user-agent
+    is_mobile = is_mobile_user_agent(request)
+    template = "m_col_map.html" if is_mobile else "col_map.html"
+    
+    context = {
+        "colsok_map": colsok_map_html,
+        "col_count": cols_franchis.count()
+    }
+    
+    return render(request, template, context)
+
                     
 #########################################################################   
 #                       Liste des activités                             #

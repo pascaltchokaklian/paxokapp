@@ -15,6 +15,7 @@
   <hr />
   {% load static %} 
   <h3><img src="{% static '/image/medal.jpg' %}"  />{{col_counter_list.count}} cols franchis</h3>  
+  <a href="{% url 'colsok_map' %}" class="btn btn-primary"><img src="{% static '/image/map.png' %}" style="height: 20px; margin-right: 5px;"/> Voir sur la carte</a>
   <hr />
   {% if col_counter_list %}  
 <table class="sortable n-last">

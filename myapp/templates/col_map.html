@@ -1,17 +1,24 @@
 {% extends "base_generic.html" %}
 
 <!DOCTYPE html>
-      <html lang="en">
-      {% block content %}
-      <head>
-          <meta charset="UTF-8">
-          <title>Col Map View</title>
-       </head>
-       <body>
-           <div>             
-           </div> 
-           
-        </body>
-        </html>
-
-       {% endblock %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Carte des Cols</title>
+</head>
+<body>
+    {% block content %}
+    <div class="my_container">
+        <div class="row mt-4">
+            <div class="col-md-10 offset-md-1">
+                <h2>Carte des Cols Franchis</h2>
+                <p>{{ col_count }} cols affichés</p>
+                <a href="{% url 'colsok' %}" class="btn btn-secondary">Retour à la liste</a>
+                <br/><br/>
+                {{ colsok_map|safe }}
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+</body>
+</html>

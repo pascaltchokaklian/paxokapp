@@ -201,6 +201,35 @@ class Col_counter(models.Model):
 		q1 = Col.objects.filter(col_code=sc)
 		return q1[0].col_alt if q1 else None
 	
+	def get_col_lat(self):
+		sc = self.col_code
+		q1 = Col.objects.filter(col_code=sc)
+		return q1[0].col_lat if q1 else None
+	
+	def get_col_lon(self):
+		sc = self.col_code
+		q1 = Col.objects.filter(col_code=sc)
+		return q1[0].col_lon if q1 else None
+	
+	def get_country_name(self):
+		sc = self.col_code[0:2]
+		q1 = Country.objects.filter(code_100cols=sc)
+		return q1[0].country_name if q1 else None
+	
+	def get_region_name(self):
+		sc = self.col_code[0:2]
+		q1 = Country.objects.filter(code_100cols=sc)
+		if not q1:
+			return None
+		country_code = q1[0].country_code
+		rc = self.col_code[3:5]
+		if country_code == "ARG":
+			rc = self.col_code[3:4]
+		q2 = Region.objects.filter(country_code=country_code).filter(region_code=rc)
+		for one in q2:
+			return one.region_name
+		return None
+	
 class Strava_user(models.Model):	
 	id = models.IntegerField(auto_created=True,  primary_key=True)
 	strava_user_id = models.IntegerField(null=True)

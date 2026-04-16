@@ -1,0 +1,22 @@
+{% extends "m_base_generic.html" %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Carte des Cols</title>
+</head>
+<body>
+    {% block content %}
+    <div class="my_container">
+        <div style="padding: 10px;">
+            <h3>Carte des Cols Franchis</h3>
+            <p>{{ col_count }} cols affichés</p>
+            <a href="{% url 'm_colsok' %}" class="btn btn-secondary">Retour à la liste</a>
+            <br/><br/>
+            {{ colsok_map|safe }}
+        </div>
+    </div>
+    {% endblock %}
+</body>
+</html>
