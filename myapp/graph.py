@@ -1,5 +1,4 @@
-from cmath import asin, sqrt
-
+import math
 from matplotlib.pylab import cos, radians, sin
 import matplotlib.pyplot as plt
 import base64
@@ -19,8 +18,8 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     
     dlat = lat2 - lat1
     dlon = lon2 - lon1
-    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-    c = 2 * asin(sqrt(a))
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a))
     r = 6371  # Rayon terrestre en km
     
     return c * r
@@ -37,7 +36,7 @@ def get_altitude_profile_graph(decoded_polyline, total_elevation=None, total_dis
         return None
         
     plt.switch_backend('AGG')
-    fig, ax = plt.subplots(figsize=(14, 6))
+    fig, ax = plt.subplots(figsize=(12, 5))  # Réduit de (14,6) à (12,5)
     
     distances = [0]  # Distance cumulée
     elevations = []
@@ -78,10 +77,59 @@ def get_altitude_profile_graph(decoded_polyline, total_elevation=None, total_dis
         elevations = elevations[:min_len]
         
         if has_elevation_data and any(e != 0 for e in elevations):
+            # Sous-échantillonnage pour optimiser les performances
+            max_points = 1000
+            if len(distances) > max_points:
+                step = len(distances) // max_points
+                distances_sampled = distances[::step]
+                elevations_sampled = elevations[::step]
+                # S'assurer que le dernier point est inclus
+                if distances[-1] != distances_sampled[-1]:
+                    distances_sampled.append(distances[-1])
+                    elevations_sampled.append(elevations[-1])
+            else:
+                distances_sampled = distances
+                elevations_sampled = elevations
+            
             # Données d'altitude disponibles
-            ax.plot(distances, elevations, color='steelblue', linewidth=2.5)
-            ax.fill_between(distances, elevations, alpha=0.3, color='steelblue')
-            ax.set_ylabel('Altitude (m)', fontsize=12)
+            try:
+                # Tracer la ligne en noir ou gris
+                ax.plot(distances_sampled, elevations_sampled, color='black', linewidth=1.5)
+                
+                # Grouper les segments par couleur pour optimiser
+                current_color = None
+                start_idx = 0
+                
+                for i in range(1, len(distances_sampled)):
+                    dist_diff = distances_sampled[i] - distances_sampled[i-1]
+                    elev_diff = elevations_sampled[i] - elevations_sampled[i-1]
+                    slope = elev_diff / dist_diff if dist_diff > 0 else 0
+                    
+                    color = 'red' if slope > 0.001 else 'steelblue'
+                    
+                    if color != current_color:
+                        # Fin de la plage précédente
+                        if current_color is not None:
+                            ax.fill_between(distances_sampled[start_idx:i], 
+                                           elevations_sampled[start_idx:i], 
+                                           0, color=current_color, alpha=0.7)
+                        # Début de nouvelle plage
+                        current_color = color
+                        start_idx = i-1
+                
+                # Dernière plage
+                if current_color is not None:
+                    ax.fill_between(distances_sampled[start_idx:], 
+                                   elevations_sampled[start_idx:], 
+                                   0, color=current_color, alpha=0.7)
+                
+                ax.set_ylabel('Altitude (m)', fontsize=12)
+            except Exception as e:
+                print(f"Error in altitude graph: {e}")
+                # En cas d'erreur, revenir au graphique simple
+                ax.plot(distances, elevations, color='steelblue', linewidth=2.5)
+                ax.fill_between(distances, elevations, alpha=0.3, color='steelblue')
+                ax.set_ylabel('Altitude (m)', fontsize=12)
         else:
             # Pas de données d'altitude précises, créer un graphique avec le dénivelé total
             if total_elevation and total_elevation > 0:

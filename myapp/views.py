@@ -14,7 +14,7 @@ from .cols_tools import *
 from .col_dbtools import *
 from .graph import *
 from .segments_tools import compute_all_vam, segment_explorer
-from .vars import get_map_center
+from .vars import get_map_center, f_debug_trace
 from django.db.models import Max
 from django.shortcuts import render , redirect
 from django.contrib.auth.models import User
@@ -768,64 +768,64 @@ class ActivityDetailView(MobileTemplateMixin, generic.DetailView):
         # Vérifier si c'est une requête mobile
         is_mobile = '/m_activity/' in self.request.path
         
-        if is_mobile:
-            try:
-                user = self.request.user
-                if str(user) != 'AnonymousUser':
-                    # Récupérer le token Strava
-                    user_list = Strava_user.objects.all().filter(strava_user=user)
-                    if user_list:
-                        access_token = user_list[0].access_token
-                        header = {'Authorization': f'Bearer {access_token}'}
+        # Générer le graphique d'altitude si l'utilisateur est connecté
+        try:
+            user = self.request.user
+            if str(user) != 'AnonymousUser':
+                # Récupérer le token Strava
+                user_list = Strava_user.objects.all().filter(strava_user=user)
+                if user_list:
+                    access_token = user_list[0].access_token
+                    header = {'Authorization': f'Bearer {access_token}'}
+                    
+                    # Récupérer les données de l'activité depuis Strava
+                    activites_url = f"https://www.strava.com/api/v3/activities/{activity.strava_id}"
+                    activities_json = requests.get(activites_url, headers=header).json()
+                    
+                    # Essayer d'abord la polyline détaillée (avec altitudes)
+                    polyline_data = None
+                    if 'map' in activities_json:
+                        # Préférer la polyline détaillée qui contient les altitudes
+                        if 'polyline_detailed' in activities_json['map'] and activities_json['map']['polyline_detailed']:
+                            polyline_data = activities_json['map']['polyline_detailed']
+                        elif 'summary_polyline' in activities_json['map']:
+                            polyline_data = activities_json['map']['summary_polyline']
+                    
+                    if polyline_data:
+                        decoded_polyline = polyline.decode(polyline_data)
                         
-                        # Récupérer les données de l'activité depuis Strava
-                        activites_url = f"https://www.strava.com/api/v3/activities/{activity.strava_id}"
-                        activities_json = requests.get(activites_url, headers=header).json()
-                        
-                        # Essayer d'abord la polyline détaillée (avec altitudes)
-                        polyline_data = None
-                        if 'map' in activities_json:
-                            # Préférer la polyline détaillée qui contient les altitudes
-                            if 'polyline_detailed' in activities_json['map'] and activities_json['map']['polyline_detailed']:
-                                polyline_data = activities_json['map']['polyline_detailed']
-                            elif 'summary_polyline' in activities_json['map']:
-                                polyline_data = activities_json['map']['summary_polyline']
-                        
-                        if polyline_data:
-                            decoded_polyline = polyline.decode(polyline_data)
+                        # Essayer de récupérer les altitudes via l'API streams
+                        try:
+                            streams_url = f"https://www.strava.com/api/v3/activities/{activity.strava_id}/streams"
+                            streams_params = {'keys': 'latlng,altitude,distance', 'key_by_type': 'true'}
+                            streams_json = requests.get(streams_url, headers=header, params=streams_params).json()
                             
-                            # Essayer de récupérer les altitudes via l'API streams
-                            try:
-                                streams_url = f"https://www.strava.com/api/v3/activities/{activity.strava_id}/streams"
-                                streams_params = {'keys': 'latlng,altitude,distance', 'key_by_type': 'true'}
-                                streams_json = requests.get(streams_url, headers=header, params=streams_params).json()
+                            if 'altitude' in streams_json and 'latlng' in streams_json:
+                                altitude_data = streams_json.get('altitude', {}).get('data', [])
+                                latlng_data = streams_json.get('latlng', {}).get('data', [])
                                 
-                                if 'altitude' in streams_json and 'latlng' in streams_json:
-                                    altitude_data = streams_json.get('altitude', {}).get('data', [])
-                                    latlng_data = streams_json.get('latlng', {}).get('data', [])
-                                    
-                                    # Combiner les données : ajouter l'altitude à chaque point
-                                    if altitude_data and latlng_data:
-                                        decoded_polyline_with_alt = [
-                                            (point[0], point[1], altitude_data[i] if i < len(altitude_data) else 0)
-                                            for i, point in enumerate(latlng_data)
-                                        ]
-                                        decoded_polyline = decoded_polyline_with_alt
-                            except Exception as e:
-                                f_debug_trace("views.py", "ActivityDetailView.streams", f"Streams API error: {str(e)}")
-                                pass
-                            
-                            # Générer le graphique d'altitude
-                            altitude_graph = get_altitude_profile_graph(
-                                decoded_polyline, 
-                                total_elevation=activity.act_den,
-                                total_distance=activity.get_act_dist_km()
-                            )
-                            if altitude_graph:
-                                context['altitude_graph'] = altitude_graph
-            except Exception as e:
-                f_debug_trace("views.py", "ActivityDetailView.get_context_data", f"Error: {str(e)}")
-                pass
+                                # Combiner les données : ajouter l'altitude à chaque point
+                                if altitude_data and latlng_data:
+                                    decoded_polyline_with_alt = [
+                                        (point[0], point[1], altitude_data[i] if i < len(altitude_data) else 0)
+                                        for i, point in enumerate(latlng_data)
+                                    ]
+                                    decoded_polyline = decoded_polyline_with_alt
+                        except Exception as e:
+                            f_debug_trace("views.py", "ActivityDetailView.streams", f"Streams API error: {str(e)}")
+                            pass
+                        
+                        # Générer le graphique d'altitude
+                        altitude_graph = get_altitude_profile_graph(
+                            decoded_polyline, 
+                            total_elevation=activity.act_den,
+                            total_distance=activity.get_act_dist_km()
+                        )
+                        if altitude_graph:
+                            context['altitude_graph'] = altitude_graph
+        except Exception as e:
+            f_debug_trace("views.py", "ActivityDetailView.get_context_data", f"Error: {str(e)}")
+            pass
         
         return context   
 
