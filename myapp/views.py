@@ -678,14 +678,23 @@ def colsok_map(request):
         col_alt = col_counter.get_col_alt()
         
         # Vérifier que les coordonnées existent
-        if col_lat and col_lon:
+        if col_lat and col_lon and col_alt:
             location = [col_lat, col_lon]
             popup_text = f"{col_name} ({col_alt}m)"
+            
+            # Déterminer la couleur selon l'altitude
+            if col_alt < 1000:
+                color = "green"
+            elif col_alt <= 2000:
+                color = "blue"
+            else:
+                color = "red"
+            
             folium.Marker(
                 location,
                 popup=popup_text,
                 tooltip=col_name,
-                icon=folium.Icon(color="blue", icon="flag")
+                icon=folium.Icon(color=color, icon="flag")
             ).add_to(colsok_map)
     
     colsok_map_html = colsok_map._repr_html_()
