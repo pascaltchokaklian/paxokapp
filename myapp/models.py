@@ -131,8 +131,11 @@ class Col_perform(models.Model):
 		ordering = ['-strava_id']
 
 	def get_col_name(self):		
-		sc = self.col_code
+		sc = self.col_code		
+		#print('Debug Col Code = >',sc,'<')
 		q1 = Col.objects.filter(col_code=sc)		
+		#print('Debug q1 = ',q1)
+		#print('col_name = ',q1[0].col_name)
 		return q1[0].col_name
 	
 	def get_col_id(self):		
