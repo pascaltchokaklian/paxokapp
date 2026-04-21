@@ -33,10 +33,10 @@
 
 {% block content %}
   <hr />
-  <h3>{{ col_list.count }} cols en base</h3>  
+  <h3>{% if country %}[{{country}}] {{region}} — {% endif %}{{ col_list.count }} cols</h3>
   <hr />
   {% load static %} 
-  <a href="{% url 'index' %}"><img src="{% static '/image/map.png' %}"  /> Voir sur la carte</a>   
+  <a href="{% url 'm_index' %}"><img src="{% static '/image/map.png' %}"  /> Voir sur la carte</a>   
   {% if col_list %}
   <br/><br/>
   <input type="text" size="10" id="myInputCol" onkeyup="myFunction(0)" placeholder="Rechercher..">

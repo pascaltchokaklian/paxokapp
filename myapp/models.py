@@ -59,7 +59,7 @@ class Activity(models.Model):
 		if self.act_type == "Ride" and self.act_dist and self.act_dist > 0:
 			return round(self.act_den / (self.act_dist / 1000), 1)
 		return None
-	
+
 	def get_act_den(self):
 		return self.act_den
 	
@@ -68,7 +68,11 @@ class Activity(models.Model):
 	
 	def get_col_passed(self):		
 		sc = self.strava_id		
-		q1 = Col_perform.objects.filter(strava_id=sc)
+		q1 = Col_perform.objects.filter(strava_id=sc).annotate(
+			col_alt_sort=models.Subquery(
+				Col.objects.filter(col_code=models.OuterRef('col_code')).values('col_alt')[:1]
+			)
+		).order_by('col_alt_sort')
 		return q1
 	
 	def get_info_txt(self):

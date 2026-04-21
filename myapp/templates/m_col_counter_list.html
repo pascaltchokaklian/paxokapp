@@ -24,7 +24,9 @@
     <tr>         
         <th class="indicator-left">Nb</th>
         <th class="indicator-left">Col</th>        
-        <th class="indicator-left">Alt.</th>                          
+        <th class="indicator-left">Alt.</th>
+        <th class="indicator-left">Pays</th>
+        <th class="indicator-left">Dep.</th>
     </tr>  
     </thead>    
     <tbody>
@@ -35,11 +37,14 @@
         {{colc.col_count}}
       </td>
       <td>        
-          <a href="{{ colc.get_col_id }}" style="color: #333333;">{{ colc.get_col_name }}</a> 
+          <a href="{{ colc.get_col_id }}" style="color: #333333;">{{ colc.get_col_name|slice:":30" }}</a> 
       </td>  
       <td align="center">
         {{colc.get_col_alt}}
-      </td>                              
+      </td>
+      <td>{{colc.col_code|slice:":2"}}</td>
+      <td>{{colc.get_region_code}}</td>
+    </tr>              
     {% endfor %}
   </tbody>
   </table> 

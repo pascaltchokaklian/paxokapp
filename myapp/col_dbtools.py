@@ -1,9 +1,6 @@
 import datetime
 import sqlite3
 import time
-
-from aifc import Error
-
 from myapp import cols_tools
 from refactor.settings import SQLITE_PATH
 from .models import Activity, Activity_info, Col, Col_counter as cc, Col_perform as cp, Country, Month_stat, Region, Strava_user, User_dashboard, User_var
@@ -22,7 +19,7 @@ def create_connection(db_file):
     conn = None
     try:
         conn = sqlite3.connect(db_file)
-    except Error as e:
+    except sqlite3.Error as e:
         print(e)
 
     return conn
@@ -301,7 +298,10 @@ def get_country_from_code(code):
         code = "ARG"
     if code == "ES":
         code = "ESP"                
-    return Country.objects.get(pk=code).country_name
+    try:
+        return Country.objects.get(pk=code).country_name
+    except Country.DoesNotExist:
+        return code
 
 ###########################################################################################################
 

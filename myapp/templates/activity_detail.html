@@ -9,15 +9,20 @@
                 <td>
                     <h1>{{ object.act_name }}</h1>
                     <a href="{% url 'activity-export-txt' act_id=object.act_id %}" style="display:inline-block; margin-top:8px; padding:8px 12px; background:#007bff; color:#fff; text-decoration:none; border-radius:4px; font-size:14px;">📥 Exporter en texte</a>
-                </td>
-                <td><h4>   {{ object.act_start_date|date:"d M Y" }}</h4></td>
-                <td><h5>  ( {{ object.act_type }} Strava = {{ object.strava_id }} )</h5></td>
+                </td>                
         </tr>
         <tr>
-                <td><h4>Distance = {{ object.get_act_dist_km|floatformat:2 }} km</h4></td>
-                <td><h5>Dénivelé = {{ object.act_den }} m </h5></td>
+                <td><h4>Distance = {{ object.get_act_dist_km|floatformat:2 }} km</h4></td> </tr>
+        <tr>    <td><h5>Dénivelé = {{ object.act_den }} m </h5></td> </tr>
+
+        {% if climb_segments %}
+        <tr>
+            <td colspan="3">
+                <h5>Montées : {{ climb_total_km }} km — pente moyenne {{ climb_avg_gradient }} %</h5>
+            </td>
         </tr>
-        
+        {% endif %}
+
             {%  for info in object.get_info_txt %}                 
                 <tr><td style="color:#1600da"> {{info.info_txt}} </td></tr>
             {% endfor %}            
