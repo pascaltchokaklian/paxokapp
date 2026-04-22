@@ -64,6 +64,20 @@
     </div>
     {% endif %}
 
+    {% if slope_zone_histograms %}
+    <div style="text-align: left; margin: 20px 0;">
+        <h3 style="margin-bottom:10px;">Histogrammes watts / frequence cardiaque par zone de pente</h3>
+        {% for hist in slope_zone_histograms %}
+            <h4 style="margin: 14px 0 8px 0;">{{ hist.title }}</h4>
+            {% if hist.graph %}
+                <img src="data:image/png;base64,{{ hist.graph }}" alt="{{ hist.title }}" style="max-width: 1100px; width: 100%; height: auto; margin-bottom: 12px;">
+            {% else %}
+                <p style="color:#666; margin-top:0;">Pas assez de donnees pour cet histogramme.</p>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <hr>        
 
     <div style="text-align: left;">

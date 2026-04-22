@@ -105,7 +105,7 @@ def get_altitude_profile_graph(decoded_polyline, total_elevation=None, total_dis
                     elev_diff = elevations_sampled[i] - elevations_sampled[i-1]
                     slope = elev_diff / dist_diff if dist_diff > 0 else 0
                     
-                    color = 'red' if slope > 0.001 else 'steelblue'
+                    color = 'red' if slope > 40 else 'steelblue'
                     
                     if color != current_color:
                         # Fin de la plage précédente
@@ -164,6 +164,60 @@ def get_altitude_profile_graph(decoded_polyline, total_elevation=None, total_dis
     
     plt.close(fig)
     return None
+
+
+def get_watts_hr_histogram(zone_points, title):
+    """Construit un histogramme: FC moyenne en abscisse, watts (tranches 10W) en ordonnée."""
+    if not zone_points:
+        return None
+
+    bins = [row.get('watts_bin', 0) for row in zone_points]
+    avg_hr = [row.get('avg_hr', 0) for row in zone_points]
+    labels = [f"{b}-{b+9}" for b in bins]
+    x = list(range(len(labels)))
+    fig_width = max(8, min(16, len(labels) * 0.45 + 4))
+
+    plt.switch_backend('AGG')
+    fig, ax = plt.subplots(figsize=(fig_width, 5.0))
+
+    # Axes inverses: FC sur X et tranches de watts sur Y.
+    ax.barh(x, avg_hr, color='#1976d2', alpha=0.85, height=0.78)
+    ax.set_xlabel('Frequence cardiaque moyenne (bpm)', fontsize=11)
+    ax.set_ylabel('Puissance moyenne (tranches de 10 W)', fontsize=11)
+    ax.grid(True, axis='x', alpha=0.25)
+
+    if avg_hr:
+        x_min = max(0, min(avg_hr) - 8)
+        x_max = max(avg_hr) + 8
+        ax.set_xlim(x_min, x_max)
+
+    max_ticks = 24
+    if len(labels) <= max_ticks:
+        shown_positions = x
+        shown_labels = labels
+    else:
+        step = max(1, len(labels) // max_ticks)
+        shown_positions = x[::step]
+        shown_labels = labels[::step]
+        if shown_positions[-1] != x[-1]:
+            shown_positions.append(x[-1])
+            shown_labels.append(labels[-1])
+
+    ax.set_yticks(shown_positions)
+    ax.set_yticklabels(shown_labels, fontsize=9)
+    ax.set_title(title, fontsize=13, fontweight='bold')
+
+    fig.tight_layout()
+
+    buffer = BytesIO()
+    fig.savefig(buffer, format='png', dpi=110)
+    buffer.seek(0)
+    image_png = buffer.getvalue()
+    graph = base64.b64encode(image_png).decode('utf-8')
+    buffer.close()
+
+    plt.close(fig)
+    return graph
 
 
 

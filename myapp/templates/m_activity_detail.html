@@ -47,6 +47,19 @@
         <hr>
     {% endif %}
 
+    {% if slope_zone_histograms %}
+        <h3>Histogrammes par zone de pente</h3>
+        {% for hist in slope_zone_histograms %}
+            <h4 style="margin: 12px 0 6px 0;">{{ hist.title }}</h4>
+            {% if hist.graph %}
+                <img src="data:image/png;base64,{{ hist.graph }}" alt="{{ hist.title }}" style="width: 100%; height: auto; margin: 8px 0;">
+            {% else %}
+                <p style="color:#666; margin-top:0;">Pas assez de donnees.</p>
+            {% endif %}
+        {% endfor %}
+        <hr>
+    {% endif %}
+
     {% if object.get_col_passed %}
         <h3>Cols passés: {{ object.get_col_passed|length }}</h3>
         <table class="tftable" style="width: 100%; font-size: 12px;">

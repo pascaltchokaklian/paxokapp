@@ -98,6 +98,119 @@ def compute_climb_segments(altitude_data, distance_data, watts_data=None, interv
     return segments, total_climb_km, avg_gradient, avg_power
 
 
+def _interpolate_value_at_distance(distance_data, value_data, target_distance, start_index=1):
+    """Interpole linéairement une valeur (altitude, FC, etc.) pour une distance cible."""
+    if not distance_data or not value_data or len(distance_data) < 2:
+        return None, start_index
+
+    i = max(1, start_index)
+    n = min(len(distance_data), len(value_data))
+    while i < n and distance_data[i] < target_distance:
+        i += 1
+
+    if i >= n:
+        i = n - 1
+
+    d1 = distance_data[i - 1]
+    d2 = distance_data[i]
+    v1 = value_data[i - 1]
+    v2 = value_data[i]
+
+    if d2 == d1:
+        return v2, i
+
+    ratio = (target_distance - d1) / (d2 - d1)
+    interpolated = v1 + (v2 - v1) * ratio
+    return interpolated, i
+
+
+def compute_slope_watts_hr_histogram_data(altitude_data, distance_data, watts_data=None, heartrate_data=None, interval_m=100):
+    """Prépare les données pour 3 histogrammes: FC moyenne par tranche de watts selon la pente."""
+    if not altitude_data or not distance_data:
+        return {}
+
+    n = min(len(altitude_data), len(distance_data))
+    if n < 2:
+        return {}
+
+    altitude_data = altitude_data[:n]
+    distance_data = distance_data[:n]
+
+    watts_n = min(len(watts_data), n) if watts_data else 0
+    hr_n = min(len(heartrate_data), n) if heartrate_data else 0
+    if watts_n == 0 or hr_n == 0:
+        return {}
+
+    zones = {
+        'lt4': {},
+        '4to8': {},
+        'gt8': {},
+    }
+
+    total_distance = distance_data[-1]
+    segment_count = int(total_distance // interval_m)
+    if segment_count <= 0:
+        return {}
+
+    idx_start = 1
+    idx_end = 1
+
+    for segment_index in range(segment_count):
+        start_m = segment_index * interval_m
+        end_m = (segment_index + 1) * interval_m
+
+        alt_start, idx_start = _interpolate_value_at_distance(distance_data, altitude_data, start_m, idx_start)
+        alt_end, idx_end = _interpolate_value_at_distance(distance_data, altitude_data, end_m, idx_end)
+
+        if alt_start is None or alt_end is None:
+            continue
+
+        slope = ((alt_end - alt_start) / float(interval_m)) * 100.0
+
+        if slope < 4.0:
+            zone_key = 'lt4'
+        elif slope <= 8.0:
+            zone_key = '4to8'
+        else:
+            zone_key = 'gt8'
+
+        power_values = []
+        hr_values = []
+        max_samples = min(watts_n, hr_n)
+        for i in range(max_samples):
+            dist_i = distance_data[i]
+            if start_m <= dist_i < end_m:
+                watts = watts_data[i]
+                hr = heartrate_data[i]
+                if watts and watts > 0 and hr and hr > 0:
+                    power_values.append(watts)
+                    hr_values.append(hr)
+
+        if not power_values or not hr_values:
+            continue
+
+        avg_power = sum(power_values) / len(power_values)
+        avg_hr = sum(hr_values) / len(hr_values)
+        if avg_power <= 120:
+            continue
+        watts_bin = int(avg_power // 10) * 10
+        zones[zone_key].setdefault(watts_bin, []).append(avg_hr)
+
+    histogram_data = {}
+    for zone_key, bins in zones.items():
+        points = []
+        for watts_bin in sorted(bins.keys()):
+            hr_list = bins[watts_bin]
+            if hr_list:
+                points.append({
+                    'watts_bin': watts_bin,
+                    'avg_hr': round(sum(hr_list) / len(hr_list), 1),
+                })
+        histogram_data[zone_key] = points
+
+    return histogram_data
+
+
 def build_strava_description(conn, strava_id, climb_total_km=None, climb_avg_gradient=None, climb_avg_power=None):
     cols = getColByActivity(conn, strava_id)
 
@@ -940,7 +1053,7 @@ class ActivityDetailView(MobileTemplateMixin, generic.DetailView):
                         # Essayer de récupérer les altitudes via l'API streams
                         try:
                             streams_url = f"https://www.strava.com/api/v3/activities/{activity.strava_id}/streams"
-                            streams_params = {'keys': 'latlng,altitude,distance,watts', 'key_by_type': 'true'}
+                            streams_params = {'keys': 'latlng,altitude,distance,watts,heartrate', 'key_by_type': 'true'}
                             streams_json = requests.get(streams_url, headers=header, params=streams_params).json()
                             
                             if 'altitude' in streams_json and 'latlng' in streams_json:
@@ -948,6 +1061,7 @@ class ActivityDetailView(MobileTemplateMixin, generic.DetailView):
                                 latlng_data = streams_json.get('latlng', {}).get('data', [])
                                 distance_data = streams_json.get('distance', {}).get('data', [])
                                 watts_data = streams_json.get('watts', {}).get('data', [])
+                                heartrate_data = streams_json.get('heartrate', {}).get('data', [])
 
                                 # Combiner les données : ajouter l'altitude à chaque point
                                 if altitude_data and latlng_data:
@@ -964,6 +1078,29 @@ class ActivityDetailView(MobileTemplateMixin, generic.DetailView):
                                     context['climb_total_km'] = climb_km
                                     context['climb_avg_gradient'] = avg_grad
                                     context['climb_avg_power'] = avg_power
+
+                                    hist_data = compute_slope_watts_hr_histogram_data(
+                                        altitude_data,
+                                        distance_data,
+                                        watts_data or None,
+                                        heartrate_data or None,
+                                        interval_m=100,
+                                    )
+                                    zone_specs = [
+                                        ('lt4', 'Pente < 4 %'),
+                                        ('4to8', 'Pente 4 a 8 %'),
+                                        ('gt8', 'Pente > 8 %'),
+                                    ]
+                                    slope_zone_histograms = []
+                                    for zone_key, zone_title in zone_specs:
+                                        zone_points = hist_data.get(zone_key, [])
+                                        graph = get_watts_hr_histogram(zone_points, zone_title)
+                                        slope_zone_histograms.append({
+                                            'title': zone_title,
+                                            'graph': graph,
+                                            'points': zone_points,
+                                        })
+                                    context['slope_zone_histograms'] = slope_zone_histograms
                         except Exception as e:
                             f_debug_trace("views.py", "ActivityDetailView.streams", f"Streams API error: {str(e)}")
                             pass
