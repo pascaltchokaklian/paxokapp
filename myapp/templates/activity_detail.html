@@ -15,10 +15,10 @@
                 <td><h4>Distance = {{ object.get_act_dist_km|floatformat:2 }} km</h4></td> </tr>
         <tr>    <td><h5>Dénivelé = {{ object.act_den }} m </h5></td> </tr>
 
-        {% if climb_segments %}
+        {% if climb_total_km %}
         <tr>
             <td colspan="3">
-                <h5>Montées : {{ climb_total_km }} km — pente moyenne {{ climb_avg_gradient }} %</h5>
+                <h5>Montées : {{ climb_total_km }} km — pente moyenne {{ climb_avg_gradient }} %{% if climb_avg_power %} — puissance moy. {{ climb_avg_power }} W{% endif %}</h5>
             </td>
         </tr>
         {% endif %}

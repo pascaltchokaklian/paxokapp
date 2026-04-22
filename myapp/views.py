@@ -38,19 +38,20 @@ def is_mobile_user_agent(request):
     return any(tok in ua_string for tok in ("mobile", "android", "iphone", "ipad", "phone", "blackberry", "windows phone"))
 
 
-def compute_climb_segments(altitude_data, distance_data, interval_m=100, min_gradient=4.0):
+def compute_climb_segments(altitude_data, distance_data, watts_data=None, interval_m=100, min_gradient=4.0):
     """
     Calcule la pente tous les `interval_m` mètres.
     Retourne la liste des segments en montée avec pente > min_gradient%.
-    Chaque entrée : {'dist_start': float km, 'dist_end': float km, 'gradient': float %}
-    Retourne aussi le total de km en montée et la pente moyenne sur ces segments.
+    Retourne aussi le total de km en montée, la pente moyenne et la puissance moyenne.
     """
     if not altitude_data or not distance_data or len(altitude_data) < 2:
-        return [], 0, None
+        return [], 0, None, None
 
     segments = []
     total_climb_dist = 0.0
     weighted_gradient_sum = 0.0
+    climb_watts_sum = 0.0
+    climb_watts_count = 0
 
     dist_start = distance_data[0]
     alt_start = altitude_data[0]
@@ -58,6 +59,7 @@ def compute_climb_segments(altitude_data, distance_data, interval_m=100, min_gra
 
     while i < len(distance_data):
         # Avancer jusqu'à avoir parcouru interval_m mètres
+        i_seg_start = i - 1
         while i < len(distance_data) and (distance_data[i] - dist_start) < interval_m:
             i += 1
 
@@ -79,24 +81,34 @@ def compute_climb_segments(altitude_data, distance_data, interval_m=100, min_gra
                 segments.append(seg)
                 total_climb_dist += delta_dist
                 weighted_gradient_sum += gradient * delta_dist
+                if watts_data:
+                    for j in range(i_seg_start, min(i + 1, len(watts_data))):
+                        w = watts_data[j]
+                        if w and w > 0:
+                            climb_watts_sum += w
+                            climb_watts_count += 1
 
         dist_start = dist_end
         alt_start = alt_end
 
-    total_climb_km = round(total_climb_dist / 1000, 2)
+    total_climb_km = round(total_climb_dist / 1000, 2) if total_climb_dist > 0 else None
     avg_gradient = round(weighted_gradient_sum / total_climb_dist, 1) if total_climb_dist > 0 else None
+    avg_power = round(climb_watts_sum / climb_watts_count) if climb_watts_count > 0 else None
 
-    return segments, total_climb_km, avg_gradient
+    return segments, total_climb_km, avg_gradient, avg_power
 
 
-def build_strava_description(conn, strava_id, climb_total_km=None, climb_avg_gradient=None):
+def build_strava_description(conn, strava_id, climb_total_km=None, climb_avg_gradient=None, climb_avg_power=None):
     cols = getColByActivity(conn, strava_id)
 
     description = ""
 
-    # Km en montée et pente moyenne (calculés depuis les streams)
+    # Km en montée, pente et puissance moyenne (calculés depuis les streams)
     if climb_total_km and climb_avg_gradient:
-        description += f"Montée : {climb_total_km} km — pente moy. {climb_avg_gradient} %\n\n"
+        line = f"Montée : {climb_total_km} km — pente moy. {climb_avg_gradient} %"
+        if climb_avg_power:
+            line += f" — puissance moy. {climb_avg_power} W"
+        description += line + "\n\n"
 
     if not cols:
         description += "Cols passés : aucun col identifié"
@@ -441,14 +453,16 @@ def connected_map(request):
             # Récupérer les streams pour calculer les segments de montée réels
             climb_total_km = None
             climb_avg_gradient = None
+            climb_avg_power = None
             try:
                 streams_url = f"https://www.strava.com/api/v3/activities/{strava_id}/streams"
-                streams_params = {'keys': 'altitude,distance', 'key_by_type': 'true'}
+                streams_params = {'keys': 'altitude,distance,watts', 'key_by_type': 'true'}
                 streams_json = requests.get(streams_url, headers={'Authorization': f'Bearer {access_token}'}, params=streams_params).json()
                 if 'altitude' in streams_json and 'distance' in streams_json:
                     altitude_data = streams_json['altitude']['data']
                     distance_data = streams_json['distance']['data']
-                    _, climb_total_km, climb_avg_gradient = compute_climb_segments(altitude_data, distance_data)
+                    watts_data = streams_json.get('watts', {}).get('data', []) or None
+                    _, climb_total_km, climb_avg_gradient, climb_avg_power = compute_climb_segments(altitude_data, distance_data, watts_data)
             except Exception as e:
                 f_debug_trace("views.py", "connected_map.streams", str(e))
 
@@ -462,7 +476,7 @@ def connected_map(request):
                 'cols': list(AllVisitedCols),
             })
 
-            description = build_strava_description(conn, strava_id, climb_total_km, climb_avg_gradient)
+            description = build_strava_description(conn, strava_id, climb_total_km, climb_avg_gradient, climb_avg_power)
             update_strava_activity_description(access_token, strava_id, description)
 
             #############################
@@ -926,13 +940,14 @@ class ActivityDetailView(MobileTemplateMixin, generic.DetailView):
                         # Essayer de récupérer les altitudes via l'API streams
                         try:
                             streams_url = f"https://www.strava.com/api/v3/activities/{activity.strava_id}/streams"
-                            streams_params = {'keys': 'latlng,altitude,distance', 'key_by_type': 'true'}
+                            streams_params = {'keys': 'latlng,altitude,distance,watts', 'key_by_type': 'true'}
                             streams_json = requests.get(streams_url, headers=header, params=streams_params).json()
                             
                             if 'altitude' in streams_json and 'latlng' in streams_json:
                                 altitude_data = streams_json.get('altitude', {}).get('data', [])
                                 latlng_data = streams_json.get('latlng', {}).get('data', [])
                                 distance_data = streams_json.get('distance', {}).get('data', [])
+                                watts_data = streams_json.get('watts', {}).get('data', [])
 
                                 # Combiner les données : ajouter l'altitude à chaque point
                                 if altitude_data and latlng_data:
@@ -944,10 +959,11 @@ class ActivityDetailView(MobileTemplateMixin, generic.DetailView):
 
                                 # Calculer les segments en montée tous les 100m
                                 if altitude_data and distance_data:
-                                    climb_segs, climb_km, avg_grad = compute_climb_segments(altitude_data, distance_data)
+                                    climb_segs, climb_km, avg_grad, avg_power = compute_climb_segments(altitude_data, distance_data, watts_data or None)
                                     context['climb_segments'] = climb_segs
                                     context['climb_total_km'] = climb_km
                                     context['climb_avg_gradient'] = avg_grad
+                                    context['climb_avg_power'] = avg_power
                         except Exception as e:
                             f_debug_trace("views.py", "ActivityDetailView.streams", f"Streams API error: {str(e)}")
                             pass
