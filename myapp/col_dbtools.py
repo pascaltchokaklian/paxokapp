@@ -4,6 +4,7 @@ import time
 from myapp import cols_tools
 from refactor.settings import SQLITE_PATH
 from .models import Activity, Activity_info, Col, Col_counter as cc, Col_perform as cp, Country, Month_stat, Region, Strava_user, User_dashboard, User_var
+from django.db.models import Count
 from django.utils import timezone
 from .vars import f_debug_col, f_debug_trace
 from django.contrib.auth.models import User
@@ -118,19 +119,44 @@ def insert_col_perform(conn,act_id,rows):
 def compute_cols_by_act( conn, my_strava_user_id,myActivity_id):
 
     ###f_debug_trace("col_dbtools.py","compute_cols_by_act","Begin")  
-                                
-    perf = cp.objects.filter(strava_id=myActivity_id).values_list("col_code", flat=True)
-                        
-    for colCode in perf:        
-        
-        nbPassage = getActivitiesByCol(conn,my_strava_user_id,colCode)        
-                
-        exists = cc.objects.filter(col_code=colCode).filter(strava_user_id=my_strava_user_id).count()
-                
-        if exists==0:
+    col_codes = list(
+        cp.objects.filter(strava_id=myActivity_id)
+        .values_list("col_code", flat=True)
+        .distinct()
+    )
+
+    if not col_codes:
+        Activity.objects.filter(strava_id=myActivity_id).update(act_status=1)
+        return
+
+    user_activity_ids = Activity.objects.filter(
+        strava_user_id=my_strava_user_id
+    ).values("strava_id")
+    counts_by_code = {
+        row["col_code"]: row["nb_passage"]
+        for row in cp.objects.filter(
+            col_code__in=col_codes,
+            strava_id__in=user_activity_ids,
+        )
+        .values("col_code")
+        .annotate(nb_passage=Count("col_code"))
+    }
+    existing_counters = {
+        counter.col_code: counter
+        for counter in cc.objects.filter(
+            strava_user_id=my_strava_user_id,
+            col_code__in=col_codes,
+        )
+    }
+
+    for colCode in col_codes:
+        nbPassage = counts_by_code.get(colCode, 0)
+        existing_counter = existing_counters.get(colCode)
+
+        if existing_counter is None:
             new_cc = cc()
             new_cc.col_code = colCode
-            new_cc.col_count = 1
+            new_cc.col_count = nbPassage
             new_cc.year_col_count = 0
             new_cc.strava_user_id = my_strava_user_id
             new_cc.save()            
@@ -141,16 +167,11 @@ def compute_cols_by_act( conn, my_strava_user_id,myActivity_id):
             my_Activity_info.info_txt = "Nouveau col: " + new_cc.get_col_name()
             my_Activity_info.save()
         else:
-            my_cc = cc.objects.filter(col_code=colCode, strava_user_id=my_strava_user_id)            
-            upd_cc = my_cc[0]
-            upd_cc.col_count=nbPassage
-            upd_cc.save()
-            ### f_debug_trace("col_dbtools.py","compute_cols_by_act","Col Franchis: " + upd_cc.get_col_name()+'('+str(nbPassage)+')')            
+            existing_counter.col_count = nbPassage
+            existing_counter.save(update_fields=["col_count"])
+            ### f_debug_trace("col_dbtools.py","compute_cols_by_act","Col Franchis: " + existing_counter.get_col_name()+'('+str(nbPassage)+')')            
 
-        lact = Activity.objects.filter(strava_id=myActivity_id)
-        for act in lact:
-            act.act_status = 1
-            act.save()
+    Activity.objects.filter(strava_id=myActivity_id).update(act_status=1)
                                            
 def cols_effectue(conn, suid):
 
