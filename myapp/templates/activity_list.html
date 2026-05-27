@@ -1,4 +1,5 @@
 {% extends "base_generic.html" %}
+{% load static %}
 {% block content %}
 
   <h3>Flux des activités</h3>
@@ -13,7 +14,7 @@
         <th class="indicator-left">Date</th>
         <th class="indicator-left">Distance</th>
         <th class="indicator-left">Dénivelé</th>
-        <th class="indicator-left">Ratio Dén./Dist.</th>
+        <th class="indicator-left">Difficulté</th>
         <th class="indicator-left">Puissance</th>
         <th class="indicator-left">Activité</th>        
         <th class="indicator-left">Type</th>       
@@ -32,9 +33,21 @@
         <td align="right" style="width:10%">
           {{activity.act_den|floatformat:0}}   
         </td>
-        <td align="right" style="width:10%;" class="{% if activity.get_den_dist_ratio > 20 %}text-danger{% endif %}">
-          {{activity.get_den_dist_ratio|default:"-"|floatformat:1}}   
+        {% with ratio=activity.get_den_dist_ratio %}
+        <td align="right" style="width:10%;" class="{% if ratio and ratio > 20 %}text-danger{% elif ratio and ratio < 15 %}text-success{% endif %}">
+          {% if ratio is not None %}
+            {% if ratio < 15 %}
+              <img src="{% static 'image/plaine.png' %}" alt="plaine" style="height:18px; vertical-align:middle;" />
+            {% elif ratio <= 20 %}
+              <img src="{% static 'image/hill.png' %}" alt="hill" style="height:18px; vertical-align:middle;" />
+            {% else %}
+              <img src="{% static 'image/montagne.png' %}" alt="montagne" style="height:18px; vertical-align:middle;" />
+            {% endif %}
+          {% else %}
+            -
+          {% endif %}
         </td>
+        {% endwith %}
         <td align="right" style="width:10%;" class="{% if activity.act_normal_power and activity.act_normal_power > 175 %}text-danger{% endif %}">
           {% if activity.act_normal_power is not None and activity.act_normal_power != 0 %}{{activity.act_normal_power|floatformat:0}}{% else %}-{% endif %}   
         </td>

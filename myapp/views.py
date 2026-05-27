@@ -326,7 +326,7 @@ def mainIndexView(request,user):
     continent = "EUROPE"
     if view_region_info[0] == "AR":
         continent = "SOUTHAMERICA"
-    main_map = folium.Map(location=get_map_center(continent), zoom_start = 5, tiles='CartoDB voyager')  # Create base map
+    main_map = folium.Map(location=get_map_center(continent), zoom_start = 6, tiles='CartoDB voyager')  # Create base map
     feature_group_Road = folium.FeatureGroup(name="Route").add_to(main_map)    
     feature_group_Piste = folium.FeatureGroup(name="Piste").add_to(main_map)    
     feature_group_Sentier = folium.FeatureGroup(name="Sentier").add_to(main_map)    
@@ -1329,18 +1329,38 @@ def puissancesView(request):
     chart = get_plot(x,y,n)
 
     # Puissances All
-    QueryAllPower = Activity.objects.filter(act_normal_power__gte=1).exclude(act_show_power=0).filter(act_type='Ride').exclude(act_trainer=1)    
+    QueryAllPower = Activity.objects.filter(act_normal_power__gte=1).exclude(act_show_power=0).filter(act_type='Ride').exclude(act_trainer=1)
+    all_users = sorted({
+        oneActivity.get_user_acronyme()
+        for oneActivity in QueryAllPower
+        if oneActivity.act_normal_power != '' and oneActivity.act_dist != ''
+    })
+
+    selected_users = request.GET.getlist('users')
+    filter_submitted = request.GET.get('filter_users') == '1'
+
+    # Par defaut, afficher tout le monde. Si le filtre est soumis sans case cochee, afficher vide.
+    if not filter_submitted:
+        selected_users = all_users
+
     x = []
     y = []
     n = []
     for oneActivity in QueryAllPower:
-        if oneActivity.act_normal_power!='' and oneActivity.act_dist!='':
-            x.append(oneActivity.act_dist/1000)    
-            y.append(oneActivity.act_normal_power)            
-            n.append(oneActivity.get_user_acronyme())                    
+        if oneActivity.act_normal_power != '' and oneActivity.act_dist != '':
+            user_acronym = oneActivity.get_user_acronyme()
+            if user_acronym in selected_users:
+                x.append(oneActivity.act_dist/1000)
+                y.append(oneActivity.act_normal_power)
+                n.append(user_acronym)
     chartAll = get_plot_all(x,y,n)
 
-    return render (request, template, {'chart':chart ,'chartAll':chartAll})
+    return render(request, template, {
+        'chart': chart,
+        'chartAll': chartAll,
+        'all_users': all_users,
+        'selected_users': selected_users,
+    })
 
 ########################################################################################################
 #                                   Historique d'un Segment                                            #

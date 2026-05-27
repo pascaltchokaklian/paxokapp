@@ -135,17 +135,19 @@ class Col_perform(models.Model):
 		ordering = ['-strava_id']
 
 	def get_col_name(self):		
-		sc = self.col_code		
-		#print('Debug Col Code = >',sc,'<')
-		q1 = Col.objects.filter(col_code=sc)		
-		#print('Debug q1 = ',q1)
-		#print('col_name = ',q1[0].col_name)
-		return q1[0].col_name
+		sc = (self.col_code or "").strip()
+		col = Col.objects.filter(col_code=sc).first()
+		if col and col.col_name:
+			name = col.col_name.strip()
+			if name:
+				return name
+		# Fallback so templates do not render an empty value.
+		return sc or "Nom inconnu"
 	
 	def get_col_id(self):		
-		sc = self.col_code
-		q1 = Col.objects.filter(col_code=sc)		
-		return q1[0].col_id
+		sc = (self.col_code or "").strip()
+		col = Col.objects.filter(col_code=sc).first()
+		return col.col_id if col else None
 	
 	def get_col_count(self):				
 		colcode = self.col_code

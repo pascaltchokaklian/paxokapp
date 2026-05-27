@@ -16,7 +16,7 @@
          {% if climb_segments %}
         <tr>
             <td colspan="3">
-                <h4>Montées {{ climb_total_km }} km — pente moyenne {{ climb_avg_gradient }} %</h4>
+                <h4>Montées : {{ climb_total_km }} km — pente moyenne {{ climb_avg_gradient }} %</h4>
             </td>
         </tr>
         {% endif %}
@@ -66,7 +66,13 @@
             {% for col in object.get_col_passed %}
                 <tr>
                     <td style="color:#1600da;">{{ col.col_code }}</td>
-                    <td><a href="{% url 'col-detail' col_id=col.get_col_id %}">{{ col.get_col_name }}</a></td>
+                    <td>
+                        {% if col.get_col_id %}
+                            <a href="{% url 'col-detail' col_id=col.get_col_id %}">{{ col.get_col_name }}</a>
+                        {% else %}
+                            {{ col.get_col_name }}
+                        {% endif %}
+                    </td>
                     <td style="text-align: center;">[{{ col.get_col_count }}]</td>
                 </tr>
             {% endfor %}

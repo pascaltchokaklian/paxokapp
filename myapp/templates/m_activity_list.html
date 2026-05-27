@@ -23,6 +23,17 @@
         <td align="right">
           {{activity.get_act_dist_km|floatformat:1}} 
         </td>          
+        {% with ratio=activity.get_den_dist_ratio %}
+        <td align="right" style="width:10%;" class="{% if ratio and ratio > 20 %}text-danger{% elif ratio and ratio < 15 %}text-success{% endif %}">
+          {% if ratio and ratio > 20 %}
+            🏔️
+          {% elif ratio and ratio < 15 %}
+            🏞️
+          {% else %}
+            {{ ratio|default:"-"|floatformat:1 }}
+          {% endif %}
+        </td>
+        {% endwith %}
         <td style=>
           <a href="./{{activity.act_id}}" style="color: #333333;"> {{ activity.act_name|truncatechars:22 }}</a>           
         </td>                

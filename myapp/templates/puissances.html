@@ -18,6 +18,8 @@
     .tab-button.active { background:#ddd; }
     .tab-content { display: none; margin-top:1em; }
     .tab-content.active { display: block; }
+    .user-filters { margin-bottom: 1em; }
+    .user-filters label { margin-right: 12px; display: inline-block; }
   </style>
 
   <div class="tabs">
@@ -34,6 +36,17 @@
   </div>
 
   <div id="tab-all" class="tab-content">
+    <form method="get" class="user-filters">
+      <input type="hidden" name="filter_users" value="1">
+      {% for one_user in all_users %}
+        <label>
+          <input type="checkbox" name="users" value="{{ one_user }}" {% if one_user in selected_users %}checked{% endif %}>
+          {{ one_user }}
+        </label>
+      {% endfor %}
+      <button type="submit">Appliquer</button>
+    </form>
+
     {% if chartAll %}
       <img src="data:image/png;base64, {{chartAll|safe}}" />
     {% else %}
@@ -42,14 +55,31 @@
   </div>
 
   <script>
+    function activateTab(tabName) {
+      document.querySelectorAll('.tab-button').forEach(function(b) {
+        b.classList.remove('active');
+      });
+      document.querySelectorAll('.tab-content').forEach(function(c) {
+        c.classList.remove('active');
+      });
+
+      var targetBtn = document.querySelector('.tab-button[data-tab="' + tabName + '"]');
+      var targetContent = document.getElementById('tab-' + tabName);
+      if (targetBtn && targetContent) {
+        targetBtn.classList.add('active');
+        targetContent.classList.add('active');
+      }
+    }
+
     document.querySelectorAll('.tab-button').forEach(function(btn) {
       btn.addEventListener('click', function() {
-        document.querySelectorAll('.tab-button').forEach(b=>b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+        activateTab(btn.dataset.tab);
       });
     });
+
+    if (new URLSearchParams(window.location.search).has('filter_users')) {
+      activateTab('all');
+    }
   </script>
 
 {% endblock %}
