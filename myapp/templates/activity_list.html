@@ -37,11 +37,11 @@
         <td align="right" style="width:10%;" class="{% if ratio and ratio > 20 %}text-danger{% elif ratio and ratio < 15 %}text-success{% endif %}">
           {% if ratio is not None %}
             {% if ratio < 15 %}
-              <img src="{% static 'image/plaine.png' %}" alt="plaine" style="height:18px; vertical-align:middle;" />
+              <img src="{% static 'image/plaine.png' %}" alt="plaine" style="height:22px; vertical-align:middle;" />
             {% elif ratio <= 20 %}
-              <img src="{% static 'image/hill.png' %}" alt="hill" style="height:18px; vertical-align:middle;" />
+              <img src="{% static 'image/hill.png' %}" alt="hill" style="height:30px; vertical-align:middle;" />
             {% else %}
-              <img src="{% static 'image/montagne.png' %}" alt="montagne" style="height:18px; vertical-align:middle;" />
+              <img src="{% static 'image/montagne.png' %}" alt="montagne" style="height:22px; vertical-align:middle;" />
             {% endif %}
           {% else %}
             -

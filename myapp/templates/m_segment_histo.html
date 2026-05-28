@@ -69,12 +69,12 @@
 
     {% for annee, chrono in perf %}
     <tr>
-        <td>
+        <td data-sort={{ annee }} >
           {{ annee }}
         </td>  
-        <td>
+        <td data-sort={{ chrono }} >
           {{ chrono }}
-        </td>                
+        </td>                    
       </tr> 
     {% endfor %}  
     </tbody>

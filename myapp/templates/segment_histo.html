@@ -1,5 +1,10 @@
 {% block content %}
 
+{% load static %}
+{% load humanize %}
+<script src="{% static 'sortable.min.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/grid.css' %}">
+
 <head>
     <meta charset="UTF-8">
     <title>Historique des Performances</title>
@@ -23,9 +28,6 @@ tr:nth-child(even) {
 
 </head>
 
-
-
-
   {% if perf %}
     <HR>    
     <tr>            
@@ -44,10 +46,10 @@ tr:nth-child(even) {
 
     {% for annee, chrono in perf %}
     <tr>
-        <td>
+        <td data-sort={{ annee }} >
           {{ annee }}
         </td>  
-        <td>
+        <td data-sort={{ chrono }} >
           {{ chrono }}
         </td>                
       </tr> 

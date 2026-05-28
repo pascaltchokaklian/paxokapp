@@ -512,4 +512,10 @@ class Activity_info(models.Model):
 	act_info_id = models.IntegerField(auto_created=True,  primary_key=True)
 	strava_id = models.IntegerField(null=True)
 	info_txt = models.TextField()
+
+class User_weight(models.Model):
+	strava_user_id = models.IntegerField(null=False)
+	weight_date = models.DateTimeField(null=False)
+	weight = models.FloatField(null=False)
+
 	
