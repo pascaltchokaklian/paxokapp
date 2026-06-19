@@ -6,7 +6,7 @@ import requests
 import pandas as pd
 import polyline
 from .forms import ColForm
-from .models import Activity, Activity_info, Col_perform, Month_stat, Perform, Region, Segment, User_dashboard, User_var
+from .models import Activity, Activity_info, Col_perform, Month_stat, Perform, Region, Segment, User_dashboard, User_var, User_weight
 from .models import Col, Country
 from .models import Col_counter
 from .models import Strava_user
@@ -1317,16 +1317,24 @@ def puissancesView(request):
     template = 'puissances.html' 
     # Mes Puissances
     strava_user_id = request.session.get('strava_user_id')        
-    QueryPower = Activity.objects.filter(act_normal_power__gte=1).exclude(act_show_power=0).filter(strava_user_id=strava_user_id)
+    QueryPower = Activity.objects.filter(act_normal_power__gte=1, strava_user_id=strava_user_id)
     x = []
     y = []
     n = []
+    normal_missing = not QueryPower.exists()
+    weight = get_user_weight(strava_user_id)
     for oneActivity in QueryPower:
-        if oneActivity.act_normal_power!='' and oneActivity.act_dist!='':
-            x.append(oneActivity.act_dist/1000)    
-            y.append(oneActivity.act_normal_power)            
-            n.append(oneActivity.act_name)
-    chart = get_plot(x,y,n)
+        power_value = oneActivity.act_normal_power
+        if power_value and oneActivity.act_dist:
+            activity_weight = get_user_weight(strava_user_id, oneActivity.act_start_date) or weight
+            if activity_weight and activity_weight > 0:
+                x.append(oneActivity.act_dist/1000)
+                y.append(round(power_value / activity_weight, 2))
+                n.append(oneActivity.act_name)
+    chart = get_plot(x,y,n, title='Mes Puissances', ylabel='Puissance (W/kg)')
+    # If there are activities but none with normalized power, show a warning in template
+    normal_missing = normal_missing and len(x) == 0
+    weight_missing = bool(QueryPower.exists() and not weight)
 
     # Puissances All
     QueryAllPower = Activity.objects.filter(act_normal_power__gte=1).exclude(act_show_power=0).filter(act_type='Ride').exclude(act_trainer=1)
@@ -1346,21 +1354,52 @@ def puissancesView(request):
     x = []
     y = []
     n = []
+    team_weight_missing = False
+    team_weight_found = False
+    team_activity_found = False
+
     for oneActivity in QueryAllPower:
         if oneActivity.act_normal_power != '' and oneActivity.act_dist != '':
             user_acronym = oneActivity.get_user_acronyme()
             if user_acronym in selected_users:
-                x.append(oneActivity.act_dist/1000)
-                y.append(oneActivity.act_normal_power)
-                n.append(user_acronym)
-    chartAll = get_plot_all(x,y,n)
+                team_activity_found = True
+                activity_weight = get_user_weight(oneActivity.strava_user_id)
+                if activity_weight and activity_weight > 0:
+                    x.append(oneActivity.act_dist/1000)
+                    y.append(round(oneActivity.act_normal_power / activity_weight, 2))
+                    n.append(user_acronym)
+                    team_weight_found = True
+                else:
+                    team_weight_missing = True
+
+    if team_activity_found and not team_weight_found:
+        team_weight_missing = True
+
+    chartAll = get_plot_all(x, y, n)
 
     return render(request, template, {
         'chart': chart,
         'chartAll': chartAll,
         'all_users': all_users,
         'selected_users': selected_users,
+        'weight_missing': weight_missing,
+        'normal_missing': normal_missing,
+        'team_weight_missing': team_weight_missing,
     })
+
+########################################################################################################
+#                                   Helper functions                                                   #
+########################################################################################################
+
+def get_user_weight(strava_user_id, activity_date=None):
+    """Return the most recent user weight, optionally on or before a specific activity date."""
+    if not strava_user_id:
+        return None
+    query = User_weight.objects.filter(strava_user_id=strava_user_id)
+    if activity_date is not None:
+        query = query.filter(weight_date__lte=activity_date)
+    weight_entry = query.order_by('-weight_date').first()
+    return float(weight_entry.weight) if weight_entry else None
 
 ########################################################################################################
 #                                   Historique d'un Segment                                            #
@@ -1395,10 +1434,17 @@ def fSegmentHistoView(request,**kwargs):
                 l_chrono[annee_index]=one[1]                                             
                 s_chrono[annee_index]=get_chrono_str(one[1])
 
-    zipped = zip(l_annee, s_chrono)        
-    print("zipped")
-    print(zipped)
-    return render (request, template, {'seg_name': segment_name , 'strava_segment_id': strava_segment_id , 'perf': zipped} )
+    perf = list(zip(l_annee, l_chrono, s_chrono))
+    perf_graph = [
+        {'year': year, 'chrono': chrono}
+        for year, chrono, _ in perf
+    ]
+    return render(request, template, {
+        'seg_name': segment_name,
+        'strava_segment_id': strava_segment_id,
+        'perf': perf,
+        'perf_graph': perf_graph,
+    })
 
 def m_act_map(request, act_id):
     """Vue pour afficher la carte d'une activité en mode mobile"""

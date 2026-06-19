@@ -235,7 +235,10 @@ def get_graph():
 
 ### get_plot
 
-def get_plot(x,y,n):
+def get_plot(x,y,n, title='Mes Puissances', ylabel='Puissance (Watt)'):
+
+    if not x or not y:
+        return ''
 
     tsize=len(x)     
     top10Km = top_10_biggest(x)
@@ -243,7 +246,7 @@ def get_plot(x,y,n):
 
     plt.switch_backend('AGG')    
     plt.figure(figsize=(15,8))
-    plt.title('Mes Puissances')
+    plt.title(title)
 
     mycolor = []
     
@@ -269,15 +272,15 @@ def get_plot(x,y,n):
         if mySize>10:
             mySize=10
 
-        if y[i] >= top10Watt[mySize-1]:
+        if mySize > 0 and y[i] >= top10Watt[mySize-1]:
             plt.annotate(txt, (x[i], y[i]))
 
         # text sur les plus longues        
-        if x[i] >= top10Km[mySize-1]:
+        if len(top10Km) > 0 and x[i] >= top10Km[min(mySize, len(top10Km))-1]:
             plt.annotate(txt, (x[i], y[i]))            
     
     plt.xlabel('Distance (Km)')
-    plt.ylabel('Puissance (Watt)') 
+    plt.ylabel(ylabel)
     plt.tight_layout()
     graph = get_graph()
 
@@ -315,7 +318,7 @@ def get_plot_all(x,y,n):
 
     # annotations removed; colors are explained by legend
     plt.xlabel('Distance (Km)')
-    plt.ylabel('Puissance (Watt)') 
+    plt.ylabel('Puissance (W/kg)') 
     plt.tight_layout()
 
     graph = get_graph()

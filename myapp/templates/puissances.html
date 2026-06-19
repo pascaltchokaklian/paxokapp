@@ -31,7 +31,14 @@
     {% if chart %}
       <img src="data:image/png;base64, {{chart|safe}}" />
     {% else %}
-      <p>Aucun graphique disponible.</p>
+      {% if weight_missing %}
+        <p>Aucun poids utilisateur défini. Ajoutez un poids pour afficher la puissance en W/kg.</p>
+      {% elif normal_missing %}
+        <p>Aucune activité avec puissance normalisée disponible (act_normal_power absent).</p>
+        <p>Si tu veux afficher d'autres puissances, active l'option d'affichage des puissances moyennes.</p>
+      {% else %}
+        <p>Aucun graphique disponible.</p>
+      {% endif %}
     {% endif %}
   </div>
 
@@ -50,7 +57,11 @@
     {% if chartAll %}
       <img src="data:image/png;base64, {{chartAll|safe}}" />
     {% else %}
-      <p>Aucun graphique disponible.</p>
+      {% if team_weight_missing %}
+        <p>Aucune activité d’équipe avec poids disponible. Ajoutez des poids utilisateurs pour afficher la puissance en W/kg.</p>
+      {% else %}
+        <p>Aucun graphique disponible.</p>
+      {% endif %}
     {% endif %}
   </div>
 

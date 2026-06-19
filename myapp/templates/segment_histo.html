@@ -5,15 +5,23 @@
 <script src="{% static 'sortable.min.js' %}"></script>
 <link rel="stylesheet" href="{% static 'css/grid.css' %}">
 
-<head>
-    <meta charset="UTF-8">
-    <title>Historique des Performances</title>
-
-<head>
 <style>
+.chart-container {
+  max-width: 760px;
+  margin-bottom: 24px;
+}
+
+#performanceChart {
+  width: 100%;
+  height: 340px;
+  border: 1px solid #888;
+  background: #161616;
+}
+
 table {
   border-collapse: collapse;
-  width: 30%;
+  width: 100%;
+  max-width: 760px;
 }
 
 th, td {
@@ -26,42 +34,147 @@ tr:nth-child(even) {
 }
 </style>
 
-</head>
-
   {% if perf %}
-    <HR>    
-    <tr>            
-    <td colspan="3"><h3> <a href="https://www.strava.com/segments/{{strava_segment_id}}" target="_blank" rel="noopener noreferrer"> {{seg_name}} </a> </h3></td>       
-    
-    </tr>        
-    <HR>
-    <table class="sortable n-last">    
-    <thead>
-    <tr>
-        <th class="indicator-left">Année</th>
-        <th class="indicator-left">Chrono</th>                
-    </tr>    
-    </thead>
-    <tbody>
+    <hr>
+    <h3>
+      <a href="https://www.strava.com/segments/{{strava_segment_id}}" target="_blank" rel="noopener noreferrer">
+        {{ seg_name }}
+      </a>
+    </h3>
 
-    {% for annee, chrono in perf %}
-    <tr>
-        <td data-sort={{ annee }} >
-          {{ annee }}
-        </td>  
-        <td data-sort={{ chrono }} >
-          {{ chrono }}
-        </td>                
-      </tr> 
-    {% endfor %}  
-    </tbody>
-    </table>      
-  
+    <div class="chart-container">
+      <canvas id="performanceChart" width="760" height="340"></canvas>
+    </div>
+
+    <table class="sortable n-last">
+      <thead>
+        <tr>
+          <th class="indicator-left">Année</th>
+          <th class="indicator-left">Chrono</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for annee, chrono, chrono_str in perf %}
+        <tr>
+          <td data-sort={{ annee }}>
+            {{ annee }}
+          </td>
+          <td data-sort={{ chrono }}>
+            {{ chrono_str }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {{ perf_graph|json_script:"perf-data" }}
+    <script>
+      (function() {
+        const data = JSON.parse(document.getElementById('perf-data').textContent);
+        data.sort((a, b) => a.year - b.year);
+
+        const canvas = document.getElementById('performanceChart');
+        if (!canvas || !canvas.getContext) return;
+        const ctx = canvas.getContext('2d');
+        const padding = 48;
+        const width = canvas.width;
+        const height = canvas.height;
+        const plotWidth = width - padding * 2;
+        const plotHeight = height - padding * 2;
+
+        const years = data.map(item => item.year);
+        const values = data.map(item => item.chrono);
+        const minY = Math.min(...values);
+        const maxY = Math.max(...values);
+        const yMargin = Math.max(10, Math.round((maxY - minY) * 0.1));
+        const yMin = minY - yMargin;
+        const yMax = maxY + yMargin;
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#111';
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.strokeStyle = '#888';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, height - padding);
+        ctx.lineTo(width - padding, height - padding);
+        ctx.stroke();
+
+        ctx.fillStyle = '#fff';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Année', width / 2, height - 12);
+
+        function formatChrono(seconds) {
+          const h = Math.floor(seconds / 3600);
+          const m = Math.floor((seconds % 3600) / 60);
+          const s = Math.round(seconds % 60);
+          const mm = String(m).padStart(2, '0');
+          const ss = String(s).padStart(2, '0');
+          return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+        }
+
+        ctx.save();
+        ctx.translate(16, height / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = 'center';
+        ctx.fillText('Chrono (mm:ss)', 0, 0);
+        ctx.restore();
+
+        const points = data.map((item, index) => {
+          const x = padding + (index / (data.length - 1 || 1)) * plotWidth;
+          const normalized = (item.chrono - yMin) / (yMax - yMin || 1);
+          const y = padding + normalized * plotHeight;
+          return { x, y };
+        });
+
+        ctx.strokeStyle = '#4fc3f7';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        points.forEach((pt, idx) => {
+          if (idx === 0) ctx.moveTo(pt.x, pt.y);
+          else ctx.lineTo(pt.x, pt.y);
+        });
+        ctx.stroke();
+
+        ctx.fillStyle = '#4fc3f7';
+        points.forEach(pt => {
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        ctx.fillStyle = '#bbb';
+        ctx.textAlign = 'center';
+        years.forEach((year, index) => {
+          const x = padding + (index / (data.length - 1 || 1)) * plotWidth;
+          ctx.fillText(year, x, height - padding + 18);
+        });
+
+        const gridCount = 5;
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = 1;
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#ddd';
+        for (let i = 0; i <= gridCount; i++) {
+          const y = padding + (i / gridCount) * plotHeight;
+          const value = yMin + ((yMax - yMin) * i / gridCount);
+          ctx.beginPath();
+          ctx.moveTo(padding, y);
+          ctx.lineTo(width - padding, y);
+          ctx.stroke();
+          ctx.fillText(formatChrono(value), padding - 10, y + 4);
+        }
+      })();
+    </script>
   {% else %}
     <p>There are no Performance in the Database.</p>
   {% endif %}
-   
-{% endblock %}  
+
+{% endblock %}
+
 
 
 
