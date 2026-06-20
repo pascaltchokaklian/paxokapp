@@ -1434,10 +1434,13 @@ def fSegmentHistoView(request,**kwargs):
                 l_chrono[annee_index]=one[1]                                             
                 s_chrono[annee_index]=get_chrono_str(one[1])
 
-    perf = list(zip(l_annee, l_chrono, s_chrono))
+    perf = [
+        {'year': year, 'chrono': chrono, 'chrono_str': chrono_str}
+        for year, chrono, chrono_str in zip(l_annee, l_chrono, s_chrono)
+    ]
     perf_graph = [
-        {'year': year, 'chrono': chrono}
-        for year, chrono, _ in perf
+        {'year': item['year'], 'chrono': item['chrono']}
+        for item in perf
     ]
     return render(request, template, {
         'seg_name': segment_name,
