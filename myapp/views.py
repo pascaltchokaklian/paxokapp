@@ -642,8 +642,8 @@ def connected_map(request):
     compute_all_month_stat(my_strava_user_id)
     # Liste des Cols des l'année
     set_col_count_list_this_year(my_strava_user_id)
-                    
-    return render(request, 'index.html', context)
+
+    return redirect('strava_user-detail', strava_user_id=my_strava_user_id)
 
 
 def index(request):
@@ -834,11 +834,14 @@ def fActivitiesListView(request, col_code):
 ##########################################################################    
 
 def fUserDetail(request,**kwargs):        
-    template = "user_detail.html"      
+    template = "m_user_detail.html" if is_mobile_user_agent(request) else "user_detail.html"      
 
     strava_user_id = kwargs['strava_user_id']
 
     mydashBoard = User_dashboard.objects.filter(strava_user_id = strava_user_id)
+    last_activities = list(Activity.objects.filter(strava_user_id=strava_user_id).order_by('-act_start_date')[:10])
+    power_values = [activity.act_normal_power for activity in last_activities if activity.act_normal_power not in (None, 0)]
+    last_ten_power_avg = round(sum(power_values) / len(power_values), 1) if power_values else None
     for onDS in mydashBoard:
         onDS.set_bike_year_km()
         onDS.set_run_year_km()
@@ -849,7 +852,12 @@ def fUserDetail(request,**kwargs):
     listActivities = Activity.objects.filter(strava_user_id=strava_user_id).order_by('-act_start_date')[:10]
     listColsOk = Col_counter.objects.filter(strava_user_id=strava_user_id).order_by("-col_count")[:10]                                                                   
             
-    return render (request,template, {'Strava_User':theUser, 'listAct': listActivities, 'ColsOk': listColsOk})
+    return render (request,template, {
+        'Strava_User': theUser,
+        'listAct': listActivities,
+        'ColsOk': listColsOk,
+        'last_ten_power_avg': last_ten_power_avg,
+    })
 
 #########################################################################################  
 

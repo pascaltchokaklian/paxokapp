@@ -1,20 +1,12 @@
-<!doctype html>
-
-{% extends "base_generic.html" %}
+{% extends "m_base_generic.html" %}
 {% load static %}
 {% block content %}
 
-<hr>        
-<table>    
-        <tr>                      
-            {%  for oneUser  in Strava_User %}  
-            <td><h3>{{ oneUser.get_strava_user_name}} </h3></td>                                                                  
-            {% endfor %}                        
-        </tr>                
-</table>                                                                        
-<hr>        
+<hr>
+<h3>{{ Strava_User.0.get_strava_user_name }}</h3>
+<hr>
 
-<table width="50%" class="sortable n-last">
+<table width="100%" class="sortable n-last">
     <thead>
     <tr>
         <th class="indicator-left">Date</th>
@@ -22,22 +14,21 @@
         <th class="indicator-left">Dénivelé</th>
         <th class="indicator-left">Difficulté</th>
         <th class="indicator-left">Puissance</th>
-        <th class="indicator-left">Activité</th>
-        <th class="indicator-left">Type</th>
-    </tr>    
+        <th class="indicator-left">Activité</th>        
+    </tr>
     </thead>
     <tbody>
-    {% if listAct %}          
-    {% for activity in listAct %}      
+    {% if listAct %}
+    {% for activity in listAct %}
       <tr>
         <td data-sort={{activity.act_start_date|date:"ymd"}}>
-          {{activity.act_start_date|date:"d-M-Y" }} 
-        </td>  
+          {{activity.act_start_date|date:"d-M-Y" }}
+        </td>
         <td align="right">
-          {{activity.get_act_dist_km|floatformat:2}} 
-        </td>  
+          {{activity.get_act_dist_km|floatformat:2}}
+        </td>
         <td align="right" style="width:10%">
-          {{activity.act_den|floatformat:0}}   
+          {{activity.act_den|floatformat:0}}
         </td>
         {% with ratio=activity.get_den_dist_ratio %}
         <td align="right" style="width:10%;" class="{% if ratio and ratio > 20 %}text-danger{% elif ratio and ratio < 15 %}text-success{% endif %}">
@@ -57,50 +48,34 @@
         <td align="right" style="width:10%;" class="{% if activity.act_normal_power is not None and activity.act_normal_power != 0 and last_ten_power_avg is not None and activity.act_normal_power > last_ten_power_avg %}text-success{% elif activity.act_normal_power is not None and activity.act_normal_power != 0 %}text-danger{% endif %}">
           {% if activity.act_normal_power is not None and activity.act_normal_power != 0 %}<strong>{{activity.act_normal_power|floatformat:0}}</strong>{% else %}-{% endif %}
         </td>
-        <td>
-          {{ activity.act_name }}
-        </td>
-        <td>          
-          {{ activity.act_type }}
-        </td>  
-      </tr> 
+        <td>{{ activity.act_name }}</td>        
+      </tr>
     {% endfor %}
     {% endif %}
-  </tbody>
-  </table>                  
+    </tbody>
+</table>
 
-<table class="sortable n-last">
-  <br/>
+<table width="100%" class="sortable n-last">
     <thead>
-    <tr>         
-        <th class="indicator-left">Col</th>        
-        <th class="indicator-left">Altitude</th>     
-        <th class="indicator-left">Nombre de passages</th>     
-        <th class="indicator-left">Cette année</th>                     
-    </tr>  
-    </thead>    
-    <tbody>
-                    
-
-    {% if ColsOk %}          
-    {% for colc in ColsOk %}                        
     <tr>
-      <td>        
-         {{ colc.get_col_name }}
-      </td>        
-      <td align="center">
-        {{colc.get_col_alt}}
-      </td>             
-      <td align="center">
-        {{colc.col_count}}
-      </td>
-      <td align="center">
-        {{colc.year_col_count}}        
-      </td>            
+        <th class="indicator-left">Col</th>
+        <th class="indicator-left">Altitude</th>
+        <th class="indicator-left">Nombre de passages</th>
+        <th class="indicator-left">Cette année</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% if ColsOk %}
+    {% for colc in ColsOk %}
+    <tr>
+      <td>{{ colc.get_col_name }}</td>
+      <td align="center">{{ colc.get_col_alt }}</td>
+      <td align="center">{{ colc.col_count }}</td>
+      <td align="center">{{ colc.year_col_count }}</td>
     </tr>
     {% endfor %}
-  </tbody>
-  </table> 
-{% endif %}
+    {% endif %}
+    </tbody>
+</table>
 
-{% endblock %}      
+{% endblock %}
