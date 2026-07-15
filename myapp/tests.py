@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from django.template.loader import render_to_string
 from django.test import SimpleTestCase
 from django.test.client import RequestFactory
 from django.urls import reverse
@@ -9,6 +10,28 @@ from myapp import views
 
 
 class ConnectedMapRedirectTests(SimpleTestCase):
+    def test_mobile_team_template_links_user_name(self):
+        class DummyActivity:
+            strava_user_id = 123
+            pk = 1
+            act_id = 1
+            act_start_date = '2024-01-01'
+
+            def get_strava_user_name(self):
+                return 'Alice Example'
+
+            def get_user_acronyme(self):
+                return 'AE'
+
+            def get_act_dist_km(self):
+                return 12.5
+
+        request = RequestFactory().get('/m_team/')
+        html = render_to_string('m_activity_team.html', {'m_activity_team': [DummyActivity()]}, request=request)
+
+        self.assertIn('/strava_user/123', html)
+        self.assertIn('Alice Example', html)
+
     def setUp(self):
         self.factory = RequestFactory()
 

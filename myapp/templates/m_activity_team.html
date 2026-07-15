@@ -24,7 +24,7 @@
     {% for activity in m_activity_team %}      
       <tr>
         <td align="left" style="width:6%">
-          {{ activity.get_user_acronyme }}
+          <a href="{% url 'strava_user-detail' strava_user_id=activity.strava_user_id %}" style="color: #333333; text-decoration: none;">{{ activity.get_user_acronyme }}</a>
         </td>
         <td data-sort={{activity.act_start_date|date:"ymd"}} style="width:10%">
           {{activity.act_start_date|date:"d/m" }} 
