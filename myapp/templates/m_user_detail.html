@@ -3,7 +3,14 @@
 {% block content %}
 
 <hr>
-<h3>{{ Strava_User.0.get_strava_user_name }}</h3>
+<div>
+  <h3 style="margin:0; padding:0;">{{ Strava_User.0.get_strava_user_name }}</h3>
+  <div style="font-size:0.85em; margin-top:0.25rem; text-align:left;">
+    {% for year, avg in year_power_avgs.items %}
+      {{ year }}: {% if avg is not None %}<strong>{{ avg|floatformat:0 }}W</strong>{% else %}--{% endif %}{% if not forloop.last %}&nbsp;&nbsp;{% endif %}
+    {% endfor %}
+  </div>
+</div>
 <hr>
 
 <table width="100%" class="sortable n-last">

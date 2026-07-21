@@ -4,15 +4,22 @@
 {% load static %}
 {% block content %}
 
-<hr>        
-<table>    
+<hr>
+<table width="100%">    
         <tr>                      
             {%  for oneUser  in Strava_User %}  
-            <td><h3>{{ oneUser.get_strava_user_name}} </h3></td>                                                                  
+            <td style="vertical-align: top;"><h3 style="margin:0; padding:0;">{{ oneUser.get_strava_user_name }}</h3>
+                <div style="font-size:0.85em; white-space: nowrap; margin-top: 0.25rem;">
+                    {% for year, avg in year_power_avgs.items %}
+                        {{ year }}: {% if avg is not None %}<strong>{{ avg|floatformat:0 }}W</strong>{% else %}--{% endif %}{% if not forloop.last %}&nbsp;&nbsp;{% endif %}
+                    {% endfor %}
+                </div>
+            </td>
             {% endfor %}                        
         </tr>                
 </table>                                                                        
-<hr>        
+<hr>
+
 
 <table width="50%" class="sortable n-last">
     <tbody>

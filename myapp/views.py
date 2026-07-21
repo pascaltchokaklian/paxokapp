@@ -1,3 +1,4 @@
+import datetime
 from django.http import HttpResponse
 from django.views import generic
 from django.shortcuts import render, get_object_or_404
@@ -326,7 +327,8 @@ def mainIndexView(request,user):
     continent = "EUROPE"
     if view_region_info[0] == "AR":
         continent = "SOUTHAMERICA"
-    main_map = folium.Map(location=get_map_center(continent), zoom_start = 6, tiles='CartoDB voyager')  # Create base map
+    # Carte avec uniquement OpenStreetMap (OSM Standard)
+    main_map = folium.Map(location=get_map_center(continent), zoom_start=6, tiles='OpenStreetMap')
     feature_group_Road = folium.FeatureGroup(name="Route").add_to(main_map)    
     feature_group_Piste = folium.FeatureGroup(name="Piste").add_to(main_map)    
     feature_group_Sentier = folium.FeatureGroup(name="Sentier").add_to(main_map)    
@@ -756,7 +758,7 @@ def act_map(request, act_id):
     map_zoom = cols_tools.map_zoom(centrer_point,activities_df['polylines'])    
     ### f_debug_trace("col_tools.py","act_map","After map_zoo")
     
-    map = folium.Map(location=centrer_point, zoom_start=map_zoom, tiles='CartoDB voyager')
+    map = folium.Map(location=centrer_point, zoom_start=map_zoom, tiles='OpenStreetMap')
                                                    
     # kw = {
     #   "color": "blue",
@@ -839,9 +841,34 @@ def fUserDetail(request,**kwargs):
     strava_user_id = kwargs['strava_user_id']
 
     mydashBoard = User_dashboard.objects.filter(strava_user_id = strava_user_id)
-    last_activities = list(Activity.objects.filter(strava_user_id=strava_user_id).order_by('-act_start_date')[:10])
+    all_activities = list(Activity.objects.filter(strava_user_id=strava_user_id).order_by('-act_start_date'))
+    last_activities = all_activities[:10]
     power_values = [activity.act_normal_power for activity in last_activities if activity.act_normal_power not in (None, 0)]
     last_ten_power_avg = round(sum(power_values) / len(power_values), 1) if power_values else None
+
+    current_year = datetime.datetime.now().year
+    year_power_avgs = {}
+    for year in (current_year, current_year - 1, current_year - 2):
+        year_values = []
+        for activity in all_activities:
+            if activity.act_normal_power in (None, 0):
+                continue
+
+            act_date = activity.act_start_date
+            if act_date is None:
+                continue
+
+            if isinstance(act_date, str):
+                try:
+                    act_date = datetime.datetime.fromisoformat(act_date.replace('Z', '+00:00'))
+                except ValueError:
+                    continue
+
+            act_year = getattr(act_date, 'year', None)
+            if act_year == year:
+                year_values.append(activity.act_normal_power)
+
+        year_power_avgs[year] = round(sum(year_values) / len(year_values), 1) if year_values else None
     for onDS in mydashBoard:
         onDS.set_bike_year_km()
         onDS.set_run_year_km()
@@ -857,6 +884,7 @@ def fUserDetail(request,**kwargs):
         'listAct': listActivities,
         'ColsOk': listColsOk,
         'last_ten_power_avg': last_ten_power_avg,
+        'year_power_avgs': year_power_avgs,
     })
 
 #########################################################################################  

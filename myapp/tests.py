@@ -1,3 +1,4 @@
+from datetime import datetime, timezone as dt_timezone
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -142,3 +143,43 @@ class ConnectedMapRedirectTests(SimpleTestCase):
             views.fUserDetail(request, strava_user_id=42)
 
         self.assertEqual(captured['context']['last_ten_power_avg'], 200)
+        expected = {
+            datetime.now().year: None,
+            datetime.now().year - 1: None,
+            datetime.now().year - 2: 200.0,
+        }
+        self.assertEqual(captured['context']['year_power_avgs'], expected)
+
+    def test_user_detail_exposes_three_year_power_average(self):
+        class DummyQuerySet(list):
+            def order_by(self, *args, **kwargs):
+                return self
+
+        request = self.factory.get('/strava_user/42')
+        captured = {}
+
+        def fake_render(request_obj, template_name, context):
+            captured['context'] = context
+            return SimpleNamespace(status_code=200)
+
+        activities = [
+            SimpleNamespace(act_id=1, act_normal_power=180, act_start_date=datetime(2024, 1, 1, tzinfo=dt_timezone.utc)),
+            SimpleNamespace(act_id=2, act_normal_power=220, act_start_date=datetime(2025, 1, 1, tzinfo=dt_timezone.utc)),
+            SimpleNamespace(act_id=3, act_normal_power=260, act_start_date=datetime(2026, 1, 1, tzinfo=dt_timezone.utc)),
+            SimpleNamespace(act_id=4, act_normal_power=300, act_start_date=datetime(2023, 1, 1, tzinfo=dt_timezone.utc)),
+        ]
+
+        with patch.object(views, 'is_mobile_user_agent', return_value=False), \
+             patch.object(views, 'render', side_effect=fake_render), \
+             patch.object(views.User_dashboard.objects, 'filter', return_value=DummyQuerySet([SimpleNamespace(set_bike_year_km=lambda: None, set_run_year_km=lambda: None, set_col_count=lambda: None, set_col2000_count=lambda: None)])), \
+             patch.object(views.Strava_user.objects, 'filter', return_value=DummyQuerySet([SimpleNamespace(get_strava_user_name='Alice')])), \
+             patch.object(views.Activity.objects, 'filter', return_value=DummyQuerySet(activities)), \
+             patch.object(views.Col_counter.objects, 'filter', return_value=DummyQuerySet()):
+            views.fUserDetail(request, strava_user_id=42)
+
+        expected = {
+            datetime.now().year: 260.0,
+            datetime.now().year - 1: 220.0,
+            datetime.now().year - 2: 180.0,
+        }
+        self.assertEqual(captured['context']['year_power_avgs'], expected)
