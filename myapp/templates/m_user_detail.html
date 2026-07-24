@@ -20,7 +20,7 @@
       {% with row_cycle=forloop.counter0|divisibleby:2 %}
       <tr class="{% if row_cycle %}activity-row-alt{% endif %}">
         <td colspan="5" style="padding-top: 12px; padding-bottom: 6px;">
-          <strong>{{ activity.act_name }}</strong>
+          <strong><a href="{% url 'activity-detail' pk=activity.act_id %}" style="color: inherit; text-decoration: none;">{{ activity.act_name }}</a></strong>
         </td>
       </tr>
       <tr class="{% if row_cycle %}activity-row-alt{% endif %}">

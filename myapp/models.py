@@ -1,4 +1,5 @@
 import datetime
+from math import radians, sin, cos, acos
 from django.db import models
 
 from myapp.myfunctions import premieres_lettres
@@ -66,14 +67,55 @@ class Activity(models.Model):
 	def get_act_normal_power(self):
 		return self.act_normal_power
 	
+	def _col_distance_km(self, lat1, lon1, lat2, lon2):
+		if lat1 is None or lon1 is None or lat2 is None or lon2 is None:
+			return None
+		theta = lon1 - lon2
+		return 6371.0 * acos(
+			sin(radians(lat1)) * sin(radians(lat2)) +
+			cos(radians(lat1)) * cos(radians(lat2)) * cos(radians(theta))
+		)
+
 	def get_col_passed(self):		
 		sc = self.strava_id		
-		q1 = Col_perform.objects.filter(strava_id=sc).annotate(
-			col_alt_sort=models.Subquery(
-				Col.objects.filter(col_code=models.OuterRef('col_code')).values('col_alt')[:1]
-			)
-		).order_by('col_alt_sort')
-		return q1
+		col_qs = Col.objects.filter(col_code=models.OuterRef('col_code'))
+		q1 = list(Col_perform.objects.filter(strava_id=sc).annotate(
+			col_alt_sort=models.Subquery(col_qs.values('col_alt')[:1]),
+			col_lat=models.Subquery(col_qs.values('col_lat')[:1]),
+			col_lon=models.Subquery(col_qs.values('col_lon')[:1]),
+		).order_by('col_alt_sort'))
+
+		unique_cols = []
+		seen_codes = set()
+		physical_groups = []
+		for col in q1:
+			if col.col_code in seen_codes:
+				continue
+			seen_codes.add(col.col_code)
+
+			lat = getattr(col, 'col_lat', None)
+			lon = getattr(col, 'col_lon', None)
+			alt = getattr(col, 'col_alt_sort', None)
+
+			if lat is None or lon is None or alt is None:
+				unique_cols.append(col)
+				continue
+
+			is_same_physical = False
+			for plat, plon, palt in physical_groups:
+				if abs(alt - palt) <= 20:
+					d = self._col_distance_km(lat, lon, plat, plon)
+					if d is not None and d <= 0.25:
+						is_same_physical = True
+						break
+
+			if is_same_physical:
+				continue
+
+			physical_groups.append((lat, lon, alt))
+			unique_cols.append(col)
+
+		return unique_cols
 	
 	def get_info_txt(self):
 		sc = self.strava_id		

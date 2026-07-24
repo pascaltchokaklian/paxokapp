@@ -108,7 +108,11 @@ def delete_activity_info(conn, strava_id):
     
 def insert_col_perform(conn,act_id,rows):
     cur = conn.cursor()
+    seen_codes = set()
     for row in rows :                 
+        if row in seen_codes:
+            continue
+        seen_codes.add(row)
         sql = "INSERT INTO myapp_col_perform (strava_id,col_code) VALUES (?, ?)"    
         value = (act_id, row)
         cur.execute(sql, value)
