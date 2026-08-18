@@ -1,6 +1,7 @@
 import datetime
 import sqlite3
 import time
+from collections import Counter
 from myapp import cols_tools
 from refactor.settings import SQLITE_PATH
 from .models import Activity, Activity_info, Col, Col_counter as cc, Col_perform as cp, Country, Month_stat, Region, Strava_user, User_dashboard, User_var
@@ -109,72 +110,81 @@ def delete_activity_info(conn, strava_id):
 def insert_col_perform(conn,act_id,rows):
     cur = conn.cursor()
     seen_codes = set()
-    for row in rows :                 
-        if row in seen_codes:
+    for row in rows:
+        if not row or row in seen_codes:
             continue
         seen_codes.add(row)
-        sql = "INSERT INTO myapp_col_perform (strava_id,col_code) VALUES (?, ?)"    
-        value = (act_id, row)
+        sql = """
+            INSERT INTO myapp_col_perform (strava_id, col_code)
+            SELECT ?, ?
+            WHERE NOT EXISTS (
+                SELECT 1 FROM myapp_col_perform
+                WHERE strava_id = ? AND col_code = ?
+            )
+        """
+        value = (act_id, row, act_id, row)
         cur.execute(sql, value)
-    conn.commit()      
+    conn.commit()
 
 #############################################################################
 
-def compute_cols_by_act( conn, my_strava_user_id,myActivity_id):
+def rebuild_user_col_counters(my_strava_user_id):
+    """Rebuild every col counter for a user from the full activity history.
 
-    ###f_debug_trace("col_dbtools.py","compute_cols_by_act","Begin")  
-    col_codes = list(
-        cp.objects.filter(strava_id=myActivity_id)
-        .values_list("col_code", flat=True)
-        .distinct()
+    This ensures totals are computed from the whole user history and not from the
+    last activity only, which was leaving stale values like 1 on the total count.
+    """
+    user_activity_ids = list(
+        Activity.objects.filter(strava_user_id=my_strava_user_id)
+        .values_list("strava_id", flat=True)
     )
 
-    if not col_codes:
-        Activity.objects.filter(strava_id=myActivity_id).update(act_status=1)
+    if not user_activity_ids:
+        cc.objects.filter(strava_user_id=my_strava_user_id).delete()
         return
 
-    user_activity_ids = Activity.objects.filter(
-        strava_user_id=my_strava_user_id
-    ).values("strava_id")
-    counts_by_code = {
-        row["col_code"]: row["nb_passage"]
-        for row in cp.objects.filter(
-            col_code__in=col_codes,
-            strava_id__in=user_activity_ids,
-        )
-        .values("col_code")
-        .annotate(nb_passage=Count("col_code"))
-    }
+    counts_by_code = Counter()
+    seen_pairs = set()
+    for strava_id, col_code in cp.objects.filter(
+        strava_id__in=user_activity_ids,
+    ).values_list("strava_id", "col_code"):
+        pair = (strava_id, col_code)
+        if pair in seen_pairs:
+            continue
+        seen_pairs.add(pair)
+        counts_by_code[col_code] += 1
+
+    all_user_col_codes = list(counts_by_code.keys())
     existing_counters = {
         counter.col_code: counter
-        for counter in cc.objects.filter(
-            strava_user_id=my_strava_user_id,
-            col_code__in=col_codes,
-        )
+        for counter in cc.objects.filter(strava_user_id=my_strava_user_id)
     }
 
-    for colCode in col_codes:
-        nbPassage = counts_by_code.get(colCode, 0)
-        existing_counter = existing_counters.get(colCode)
+    for col_code in all_user_col_codes:
+        nb_passage = counts_by_code.get(col_code, 0)
+        existing_counter = existing_counters.get(col_code)
 
         if existing_counter is None:
             new_cc = cc()
-            new_cc.col_code = colCode
-            new_cc.col_count = nbPassage
+            new_cc.col_code = col_code
+            new_cc.col_count = nb_passage
             new_cc.year_col_count = 0
             new_cc.strava_user_id = my_strava_user_id
-            new_cc.save()            
-            ### f_debug_trace("col_dbtools.py","compute_cols_by_act","Nouveau col: " + new_cc.get_col_name())            
-            ### log new col
-            my_Activity_info = Activity_info()
-            my_Activity_info.strava_id = myActivity_id
-            my_Activity_info.info_txt = "Nouveau col: " + new_cc.get_col_name()
-            my_Activity_info.save()
+            new_cc.save()
         else:
-            existing_counter.col_count = nbPassage
+            existing_counter.col_count = nb_passage
             existing_counter.save(update_fields=["col_count"])
-            ### f_debug_trace("col_dbtools.py","compute_cols_by_act","Col Franchis: " + existing_counter.get_col_name()+'('+str(nbPassage)+')')            
 
+    for counter in cc.objects.filter(strava_user_id=my_strava_user_id):
+        if counter.col_code not in counts_by_code:
+            counter.col_count = 0
+            counter.save(update_fields=["col_count"])
+
+
+def compute_cols_by_act( conn, my_strava_user_id,myActivity_id):
+
+    ###f_debug_trace("col_dbtools.py","compute_cols_by_act","Begin")
+    rebuild_user_col_counters(my_strava_user_id)
     Activity.objects.filter(strava_id=myActivity_id).update(act_status=1)
                                            
 def cols_effectue(conn, suid):
@@ -528,11 +538,12 @@ def set_col_count_list_this_year(strava_user_id):
     currentDateTime = datetime.datetime.now()
     
     date = currentDateTime.date()
-    year = date.strftime("%Y")+'-01-01'        
+    year = date.strftime("%Y")+'-01-01'
+    strava_user_id_str = str(strava_user_id)
 
     cur = conn.cursor()            
 
-    sqlExec = "select count(*) as compteur, col_code from myapp_col_perform P, myapp_activity A where P.strava_id = A.strava_id	and strava_user_id = "+strava_user_id+" and act_start_date > '"+year+"' group by col_code"
+    sqlExec = "select count(*) as compteur, col_code from myapp_col_perform P, myapp_activity A where P.strava_id = A.strava_id	and strava_user_id = "+strava_user_id_str+" and act_start_date > '"+year+"' group by col_code"
 
     ### f_debug_trace('set_col_count_list_this_year',sqlExec,str(year))
     cur.execute(sqlExec)    
@@ -553,7 +564,7 @@ def set_col_count_list_this_year(strava_user_id):
 
     ###
 
-    sqlExec2 =  "select max(act_start_date),col_code, A.act_id from myapp_col_perform C, myapp_activity A where A.strava_id = C.strava_id and strava_user_id = "+strava_user_id+" group by col_code"
+    sqlExec2 =  "select max(act_start_date),col_code, A.act_id from myapp_col_perform C, myapp_activity A where A.strava_id = C.strava_id and strava_user_id = "+strava_user_id_str+" group by col_code"
     cur.execute(sqlExec2)    
 
     myListPass = cur.fetchall()    

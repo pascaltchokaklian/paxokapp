@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.views import generic
 from django.shortcuts import render, get_object_or_404
 import folium
+from folium.plugins import MarkerCluster
 import requests
 import pandas as pd
 import polyline
@@ -397,7 +398,7 @@ def base_map(request, force_mobile=False):
 def connected_map(request):
         
     # Make your map object    
-    main_map = folium.Map(location=get_map_center("EUROPE"), zoom_start = 6, tiles='CartoDB voyager') # Create base map 
+    main_map = folium.Map(location=get_map_center("EUROPE"), zoom_start = 6, tiles='OpenStreetMap') # Create base map 
     user = request.user # Pulls in the Strava User data                
     ### f_debug_trace("views.py","connected_map","user = "+str(user))
     get_strava_user_id(request,user)
@@ -680,7 +681,7 @@ def col_map(request, col_id):
         myCol.setPoint(oneCol)
         col_location = [myCol.lat,myCol.lon]
         colColor = "blue"
-        map = folium.Map(col_location, zoom_start=15, tiles='CartoDB voyager')
+        map = folium.Map(col_location, zoom_start=15, tiles='OpenStreetMap')
         myPopup = myCol.name+" ("+str(myCol.alt)+"m)"
         folium.Marker(col_location, popup=myPopup,icon=folium.Icon(color=colColor, icon="flag")).add_to(map)      
 
@@ -694,128 +695,126 @@ def col_map(request, col_id):
     return render(request, 'index.html', context)
 
 def act_map(request, act_id):
-    
-    my_strava_user = request.session.get("strava_user")    
-    my_strava_user_id = get_strava_user_id(request,my_strava_user)
-    
-    ###f_debug_trace("col_tools.py","act_map","user : "+my_strava_user)
-    
-    refresh_access_token(my_strava_user)
+    try:
+        my_strava_user = request.session.get("strava_user")    
+        my_strava_user_id = get_strava_user_id(request,my_strava_user)
+        
+        refresh_access_token(my_strava_user)
 
-    user = str(request.user) # Pulls in the Strava User data                
-    ### f_debug_trace("views.py","act_map","user = "+user)
-    get_strava_user_id(request,user)
+        user = str(request.user)
+        get_strava_user_id(request,user)
 
-    myActivity_sq = Activity.objects.all().filter(act_id = act_id)    
-    access_token = "notFound"
-                   
-    userList = Strava_user.objects.all().filter(strava_user = user)
-    for userOne in userList:
-            myUser = userOne
-            access_token = myUser.access_token                
-
-    ### f_debug_trace("views.py","act_map","access_token = "+access_token)     
-           
-    for myActivity in myActivity_sq:            
-            strava_id =  myActivity.strava_id
-            act_statut = myActivity.act_status
-            team_strava_user_id = myActivity.strava_user_id
-            f_debug_trace("views.py","strava_user_id = ",my_strava_user_id)                 
+        # Initialiser les variables
+        myActivity_sq = Activity.objects.all().filter(act_id=act_id)
+        
+        if not myActivity_sq.exists():
+            return HttpResponse('Activité non trouvée', status=404)
+        
+        myActivity = myActivity_sq.first()
+        strava_id = myActivity.strava_id
+        act_statut = myActivity.act_status
+        team_strava_user_id = myActivity.strava_user_id
                         
-    if str(my_strava_user_id) != str(team_strava_user_id):
-        ### See activity from an other
-        ### f_debug_trace("views.py","### See activity from an other",team_strava_user_id)     
-        return HttpResponse('')
+        if str(my_strava_user_id) != str(team_strava_user_id):
+            return HttpResponse('Accès non autorisé', status=403)
         
+        # Récupérer le token
+        access_token = None
+        userList = Strava_user.objects.filter(strava_user=user)
+        if userList.exists():
+            access_token = userList.first().access_token
         
-    activites_url = "https://www.strava.com/api/v3//activities/"+str(strava_id)
-    
-    # Get activity data
-    header = {'Authorization': 'Bearer ' + str(access_token)}            
-    param = {'id': strava_id}
-    
-    activities_json = requests.get(activites_url, headers=header, params=param).json()
-    activity_df_list = []
-       
-    activity_df_list.append(pd.json_normalize(activities_json))
-    
-    # Get Polyline Data
-    activities_df = pd.concat(activity_df_list)        
+        if not access_token or access_token == "notFound":
+            f_debug_trace("views.py", "act_map", "Token non disponible")
+            map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+            context = {"main_map": map._repr_html_()}
+            return render(request, "base_map.html", context)
         
-    activities_df = activities_df.dropna(subset=['map.summary_polyline'])
-    
-    activities_df['polylines'] = activities_df['map.summary_polyline'].apply(polyline.decode)
-    
-    # Centrage de la carte                       
-    centrer_point = map_center(activities_df['polylines'])           
-
-    # Recherche des Segments
-    myRectangle = get_map_rectangle(activities_df['polylines'])
-    segment_explorer(myRectangle, access_token, strava_id, my_strava_user_id)
-                             
-    # Zoom
-    ### f_debug_trace("col_tools.py","act_map","Call map_zoom ")
-    map_zoom = cols_tools.map_zoom(centrer_point,activities_df['polylines'])    
-    ### f_debug_trace("col_tools.py","act_map","After map_zoo")
-    
-    map = folium.Map(location=centrer_point, zoom_start=map_zoom, tiles='OpenStreetMap')
-                                                   
-    # kw = {
-    #   "color": "blue",
-    #   "line_cap": "round",
-    #   "fill": True,
-    #   "fill_color": "red",
-    #   "weight": 5,
-    #   "popup": "Mon rectangle",
-    #   "tooltip": "<strong>Click me!</strong>",
-    #   }        
-    
-    #folium.Rectangle(bounds=[[myRectangle[0],myRectangle[1]],[myRectangle[2],myRectangle[3]]],line_join="round",dash_array="5, 5",**kw,).add_to(map)
-
-    ###############################################
-    #   Plot Polylines onto Folium Map
-    ###############################################
-
-    myGPSPoints = []
-    
-    for pl in activities_df['polylines']:
-        if len(pl) > 0: # Ignore polylines with length zero (Thanks Joukesmink for the tip)
-            folium.PolyLine(locations=pl, color='red').add_to(map)                
-            myPoint = PointGPS()                
-            myPoint = pl                            
-            myGPSPoints.append(myPoint)
-
-
-    ## Col Display
-    ### f_debug_trace("views.py","act_map",SQLITE_PATH)    
-    conn = create_connection(SQLITE_PATH)        
-    
-    myColsList =  getColByActivity(conn,strava_id)     
+        # Récupérer les données de l'activité avec gestion d'erreur
+        activites_url = f"https://www.strava.com/api/v3/activities/{strava_id}"
+        header = {'Authorization': f'Bearer {access_token}'}
         
-    for oneCol in myColsList:
-        myCol = PointCol()
-        myCol.setPoint(oneCol)
-        col_location = [myCol.lat,myCol.lon]
-        colColor = "blue"        
-        mypopup = myCol.name+" ("+str(myCol.alt)+"m)"
-        folium.Marker(col_location, popup=mypopup,icon=folium.Icon(color=colColor, icon="flag")).add_to(map)      
-        ##### Count Update #####
-                   
+        try:
+            response = requests.get(activites_url, headers=header, timeout=10)
+            response.raise_for_status()
+            activities_json = response.json()
+        except (requests.RequestException, ValueError) as e:
+            f_debug_trace("views.py", "act_map", f"Erreur API Strava: {str(e)}")
+            map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+            context = {"main_map": map._repr_html_()}
+            return render(request, "base_map.html", context)
+        
+        # Vérifier que la polyline existe
+        if 'map' not in activities_json or 'summary_polyline' not in activities_json.get('map', {}):
+            f_debug_trace("views.py", "act_map", "Pas de polyline disponible")
+            map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+            context = {"main_map": map._repr_html_()}
+            return render(request, "base_map.html", context)
+        
+        # Décoder la polyline
+        try:
+            polyline_data = activities_json['map']['summary_polyline']
+            decoded_polyline = polyline.decode(polyline_data)
             
-    # Return HTML version of map
-    map_html = map._repr_html_() # Get HTML for website
+            if not decoded_polyline or len(decoded_polyline) == 0:
+                f_debug_trace("views.py", "act_map", "Polyline vide après décodage")
+                map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+                context = {"main_map": map._repr_html_()}
+                return render(request, "base_map.html", context)
+            
+            # Créer la carte
+            centrer_point = [sum(p[0] for p in decoded_polyline) / len(decoded_polyline),
+                            sum(p[1] for p in decoded_polyline) / len(decoded_polyline)]
+            map = folium.Map(location=centrer_point, zoom_start=9, tiles='OpenStreetMap')
+            
+            # Ajouter la polyline
+            folium.PolyLine(locations=decoded_polyline, color='red').add_to(map)
+            
+            # Ajouter les cols (sans appel bloquant à segment_explorer)
+            conn = create_connection(SQLITE_PATH)
+            myColsList = getColByActivity(conn, strava_id)
+            
+            for oneCol in myColsList:
+                myCol = PointCol()
+                myCol.setPoint(oneCol)
+                col_location = [myCol.lat, myCol.lon]
+                colColor = "blue"
+                mypopup = myCol.name + " (" + str(myCol.alt) + "m)"
+                folium.Marker(col_location, popup=mypopup, 
+                            icon=folium.Icon(color=colColor, icon="flag")).add_to(map)
+            
+            # Appeler segment_explorer en arrière-plan (non-bloquant)
+            try:
+                myRectangle = get_map_rectangle([decoded_polyline])
+                # Exécuter segment_explorer sans bloquer (si possible, utiliser Celery)
+                segment_explorer(myRectangle, access_token, strava_id, my_strava_user_id)
+            except Exception as e:
+                f_debug_trace("views.py", "act_map", f"Erreur segment_explorer: {str(e)}")
+                pass  # Continuer même si segment_explorer échoue
+            
+            # Recompute activity si nécessaire
+            if act_statut == 0:
+                try:
+                    recompute_activity(strava_id, None, my_strava_user_id)
+                except Exception as e:
+                    f_debug_trace("views.py", "act_map", f"Erreur recompute_activity: {str(e)}")
+                    pass
+            
+            map_html = map._repr_html_()
+            context = {"main_map": map_html}
+            return render(request, "base_map.html", context)
+            
+        except Exception as e:
+            f_debug_trace("views.py", "act_map", f"Erreur polyline: {str(e)}")
+            map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+            context = {"main_map": map._repr_html_()}
+            return render(request, "base_map.html", context)
     
-    context = {
-        "main_map":map_html        
-    }
-
-    strava_user = get_strava_user_id(request,my_strava_user)
-
-    ## Check col passed new
-    if act_statut == 0:
-        recompute_activity(strava_id, activities_df,strava_user)
-                                           
-    return render(request,"base_map.html", context)
+    except Exception as e:
+        f_debug_trace("views.py", "act_map", f"Erreur générale: {str(e)}")
+        map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+        context = {"main_map": map._repr_html_()}
+        return render(request, "base_map.html", context)
 
 
 def act_map_by_col(request,col_id,act_id):      
@@ -951,16 +950,36 @@ class ColsOkListView(MobileTemplateMixin, generic.ListView):
 #                       Carte des Cols Franchis                         #
 #########################################################################   
 
+def get_col_count_color(col_count):
+    """Retourne une palette de 6 nuances, du plus clair au rouge pour les plus visités."""
+    palette = [
+        "#ddb571",
+        "#d89538",
+        "#d8781d",
+        "#c85a1a",
+        "#b33d14",
+        "#7d0000",
+    ]
+    thresholds = [1, 2, 5, 10, 20, float('inf')]
+    for index, limit in enumerate(thresholds):
+        if col_count <= limit:
+            return palette[index]
+    return palette[-1]
+
+
 def colsok_map(request):
-    """Affiche une carte avec les cols franchis en bleu"""
+    """Affiche une carte avec les cols franchis colorés selon le nombre d'ascensions."""
     strava_user_id = request.session.get('strava_user_id')
     
     # Récupérer tous les cols franchis de l'utilisateur
-    cols_franchis = Col_counter.objects.filter(strava_user_id=strava_user_id)
+    cols_franchis = Col_counter.objects.filter(strava_user_id=strava_user_id).order_by('col_code')
     
     # Initialiser la carte avec un centre par défaut
     map_center = [45.5, 5.0]  # Centre en France par défaut
-    colsok_map = folium.Map(location=map_center, zoom_start=6, tiles='CartoDB voyager')
+    colsok_map = folium.Map(location=map_center, zoom_start=6, tiles='OpenStreetMap')
+    
+    # Créer un cluster pour grouper les marqueurs proches
+    marker_cluster = MarkerCluster().add_to(colsok_map)
     
     # Ajouter un marqueur pour chaque col franchi
     for col_counter in cols_franchis:
@@ -968,26 +987,24 @@ def colsok_map(request):
         col_lon = col_counter.get_col_lon()
         col_name = col_counter.get_col_name()
         col_alt = col_counter.get_col_alt()
+        col_count = getattr(col_counter, 'col_count', 0) or 0
         
         # Vérifier que les coordonnées existent
         if col_lat and col_lon and col_alt:
             location = [col_lat, col_lon]
-            popup_text = f"{col_name} ({col_alt}m)"
+            popup_text = f"{col_name} ({col_alt}m) [{col_count}x]"
+            color = get_col_count_color(col_count)
             
-            # Déterminer la couleur selon l'altitude
-            if col_alt < 1000:
-                color = "green"
-            elif col_alt <= 2000:
-                color = "orange"
-            else:
-                color = "red"
-            
-            folium.Marker(
+            folium.CircleMarker(
                 location,
+                radius=8,
                 popup=popup_text,
-                tooltip=col_name,
-                icon=folium.Icon(color=color, icon="flag")
-            ).add_to(colsok_map)
+                tooltip=f"{col_name} ({col_count}x)",
+                color=color,
+                fill=True,
+                fill_color=color,
+                fill_opacity=0.9,
+            ).add_to(marker_cluster)
     
     colsok_map_html = colsok_map._repr_html_()
     
@@ -995,9 +1012,14 @@ def colsok_map(request):
     is_mobile = is_mobile_user_agent(request)
     template = "m_col_map.html" if is_mobile else "col_map.html"
     
+    try:
+        col_count = cols_franchis.count()
+    except TypeError:
+        col_count = len(cols_franchis)
+
     context = {
         "colsok_map": colsok_map_html,
-        "col_count": cols_franchis.count()
+        "col_count": col_count
     }
     
     return render(request, template, context)
@@ -1015,9 +1037,48 @@ class ActivityListView(MobileTemplateMixin, generic.ListView):
     template_name = "activity_list.html"    # Specify your own template name/location
 
     def get_queryset(self):                
-        strava_user_id = self.request.session.get('strava_user_id')    
-        ### f_debug_trace("views.py","ActivityListView",Activity.objects.count())
-        return Activity.objects.filter(strava_user_id=strava_user_id).order_by("-act_start_date")
+        strava_user_id = self.request.session.get('strava_user_id')
+        queryset = Activity.objects.filter(strava_user_id=strava_user_id).order_by("-act_start_date")
+        
+        # Filtre par date de début
+        date_from = self.request.GET.get('date_from')
+        if date_from:
+            try:
+                from datetime import datetime, time
+                date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').replace(hour=0, minute=0, second=0)
+                queryset = queryset.filter(act_start_date__gte=date_from_obj)
+                f_debug_trace("views.py", "ActivityListView", f"Filtre date_from: {date_from_obj}")
+            except (ValueError, Exception) as e:
+                f_debug_trace("views.py", "ActivityListView", f"Erreur date_from: {str(e)}")
+                pass
+        
+        # Filtre par date de fin
+        date_to = self.request.GET.get('date_to')
+        if date_to:
+            try:
+                from datetime import datetime, time
+                date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+                queryset = queryset.filter(act_start_date__lte=date_to_obj)
+                f_debug_trace("views.py", "ActivityListView", f"Filtre date_to: {date_to_obj}")
+            except (ValueError, Exception) as e:
+                f_debug_trace("views.py", "ActivityListView", f"Erreur date_to: {str(e)}")
+                pass
+        
+        # Filtre par nom de l'activité
+        activity_name = self.request.GET.get('activity_name')
+        if activity_name:
+            queryset = queryset.filter(act_name__icontains=activity_name)
+            f_debug_trace("views.py", "ActivityListView", f"Filtre activity_name: {activity_name}")
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Passer les paramètres de filtre au template
+        context['date_from'] = self.request.GET.get('date_from', '')
+        context['date_to'] = self.request.GET.get('date_to', '')
+        context['activity_name'] = self.request.GET.get('activity_name', '')
+        return context
 
     
 #############################################################################################
@@ -1207,6 +1268,72 @@ def export_activity_text(request, act_id):
     response = HttpResponse(content, content_type='text/plain; charset=utf-8')
     response['Content-Disposition'] = f'attachment; filename="activity_{activity.act_id}.txt"'
     return response
+
+
+def recalculate_activity_cols(request, act_id):
+    """Réinitialise le calcul des cols pour une activité."""
+    try:
+        activity = get_object_or_404(Activity, act_id=act_id)
+        
+        # Vérifier que c'est l'utilisateur de l'activité
+        strava_user_id = request.session.get('strava_user_id')
+        if str(strava_user_id) != str(activity.strava_user_id):
+            return HttpResponse('Accès non autorisé', status=403)
+        
+        user = request.user
+        
+        # Récupérer le token Strava
+        user_list = Strava_user.objects.filter(strava_user=user)
+        if not user_list.exists():
+            f_debug_trace("views.py", "recalculate_activity_cols", "Token Strava non trouvé")
+            activity.act_status = 0
+            activity.save()
+            return redirect('activity-detail', pk=act_id)
+        
+        access_token = user_list.first().access_token
+        
+        if not access_token or access_token == "notFound":
+            f_debug_trace("views.py", "recalculate_activity_cols", "Token invalide")
+            activity.act_status = 0
+            activity.save()
+            return redirect('activity-detail', pk=act_id)
+        
+        # Récupérer les données de l'activité depuis Strava
+        strava_id = activity.strava_id
+        activites_url = f"https://www.strava.com/api/v3/activities/{strava_id}"
+        header = {'Authorization': f'Bearer {access_token}'}
+        
+        try:
+            response = requests.get(activites_url, headers=header, timeout=10)
+            response.raise_for_status()
+            activities_json = response.json()
+            
+            # Vérifier que la polyline existe
+            if 'map' in activities_json and 'summary_polyline' in activities_json.get('map', {}):
+                polyline_data = activities_json['map']['summary_polyline']
+                decoded_polyline = polyline.decode(polyline_data)
+                
+                if decoded_polyline and len(decoded_polyline) > 0:
+                    # Créer un DataFrame avec les données
+                    activities_df = pd.DataFrame({
+                        'polylines': [decoded_polyline]
+                    })
+                    
+                    # Lancer le recalcul
+                    recompute_activity(strava_id, activities_df, strava_user_id)
+                    f_debug_trace("views.py", "recalculate_activity_cols", f"Recalcul lancé avec succès pour {strava_id}")
+        except Exception as e:
+            f_debug_trace("views.py", "recalculate_activity_cols", f"Erreur lors du recalcul: {str(e)}")
+        
+        # Passer le status à 1 pour marquer le calcul comme fait
+        activity.act_status = 1
+        activity.save()
+        
+        return redirect('activity-detail', pk=act_id)
+    except Exception as e:
+        f_debug_trace("views.py", "recalculate_activity_cols", f"Erreur générale: {str(e)}")
+        return HttpResponse('Erreur lors du recalcul', status=500)
+
                                                                             
 class ColsDetailView(generic.DetailView):
 	# specify the model to use            
@@ -1526,7 +1653,7 @@ def m_act_map(request, act_id):
     centrer_point = map_center(activities_df['polylines'])           
     map_zoom = cols_tools.map_zoom(centrer_point, activities_df['polylines'])    
     
-    map = folium.Map(location=centrer_point, zoom_start=map_zoom, tiles='CartoDB voyager')
+    map = folium.Map(location=centrer_point, zoom_start=map_zoom, tiles='OpenStreetMap')
 
     # Afficher la polyline
     myGPSPoints = []

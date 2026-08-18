@@ -4,6 +4,32 @@
 
   <h3>Flux des activités</h3>
 
+  <!-- Formulaire de filtrage -->
+  <div style="background-color: #f5f5f5; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+    <form method="get" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+      <div style="display: flex; flex-direction: column;">
+        <label for="date_from" style="font-weight: bold; margin-bottom: 5px;">Date de début :</label>
+        <input type="date" id="date_from" name="date_from" value="{{ date_from }}" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
+      
+      <div style="display: flex; flex-direction: column;">
+        <label for="date_to" style="font-weight: bold; margin-bottom: 5px;">Date de fin :</label>
+        <input type="date" id="date_to" name="date_to" value="{{ date_to }}" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
+      
+      <div style="display: flex; flex-direction: column;">
+        <label for="activity_name" style="font-weight: bold; margin-bottom: 5px;">Nom de la sortie :</label>
+        <input type="text" id="activity_name" name="activity_name" placeholder="Rechercher..." value="{{ activity_name }}" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
+      
+      <button type="submit" style="padding: 6px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">🔍 Filtrer</button>
+      
+      {% if date_from or date_to or activity_name %}
+        <a href="{% url 'activity' %}" style="padding: 6px 12px; background-color: #6c757d; color: white; border: none; border-radius: 4px; text-decoration: none; display: inline-block;">Réinitialiser</a>
+      {% endif %}
+    </form>
+  </div>
+
   {{ f_test }} 
   
   
