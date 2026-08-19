@@ -1,22 +1,124 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>{{ activity.act_name }}</title>
+</head>
+<body>
 {% block content %}
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h3>{{ activity.act_name }}</h3>
-        <a href="{% url 'activity-detail' pk=activity.act_id %}" title="Retour" style="font-size: 20px; text-decoration: none; color: red;">✕</a>
-    </div>
-    
-    <div style="width: 100%; height: 500px; border: 1px solid #ccc;">
+    <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .mobile-activity-map-frame {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            min-height: 100dvh;
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .mobile-activity-map-frame iframe {
+            position: absolute;
+            inset: 0;
+            display: block;
+            width: 100vw !important;
+            height: 100vh !important;
+            height: 100dvh !important;
+            border: 0;
+        }
+
+        .mobile-activity-map-loading {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            color: #555;
+        }
+
+        .mobile-activity-map-title {
+            position: absolute;
+            top: max(12px, env(safe-area-inset-top));
+            left: 50%;
+            z-index: 1001;
+            max-width: 58vw;
+            overflow: hidden;
+            color: #333;
+            font-weight: 600;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            transform: translateX(-50%);
+        }
+
+        .mobile-activity-map-back {
+            position: absolute;
+            top: max(12px, env(safe-area-inset-top));
+            left: 12px;
+            z-index: 1001;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.94);
+            color: #333;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        }
+
+        .mobile-activity-map-frame.is-loaded .mobile-activity-map-loading {
+            display: none;
+        }
+    </style>
+
+    <div id="mobile-activity-map-frame" class="mobile-activity-map-frame">
+        <a href="{% url 'm-activity-detail' pk=activity.act_id %}" class="mobile-activity-map-back" title="Retour">Retour</a>
+        <div class="mobile-activity-map-title">{{ activity.act_name }}</div>
+        <div class="mobile-activity-map-loading">Chargement de la carte…</div>
         {{ main_map|safe }}
     </div>
-    
-    <div style="margin-top: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 5px;">
-        <p><strong>Distance:</strong> {{ activity.get_act_dist_km|floatformat:2 }} km</p>
-        <p><strong>Dénivelé:</strong> {{ activity.act_den }} m</p>
-        <p><strong>Type:</strong> {{ activity.act_type }}</p>
-        <p><strong>Date:</strong> {{ activity.act_start_date|date:"d M Y" }}</p>
-    </div>
-    
-    <div style="margin-top: 10px; text-align: center;">
-        <a href="{% url 'activity-detail' pk=activity.act_id %}" style="color: blue; text-decoration: underline;">← Retour au détail</a>
-    </div>
+
+    <script>
+        (function () {
+            const frame = document.getElementById('mobile-activity-map-frame');
+            if (!frame) return;
+
+            const mapFrame = frame.querySelector('iframe');
+            if (!mapFrame) {
+                frame.classList.add('is-loaded');
+                return;
+            }
+
+            const markLoaded = function () {
+                frame.classList.add('is-loaded');
+                try {
+                    mapFrame.contentWindow.dispatchEvent(new Event('resize'));
+                } catch (error) {
+                }
+            };
+
+            mapFrame.addEventListener('load', markLoaded, { once: true });
+            window.addEventListener('resize', function () {
+                try {
+                    mapFrame.contentWindow.dispatchEvent(new Event('resize'));
+                } catch (error) {
+                }
+            });
+
+            setTimeout(markLoaded, 2500);
+        }());
+    </script>
 
 {% endblock %}
+</body>
+</html>

@@ -802,8 +802,12 @@ def act_map(request, act_id):
                     pass
             
             map_html = map._repr_html_()
-            context = {"main_map": map_html}
-            return render(request, "base_map.html", context)
+            if "/m_activity/" in request.path:
+                return render(request, "m_activity_map.html", {
+                    "main_map": map_html,
+                    "activity": myActivity,
+                })
+            return render(request, "base_map.html", {"main_map": map_html})
             
         except Exception as e:
             f_debug_trace("views.py", "act_map", f"Erreur polyline: {str(e)}")
@@ -1644,11 +1648,34 @@ def m_act_map(request, act_id):
     header = {'Authorization': f'Bearer {access_token}'}            
     param = {'id': strava_id}
     
-    activities_json = requests.get(activites_url, headers=header, params=param).json()
+    try:
+        response = requests.get(activites_url, headers=header, params=param, timeout=10)
+        response.raise_for_status()
+        activities_json = response.json()
+    except (requests.RequestException, ValueError) as e:
+        f_debug_trace("views.py", "m_act_map", f"Erreur API Strava: {str(e)}")
+        fallback_map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+        return render(request, "m_activity_map.html", {
+            "main_map": fallback_map._repr_html_(),
+            "activity": Activity.objects.get(act_id=act_id),
+        })
     activity_df_list = [pd.json_normalize(activities_json)]
     
     activities_df = pd.concat(activity_df_list)        
+    if 'map.summary_polyline' not in activities_df.columns:
+        fallback_map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+        return render(request, "m_activity_map.html", {
+            "main_map": fallback_map._repr_html_(),
+            "activity": Activity.objects.get(act_id=act_id),
+        })
+
     activities_df = activities_df.dropna(subset=['map.summary_polyline'])
+    if activities_df.empty:
+        fallback_map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+        return render(request, "m_activity_map.html", {
+            "main_map": fallback_map._repr_html_(),
+            "activity": Activity.objects.get(act_id=act_id),
+        })
     activities_df['polylines'] = activities_df['map.summary_polyline'].apply(polyline.decode)
     
     # Centrage et zoom de la carte
