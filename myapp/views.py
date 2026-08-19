@@ -945,7 +945,7 @@ class ColsOkListView(MobileTemplateMixin, generic.ListView):
         date = currentDateTime.date()
         year = date.strftime("%Y")
         context['annee'] = str(year)
-        context['show_recalc_progress'] = self.request.GET.get('recalc') == '1'
+        context['show_recalc_progress'] = True
         return context
 
 #########################################################################   
@@ -1001,7 +1001,7 @@ def colsok_map(request):
                 location,
                 radius=8,
                 popup=popup_text,
-                tooltip=f"{col_name} ({col_count}x)",
+                # tooltip=f"{col_name} ({col_count}x)",
                 color=color,
                 fill=True,
                 fill_color=color,
