@@ -19,6 +19,7 @@ from .segments_tools import compute_all_vam, segment_explorer
 from .vars import get_map_center, f_debug_trace
 from django.db.models import Max
 from django.shortcuts import render , redirect
+from django.urls import reverse
 from django.contrib.auth.models import User
 from social_django.models import UserSocialAuth
 from .myfunctions import *
@@ -942,8 +943,9 @@ class ColsOkListView(MobileTemplateMixin, generic.ListView):
         context = super(ColsOkListView, self).get_context_data(**kwargs)
         currentDateTime = datetime.datetime.now()
         date = currentDateTime.date()
-        year = date.strftime("%Y")        
+        year = date.strftime("%Y")
         context['annee'] = str(year)
+        context['show_recalc_progress'] = self.request.GET.get('recalc') == '1'
         return context
 
 #########################################################################   
@@ -1329,7 +1331,7 @@ def recalculate_activity_cols(request, act_id):
         activity.act_status = 1
         activity.save()
         
-        return redirect('activity-detail', pk=act_id)
+        return redirect(f"{reverse('colsok')}?recalc=1")
     except Exception as e:
         f_debug_trace("views.py", "recalculate_activity_cols", f"Erreur générale: {str(e)}")
         return HttpResponse('Erreur lors du recalcul', status=500)

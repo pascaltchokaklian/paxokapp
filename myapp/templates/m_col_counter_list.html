@@ -12,6 +12,18 @@
 {% extends "m_base_generic.html" %}
 
 {% block content %}
+  {% if show_recalc_progress %}
+  <div id="recalc-progress-overlay" style="position:fixed; inset:0; background:rgba(15, 23, 42, 0.5); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px;">
+    <div style="width:min(320px, 90vw); background:#fff; border-radius:12px; padding:16px 18px; box-shadow:0 18px 45px rgba(0,0,0,0.22);">
+      <div style="font-size:15px; font-weight:700; margin-bottom:12px; color:#0f172a;">Calcul des cols…</div>
+      <div style="width:100%; height:10px; background:#e5e7eb; border-radius:999px; overflow:hidden;">
+        <div id="recalc-progress-bar" style="width:0%; height:100%; border-radius:999px; background:linear-gradient(90deg, #22c55e, #14b8a6); transition:width 0.25s ease;"></div>
+      </div>
+      <div id="recalc-progress-label" style="margin-top:8px; font-size:12px; color:#334155; text-align:right;">0%</div>
+    </div>
+  </div>
+  {% endif %}
+
   <hr />
   {% load static %} 
   <h3>{{col_counter_list.count}} cols franchis</h3>  
@@ -51,6 +63,32 @@
   {% else %}
     <p>There is no Col in the Database.</p>
   {% endif %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const overlay = document.getElementById('recalc-progress-overlay');
+      if (!overlay) return;
+
+      const bar = document.getElementById('recalc-progress-bar');
+      const label = document.getElementById('recalc-progress-label');
+      let progress = 0;
+
+      const timer = setInterval(function () {
+        progress = Math.min(progress + 12 + Math.random() * 12, 96);
+        bar.style.width = progress + '%';
+        label.textContent = Math.round(progress) + '%';
+
+        if (progress >= 96) {
+          clearInterval(timer);
+          setTimeout(function () {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('recalc');
+            window.history.replaceState({}, '', url);
+            overlay.style.display = 'none';
+          }, 400);
+        }
+      }, 180);
+    });
+  </script>
 {% endblock %}
 
 </body>
