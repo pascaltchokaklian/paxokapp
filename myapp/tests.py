@@ -7,7 +7,31 @@ from django.test import SimpleTestCase, TestCase
 from django.test.client import RequestFactory
 from django.urls import reverse
 
-from myapp import col_dbtools, views
+from myapp import col_dbtools, segments_tools, views
+
+
+class SegmentExplorerResponseTests(SimpleTestCase):
+    @patch.object(segments_tools.requests, 'get')
+    def test_missing_segments_response_does_not_raise(self, mock_get):
+        mock_get.return_value = SimpleNamespace(
+            status_code=200,
+            json=lambda: {'message': 'Rate Limit Exceeded'},
+        )
+
+        result = segments_tools.segment_explorer((1, 2, 3, 4), 'token', 123, 456)
+
+        self.assertEqual(result, 0)
+
+    @patch.object(segments_tools.requests, 'get')
+    def test_api_error_response_does_not_raise(self, mock_get):
+        mock_get.return_value = SimpleNamespace(
+            status_code=403,
+            json=lambda: {'message': 'Forbidden'},
+        )
+
+        result = segments_tools.segment_explorer((1, 2, 3, 4), 'token', 123, 456)
+
+        self.assertEqual(result, 0)
 
 
 class ConnectedMapRedirectTests(SimpleTestCase):

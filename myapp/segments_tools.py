@@ -17,11 +17,34 @@ def segment_explorer(myRectangle, access_token, strava_id, strava_user_id):
     segments_url = segments_url + "&activity_type=riding"
     segments_url = segments_url + "&access_token="+ str(access_token)
 
-    ExplorerResponse = requests.get(segments_url, headers=header, params=param).json()
+    try:
+        response = requests.get(segments_url, headers=header, params=param)
+        ExplorerResponse = response.json()
+    except (requests.RequestException, ValueError) as error:
+        f_debug_trace("segments_tools.py", "segment_explorer", f"Erreur API Strava: {error}")
+        return 0
+
+    status_code = getattr(response, "status_code", 200)
+    if status_code != 200:
+        f_debug_trace(
+            "segments_tools.py",
+            "segment_explorer",
+            f"Erreur API Strava ({status_code}): {ExplorerResponse}",
+        )
+        return 0
+
+    segments = ExplorerResponse.get("segments") if isinstance(ExplorerResponse, dict) else None
+    if segments is None:
+        f_debug_trace(
+            "segments_tools.py",
+            "segment_explorer",
+            f"Réponse Strava sans segments: {ExplorerResponse}",
+        )
+        return 0
 
     ret = 0
     
-    for oneSegment in ExplorerResponse['segments']:
+    for oneSegment in segments:
         
         strava_id = oneSegment["id"]
         nameSegment = oneSegment["name"]
