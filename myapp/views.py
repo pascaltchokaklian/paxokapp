@@ -22,7 +22,11 @@ from django.shortcuts import render , redirect
 from django.urls import reverse
 from django.contrib.auth.models import User
 from social_django.models import UserSocialAuth
+from django.utils import timezone
 from .myfunctions import *
+
+DEFAULT_MAP_TILES = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
+DEFAULT_MAP_ATTR = "Tiles &copy; Esri"
 
 
 def is_mobile_user_agent(request):
@@ -329,8 +333,15 @@ def mainIndexView(request,user):
     continent = "EUROPE"
     if view_region_info[0] == "AR":
         continent = "SOUTHAMERICA"
-    # Carte avec uniquement OpenStreetMap (OSM Standard)
-    main_map = folium.Map(location=get_map_center(continent), zoom_start=6, tiles='OpenStreetMap')
+    # Carte avec un fournisseur de tuiles public sans clé
+    main_map = folium.Map(location=get_map_center(continent), zoom_start=6)
+    folium.TileLayer(
+        tiles=DEFAULT_MAP_TILES,
+        attr=DEFAULT_MAP_ATTR,
+        name='Carte',
+        overlay=False,
+        control=True,
+    ).add_to(main_map)
     feature_group_Road = folium.FeatureGroup(name="Route").add_to(main_map)    
     feature_group_Piste = folium.FeatureGroup(name="Piste").add_to(main_map)    
     feature_group_Sentier = folium.FeatureGroup(name="Sentier").add_to(main_map)    
@@ -399,7 +410,14 @@ def base_map(request, force_mobile=False):
 def connected_map(request):
         
     # Make your map object    
-    main_map = folium.Map(location=get_map_center("EUROPE"), zoom_start = 6, tiles='OpenStreetMap') # Create base map 
+    main_map = folium.Map(location=get_map_center("EUROPE"), zoom_start = 6) # Create base map 
+    folium.TileLayer(
+        tiles=DEFAULT_MAP_TILES,
+        attr=DEFAULT_MAP_ATTR,
+        name='Carte',
+        overlay=False,
+        control=True,
+    ).add_to(main_map)
     user = request.user # Pulls in the Strava User data                
     ### f_debug_trace("views.py","connected_map","user = "+str(user))
     get_strava_user_id(request,user)
@@ -434,6 +452,11 @@ def connected_map(request):
             myUser.refresh_token = refresh_token
             myUser.expire_at = expires
             myUser.save()            
+
+    if refresh_access_token(str(user)):
+        refreshed_user = Strava_user.objects.all().filter(strava_user=str(user)).first()
+        if refreshed_user and refreshed_user.access_token:
+            access_token = refreshed_user.access_token
 
     
     my_strava_user_id = get_strava_user_id(request,user)
@@ -602,8 +625,7 @@ def connected_map(request):
             
             # Recherche des Segments
             ### f_debug_trace("views.py","connected_map","Activity Segemnts Performance, strava_id ="+str(strava_id)) 
-            myRectangle = get_map_rectangle(activities_df['polylines'])
-            segment_explorer(myRectangle, access_token, strava_id, my_strava_user_id)
+            segment_explorer(None, access_token, strava_id, my_strava_user_id)
 
         ### End Treatement des segments
                         
@@ -682,7 +704,14 @@ def col_map(request, col_id):
         myCol.setPoint(oneCol)
         col_location = [myCol.lat,myCol.lon]
         colColor = "blue"
-        map = folium.Map(col_location, zoom_start=15, tiles='OpenStreetMap')
+        map = folium.Map(col_location, zoom_start=15)
+        folium.TileLayer(
+            tiles=DEFAULT_MAP_TILES,
+            attr=DEFAULT_MAP_ATTR,
+            name='Carte',
+            overlay=False,
+            control=True,
+        ).add_to(map)
         myPopup = myCol.name+" ("+str(myCol.alt)+"m)"
         folium.Marker(col_location, popup=myPopup,icon=folium.Icon(color=colColor, icon="flag")).add_to(map)      
 
@@ -697,13 +726,9 @@ def col_map(request, col_id):
 
 def act_map(request, act_id):
     try:
-        my_strava_user = request.session.get("strava_user")    
-        my_strava_user_id = get_strava_user_id(request,my_strava_user)
-        
-        refresh_access_token(my_strava_user)
-
         user = str(request.user)
-        get_strava_user_id(request,user)
+        my_strava_user_id = get_strava_user_id(request, user)
+        refresh_access_token(user)
 
         # Initialiser les variables
         myActivity_sq = Activity.objects.all().filter(act_id=act_id)
@@ -727,7 +752,8 @@ def act_map(request, act_id):
         
         if not access_token or access_token == "notFound":
             f_debug_trace("views.py", "act_map", "Token non disponible")
-            map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+            map = folium.Map(location=[45.5, 5.0], zoom_start=6)
+            folium.TileLayer(tiles=DEFAULT_MAP_TILES, attr=DEFAULT_MAP_ATTR, name='Carte', overlay=False, control=True).add_to(map)
             context = {"main_map": map._repr_html_()}
             return render(request, "base_map.html", context)
         
@@ -741,14 +767,16 @@ def act_map(request, act_id):
             activities_json = response.json()
         except (requests.RequestException, ValueError) as e:
             f_debug_trace("views.py", "act_map", f"Erreur API Strava: {str(e)}")
-            map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+            map = folium.Map(location=[45.5, 5.0], zoom_start=6)
+            folium.TileLayer(tiles=DEFAULT_MAP_TILES, attr=DEFAULT_MAP_ATTR, name='Carte', overlay=False, control=True).add_to(map)
             context = {"main_map": map._repr_html_()}
             return render(request, "base_map.html", context)
         
         # Vérifier que la polyline existe
         if 'map' not in activities_json or 'summary_polyline' not in activities_json.get('map', {}):
             f_debug_trace("views.py", "act_map", "Pas de polyline disponible")
-            map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+            map = folium.Map(location=[45.5, 5.0], zoom_start=6)
+            folium.TileLayer(tiles=DEFAULT_MAP_TILES, attr=DEFAULT_MAP_ATTR, name='Carte', overlay=False, control=True).add_to(map)
             context = {"main_map": map._repr_html_()}
             return render(request, "base_map.html", context)
         
@@ -759,14 +787,16 @@ def act_map(request, act_id):
             
             if not decoded_polyline or len(decoded_polyline) == 0:
                 f_debug_trace("views.py", "act_map", "Polyline vide après décodage")
-                map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+                map = folium.Map(location=[45.5, 5.0], zoom_start=6)
+                folium.TileLayer(tiles=DEFAULT_MAP_TILES, attr=DEFAULT_MAP_ATTR, name='Carte', overlay=False, control=True).add_to(map)
                 context = {"main_map": map._repr_html_()}
                 return render(request, "base_map.html", context)
             
             # Créer la carte
             centrer_point = [sum(p[0] for p in decoded_polyline) / len(decoded_polyline),
                             sum(p[1] for p in decoded_polyline) / len(decoded_polyline)]
-            map = folium.Map(location=centrer_point, zoom_start=9, tiles='OpenStreetMap')
+            map = folium.Map(location=centrer_point, zoom_start=9)
+            folium.TileLayer(tiles=DEFAULT_MAP_TILES, attr=DEFAULT_MAP_ATTR, name='Carte', overlay=False, control=True).add_to(map)
             
             # Ajouter la polyline
             folium.PolyLine(locations=decoded_polyline, color='red').add_to(map)
@@ -786,9 +816,8 @@ def act_map(request, act_id):
             
             # Appeler segment_explorer en arrière-plan (non-bloquant)
             try:
-                myRectangle = get_map_rectangle([decoded_polyline])
                 # Exécuter segment_explorer sans bloquer (si possible, utiliser Celery)
-                segment_explorer(myRectangle, access_token, strava_id, my_strava_user_id)
+                segment_explorer(None, access_token, strava_id, my_strava_user_id)
             except Exception as e:
                 f_debug_trace("views.py", "act_map", f"Erreur segment_explorer: {str(e)}")
                 pass  # Continuer même si segment_explorer échoue
@@ -811,13 +840,15 @@ def act_map(request, act_id):
             
         except Exception as e:
             f_debug_trace("views.py", "act_map", f"Erreur polyline: {str(e)}")
-            map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+            map = folium.Map(location=[45.5, 5.0], zoom_start=6)
+            folium.TileLayer(tiles=DEFAULT_MAP_TILES, attr=DEFAULT_MAP_ATTR, name='Carte', overlay=False, control=True).add_to(map)
             context = {"main_map": map._repr_html_()}
             return render(request, "base_map.html", context)
     
     except Exception as e:
         f_debug_trace("views.py", "act_map", f"Erreur générale: {str(e)}")
-        map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+        map = folium.Map(location=[45.5, 5.0], zoom_start=6)
+        folium.TileLayer(tiles=DEFAULT_MAP_TILES, attr=DEFAULT_MAP_ATTR, name='Carte', overlay=False, control=True).add_to(map)
         context = {"main_map": map._repr_html_()}
         return render(request, "base_map.html", context)
 
@@ -982,7 +1013,8 @@ def colsok_map(request):
     
     # Initialiser la carte avec un centre par défaut
     map_center = [45.5, 5.0]  # Centre en France par défaut
-    colsok_map = folium.Map(location=map_center, zoom_start=6, tiles='OpenStreetMap')
+    colsok_map = folium.Map(location=map_center, zoom_start=6)
+    folium.TileLayer(tiles=DEFAULT_MAP_TILES, attr=DEFAULT_MAP_ATTR, name='Carte', overlay=False, control=True).add_to(colsok_map)
     
     # Créer un cluster pour grouper les marqueurs proches
     marker_cluster = MarkerCluster().add_to(colsok_map)
@@ -1051,7 +1083,11 @@ class ActivityListView(MobileTemplateMixin, generic.ListView):
         if date_from:
             try:
                 from datetime import datetime, time
-                date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').replace(hour=0, minute=0, second=0)
+                date_from_obj = timezone.make_aware(
+                    datetime.strptime(date_from, '%Y-%m-%d').replace(
+                        hour=0, minute=0, second=0
+                    )
+                )
                 queryset = queryset.filter(act_start_date__gte=date_from_obj)
                 f_debug_trace("views.py", "ActivityListView", f"Filtre date_from: {date_from_obj}")
             except (ValueError, Exception) as e:
@@ -1063,7 +1099,11 @@ class ActivityListView(MobileTemplateMixin, generic.ListView):
         if date_to:
             try:
                 from datetime import datetime, time
-                date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+                date_to_obj = timezone.make_aware(
+                    datetime.strptime(date_to, '%Y-%m-%d').replace(
+                        hour=23, minute=59, second=59
+                    )
+                )
                 queryset = queryset.filter(act_start_date__lte=date_to_obj)
                 f_debug_trace("views.py", "ActivityListView", f"Filtre date_to: {date_to_obj}")
             except (ValueError, Exception) as e:
@@ -1439,6 +1479,10 @@ def new_col_form(request):
         return render(request , 'new_col.html' , {'form' : form})    
     
 def get_strava_user_id(request,username):    
+    # Si username est un objet User, obtenir son username
+    if hasattr(username, 'username'):
+        username = username.username
+    
     ### f_debug_trace("views.py","get_strava_user_id","username = "+str(username))
     user_id = User.objects.get(username=username).pk        
     uid = UserSocialAuth.objects.get(user_id=user_id).uid        
@@ -1620,13 +1664,9 @@ def fSegmentHistoView(request,**kwargs):
 
 def m_act_map(request, act_id):
     """Vue pour afficher la carte d'une activité en mode mobile"""
-    my_strava_user = request.session.get("strava_user")    
-    my_strava_user_id = get_strava_user_id(request, my_strava_user)
-    
-    refresh_access_token(my_strava_user)
-
     user = str(request.user)
-    get_strava_user_id(request, user)
+    my_strava_user_id = get_strava_user_id(request, user)
+    refresh_access_token(user)
 
     myActivity_sq = Activity.objects.all().filter(act_id=act_id)    
     access_token = "notFound"
@@ -1654,7 +1694,7 @@ def m_act_map(request, act_id):
         activities_json = response.json()
     except (requests.RequestException, ValueError) as e:
         f_debug_trace("views.py", "m_act_map", f"Erreur API Strava: {str(e)}")
-        fallback_map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+        fallback_map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles=DEFAULT_MAP_TILES)
         return render(request, "m_activity_map.html", {
             "main_map": fallback_map._repr_html_(),
             "activity": Activity.objects.get(act_id=act_id),
@@ -1663,7 +1703,8 @@ def m_act_map(request, act_id):
     
     activities_df = pd.concat(activity_df_list)        
     if 'map.summary_polyline' not in activities_df.columns:
-        fallback_map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+        fallback_map = folium.Map(location=[45.5, 5.0], zoom_start=6)
+        folium.TileLayer(tiles=DEFAULT_MAP_TILES, attr=DEFAULT_MAP_ATTR, name='Carte', overlay=False, control=True).add_to(fallback_map)
         return render(request, "m_activity_map.html", {
             "main_map": fallback_map._repr_html_(),
             "activity": Activity.objects.get(act_id=act_id),
@@ -1671,7 +1712,8 @@ def m_act_map(request, act_id):
 
     activities_df = activities_df.dropna(subset=['map.summary_polyline'])
     if activities_df.empty:
-        fallback_map = folium.Map(location=[45.5, 5.0], zoom_start=6, tiles='OpenStreetMap')
+        fallback_map = folium.Map(location=[45.5, 5.0], zoom_start=6)
+        folium.TileLayer(tiles=DEFAULT_MAP_TILES, attr=DEFAULT_MAP_ATTR, name='Carte', overlay=False, control=True).add_to(fallback_map)
         return render(request, "m_activity_map.html", {
             "main_map": fallback_map._repr_html_(),
             "activity": Activity.objects.get(act_id=act_id),
@@ -1682,7 +1724,8 @@ def m_act_map(request, act_id):
     centrer_point = map_center(activities_df['polylines'])           
     map_zoom = cols_tools.map_zoom(centrer_point, activities_df['polylines'])    
     
-    map = folium.Map(location=centrer_point, zoom_start=map_zoom, tiles='OpenStreetMap')
+    map = folium.Map(location=centrer_point, zoom_start=map_zoom)
+    folium.TileLayer(tiles=DEFAULT_MAP_TILES, attr=DEFAULT_MAP_ATTR, name='Carte', overlay=False, control=True).add_to(map)
 
     # Afficher la polyline
     myGPSPoints = []
@@ -1715,5 +1758,3 @@ def m_act_map(request, act_id):
     }
 
     return render(request, "m_activity_map.html", context)
-
-

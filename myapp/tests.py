@@ -11,6 +11,28 @@ from myapp import col_dbtools, segments_tools, views
 
 
 class SegmentExplorerResponseTests(SimpleTestCase):
+    @patch('myapp.cols_tools.refresh_access_token', return_value=True)
+    @patch.object(segments_tools.Strava_user.objects, 'filter')
+    @patch.object(segments_tools.requests, 'get')
+    def test_401_refreshes_token_and_retries(self, mock_get, mock_filter, mock_refresh):
+        stored_user = SimpleNamespace(
+            strava_user='alice',
+            access_token='fresh-token',
+            refresh_from_db=lambda: None,
+        )
+        mock_filter.return_value.first.return_value = stored_user
+        mock_get.side_effect = [
+            SimpleNamespace(status_code=401, json=lambda: {'message': 'Authorization Error'}),
+            SimpleNamespace(status_code=200, json=lambda: {'segments': []}),
+        ]
+
+        result = segments_tools.segment_explorer((1, 2, 3, 4), 'expired-token', 123, 456)
+
+        self.assertEqual(result, 0)
+        mock_refresh.assert_called_once_with(456)
+        self.assertEqual(mock_get.call_count, 2)
+        self.assertEqual(mock_get.call_args_list[1].kwargs['headers']['Authorization'], 'Bearer fresh-token')
+
     @patch.object(segments_tools.requests, 'get')
     def test_missing_segments_response_does_not_raise(self, mock_get):
         mock_get.return_value = SimpleNamespace(
@@ -32,6 +54,16 @@ class SegmentExplorerResponseTests(SimpleTestCase):
         result = segments_tools.segment_explorer((1, 2, 3, 4), 'token', 123, 456)
 
         self.assertEqual(result, 0)
+
+class RefreshAccessTokenTests(SimpleTestCase):
+    @patch('myapp.cols_tools.Strava_user.objects')
+    def test_username_does_not_query_integer_strava_id(self, mock_objects):
+        mock_objects.filter.return_value.first.return_value = None
+
+        from myapp.cols_tools import refresh_access_token
+
+        self.assertFalse(refresh_access_token('tpascal'))
+        mock_objects.filter.assert_called_once_with(strava_user='tpascal')
 
 
 class ConnectedMapRedirectTests(SimpleTestCase):
@@ -110,6 +142,7 @@ class ConnectedMapRedirectTests(SimpleTestCase):
              patch.object(views, 'User_var', FakeUserVar), \
              patch.object(views, 'Activity', FakeActivity), \
              patch.object(views, 'get_strava_user_id', return_value=42), \
+             patch.object(views, 'refresh_access_token', return_value=False), \
              patch.object(views, 'update_user_var'), \
              patch.object(views, 'compute_all_month_stat'), \
              patch.object(views, 'set_col_count_list_this_year'), \

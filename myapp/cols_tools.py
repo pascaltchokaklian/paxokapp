@@ -216,46 +216,109 @@ def map_zoom(centrerPoint, listePoint= PointGPS() ):
 
 #########################################################
 
-def refresh_access_token(strava_user):
-    """ Refresh du token strava 
-    
-    Parametres :
-    client_Strava: une liste avec les informations du client strava
-    
-    Retourne :
-    bool: Refresh token réussie ou non
-    """
+def refresh_access_token(strava_user_or_id):
+    """Refresh du token Strava. Accepte strava_user ou strava_user_id."""
 
-    refresh_token = ""
-    myUser_unique = Strava_user.objects.all().filter(strava_user = strava_user)
-    for oneOk in myUser_unique:
-            myUser = oneOk            
-            refresh_token = myUser.refresh_token                        
-            
+    # Query the integer field only when the value is actually numeric.
+    myUser = None
+    try:
+        strava_user_id = int(strava_user_or_id)
+    except (TypeError, ValueError):
+        strava_user_id = None
+
+    if strava_user_id is not None:
+        myUser = Strava_user.objects.filter(strava_user_id=strava_user_id).first()
+
+    if not myUser:
+        # Sinon essayer par strava_user (string)
+        myUser = Strava_user.objects.filter(strava_user=strava_user_or_id).first()
+
+    if myUser is None:
+        f_debug_trace(
+            "col_tools.py",
+            "refresh_access_token",
+            f"Utilisateur Strava introuvable (recherche: {strava_user_or_id})"
+        )
+        return False
+
+    if not myUser.refresh_token:
+        f_debug_trace(
+            "col_tools.py",
+            "refresh_access_token",
+            "Refresh token absent"
+        )
+        return False
+
     payload_refresh = {
-        'client_id': {get_app_client_id()},
-        'client_secret': {get_app_client_secret()},
-        'refresh_token': {refresh_token},
-        'grant_type': "refresh_token",
-        'f': 'json'
+        "client_id": get_app_client_id(),
+        "client_secret": get_app_client_secret(),
+        "refresh_token": myUser.refresh_token,
+        "grant_type": "refresh_token",
     }
-        
+
     try:
         auth_url = "https://www.strava.com/oauth/token"
-        print("-------------------------------------")
-        print(auth_url)
-        print("-------------------------------------")
-        res = requests.post(auth_url, data=payload_refresh, verify=False)                
 
-        myUser.access_token = res.json()['access_token']
-        myUser.expire_at = res.json()['expires_at']
+        print("-------------------------------------")
+        print("Strava OAuth refresh")
+        print("URL :", auth_url)
+        print("client_id :", payload_refresh["client_id"])
+        print("refresh_token présent :", bool(payload_refresh["refresh_token"]))
+        print("refresh_token longueur :", len(payload_refresh["refresh_token"]))
+        print("-------------------------------------")
+
+        res = requests.post(
+            auth_url,
+            data=payload_refresh,
+            timeout=15
+        )
+
+        try:
+            response_data = res.json()
+        except ValueError:
+            f_debug_trace(
+                "col_tools.py",
+                "refresh_access_token",
+                f"Réponse Strava non JSON (HTTP {res.status_code})"
+            )
+            return False
+
+        print("HTTP :", res.status_code)
+        print("Réponse Strava reçue (champs) :", list(response_data.keys()))
+        print("-------------------------------------")
+
+        if res.status_code != 200 or "access_token" not in response_data:
+            f_debug_trace(
+                "col_tools.py",
+                "refresh_access_token",
+                f"Strava ({res.status_code}): {response_data}"
+            )
+            return False
+
+        myUser.access_token = response_data["access_token"]
+        myUser.expire_at = response_data["expires_at"]
+
+        # Strava peut fournir un nouveau refresh_token
+        if response_data.get("refresh_token"):
+            myUser.refresh_token = response_data["refresh_token"]
+
         myUser.save()
-        
-    except:
-        f_debug_trace("col_tools.py","refresh_access_token","Refresh Token Error")
+
+        f_debug_trace(
+            "col_tools.py",
+            "refresh_access_token",
+            "Token Strava rafraîchi avec succès"
+        )
+
+        return True
+
+    except requests.RequestException as error:
+        f_debug_trace(
+            "col_tools.py",
+            "refresh_access_token",
+            f"Erreur réseau Strava : {error}"
+        )
         return False
-    
-    return True
 
 #####################################################
 #   month = 202311

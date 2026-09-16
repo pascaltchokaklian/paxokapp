@@ -82,28 +82,37 @@
 
   <script>
     var table = document.querySelector('.massive')
-    var tbody = table.tBodies[0]
-    var rows = [].slice.call(tbody.rows, 0)
-    var fragment = document.createDocumentFragment()
-  
-    for (var k = 0; k < 50; k++) {
-      for (var i = 0; i < rows.length; i++) {
-        fragment.appendChild(rows[i].cloneNode(true))
+    if (table && table.tBodies && table.tBodies[0]) {
+      var tbody = table.tBodies[0]
+      var rows = [].slice.call(tbody.rows, 0)
+      var fragment = document.createDocumentFragment()
+    
+      for (var k = 0; k < 50; k++) {
+        for (var i = 0; i < rows.length; i++) {
+          fragment.appendChild(rows[i].cloneNode(true))
+        }
       }
+      tbody.innerHTML = ''
+      tbody.appendChild(fragment)
     }
-    tbody.innerHTML = ''
-    tbody.appendChild(fragment)
   </script>
   
   <script>
     function prepareAdvancedTable() {
       var size_table = document.querySelector('.advanced-table')
+      if (!size_table || !size_table.tBodies || !size_table.tBodies[0]) {
+        return
+      }
       var rows = size_table.tBodies[0].rows    
       for (let i = 0; i < rows.length; i++) {
         const date_element = rows[i].cells[2]
         const size_element = rows[i].cells[1]
-        date_element.setAttribute('data-sort', date_element.innerText.replace(/(\d+)\/(\d+)\/(\d+)/, '$3$1$2'))
-        size_element.setAttribute('data-sort', toBytes(size_element.innerText))
+        if (date_element) {
+          date_element.setAttribute('data-sort', date_element.innerText.replace(/(\d+)\/(\d+)\/(\d+)/, '$3$1$2'))
+        }
+        if (size_element) {
+          size_element.setAttribute('data-sort', toBytes(size_element.innerText))
+        }
       }
     }
   

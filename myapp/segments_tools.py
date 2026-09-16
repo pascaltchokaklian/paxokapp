@@ -1,7 +1,8 @@
 import datetime
 import requests
 
-from .models import Perform, Segment
+from . import cols_tools
+from .models import Perform, Segment, Strava_user
 from .vars import f_debug_trace
 
 ################################################
@@ -9,72 +10,107 @@ from .vars import f_debug_trace
 ################################################
 
 def segment_explorer(myRectangle, access_token, strava_id, strava_user_id):
-            
-    header = {'Authorization': 'Bearer ' + str(access_token)}            
-    param = {'id': strava_id, 'min_cat' : 3 }
+    """Importe les segments réellement parcourus dans une activité Strava.
 
-    segments_url = "https://www.strava.com/api/v3/segments/explore?bounds="+str(myRectangle[0])+","+str(myRectangle[1])+","+str(myRectangle[2])+","+str(myRectangle[3])
-    segments_url = segments_url + "&activity_type=riding"
-    segments_url = segments_url + "&access_token="+ str(access_token)
+    ``myRectangle`` est conservé dans la signature pour compatibilité avec les
+    anciens appelants, mais il n'est plus utilisé. L'endpoint d'activité
+    retourne directement les efforts de segment associés à cette activité.
+    """
+    del myRectangle
+
+    activity_url = f"https://www.strava.com/api/v3/activities/{strava_id}"
+    headers = {"Authorization": f"Bearer {access_token}"}
 
     try:
-        response = requests.get(segments_url, headers=header, params=param)
-        ExplorerResponse = response.json()
+        response = requests.get(
+            activity_url,
+            headers=headers,
+            params={"include_all_efforts": "true"},
+            timeout=15,
+        )
+        activity_response = response.json()
     except (requests.RequestException, ValueError) as error:
         f_debug_trace("segments_tools.py", "segment_explorer", f"Erreur API Strava: {error}")
         return 0
 
-    status_code = getattr(response, "status_code", 200)
-    if status_code != 200:
+    if response.status_code == 401 and cols_tools.refresh_access_token(strava_user_id):
+        refreshed_user = Strava_user.objects.filter(strava_user_id=strava_user_id).first()
+        if refreshed_user and refreshed_user.access_token:
+            headers["Authorization"] = f"Bearer {refreshed_user.access_token}"
+            try:
+                response = requests.get(
+                    activity_url,
+                    headers=headers,
+                    params={"include_all_efforts": "true"},
+                    timeout=15,
+                )
+                activity_response = response.json()
+            except (requests.RequestException, ValueError) as error:
+                f_debug_trace("segments_tools.py", "segment_explorer", f"Erreur API Strava après renouvellement: {error}")
+                return 0
+
+    if response.status_code != 200:
         f_debug_trace(
             "segments_tools.py",
             "segment_explorer",
-            f"Erreur API Strava ({status_code}): {ExplorerResponse}",
+            f"Erreur API Strava ({response.status_code}): {activity_response}",
         )
         return 0
 
-    segments = ExplorerResponse.get("segments") if isinstance(ExplorerResponse, dict) else None
-    if segments is None:
+    segment_efforts = activity_response.get("segment_efforts") if isinstance(activity_response, dict) else None
+    if segment_efforts is None:
+        # Compatibilité avec une réponse de test/ancienne intégration.
+        segment_efforts = activity_response.get("segments") if isinstance(activity_response, dict) else None
+    if not isinstance(segment_efforts, list):
         f_debug_trace(
             "segments_tools.py",
             "segment_explorer",
-            f"Réponse Strava sans segments: {ExplorerResponse}",
+            f"Réponse Strava sans segment_efforts: {activity_response}",
         )
         return 0
 
     ret = 0
     
-    for oneSegment in segments:
-        
-        strava_id = oneSegment["id"]
-        nameSegment = oneSegment["name"]
-        
-        avg_grade = oneSegment["avg_grade"]
-        normal_power = oneSegment["avg_grade"]
-        elev_difference = oneSegment["elev_difference"]
-        distance = oneSegment["distance"]/1000
-        segment_id = 0 # compuuted
+    for effort in segment_efforts:
+        oneSegment = effort.get("segment", effort) if isinstance(effort, dict) else {}
+        try:
+            segment_strava_id = oneSegment["id"]
+            nameSegment = oneSegment["name"]
+            avg_grade = float(oneSegment.get("average_grade", oneSegment.get("avg_grade", 0)))
+            elev_difference = oneSegment.get("elev_difference")
+            if elev_difference is None:
+                elev_difference = abs(
+                    float(oneSegment.get("elevation_high", 0))
+                    - float(oneSegment.get("elevation_low", 0))
+                )
+            distance = float(oneSegment["distance"]) / 1000
+        except (KeyError, TypeError, ValueError):
+            f_debug_trace("segments_tools.py", "segment_explorer", f"Segment Strava invalide: {oneSegment}")
+            continue
+
+        normal_power = None
+        segment_id = 0  # computed
         ### f_debug_trace("segment_tools.py","segment_explorer",nameSegment + " distance = " + str(distance) + " avg_grade = " + str(avg_grade))                        
         ### Eligible ou Non        
-        if distance >= 3 and avg_grade >= 5:                    
+        if distance >= 3 and avg_grade >= 5:
             # DB update
-            segment_list = Segment.objects.all().filter(strava_segment_id = strava_id)
-            if len(segment_list) == 1 :
+            segment_list = Segment.objects.all().filter(strava_segment_id=segment_strava_id)
+            if len(segment_list) == 1:
                 # UPDATE
-                for oneSegment in segment_list:                                        
-                    segment_id = oneSegment.segment_id
+                for db_segment in segment_list:
+                    segment_id = db_segment.segment_id
             else:
                 # INSERT                                
-                segment = Segment(strava_segment_id=strava_id,activity_type="riding", segment_name=nameSegment, slope=avg_grade,lenght=distance,ascent=elev_difference,power=normal_power)
+                segment = Segment(strava_segment_id=segment_strava_id, activity_type="riding", segment_name=nameSegment, slope=avg_grade, lenght=distance, ascent=elev_difference, power=normal_power)
                 segment.save()
                 # Find the new key
-                segment_list = Segment.objects.all().filter(strava_segment_id = strava_id)
-                if len(segment_list) ==1 :                
-                    for oneSegment in segment_list:                        
-                        segment_id = oneSegment.segment_id
+                segment_list = Segment.objects.all().filter(strava_segment_id=segment_strava_id)
+                if len(segment_list) == 1:
+                    for db_segment in segment_list:
+                        segment_id = db_segment.segment_id
 
-            #Performances
-            payment = save_segment_perf(segment_id, strava_id, access_token, elev_difference,strava_user_id)
+            # Performances
+            payment = save_segment_perf(segment_id, segment_strava_id, access_token, elev_difference, strava_user_id)
 
             if payment == 0:
                 break
@@ -89,17 +125,16 @@ def segment_explorer(myRectangle, access_token, strava_id, strava_user_id):
 def save_segment_perf(segment_id, segment_strava_id, access_token, elev_difference, strava_user_id):
         
     param = {'segment_id': segment_strava_id}
-    header = {'Authorization': 'Bearer ' + str(access_token)} 
-    
+
     myDate = datetime.datetime.now().isoformat()
 
-    performance_url = "https://www.strava.com/api/v3/segment_efforts?segment_id="+ str (segment_strava_id)
-    performance_url = performance_url + "&start_date_local="+"2010-10-01T00:00:30+01:00"
-    performance_url = performance_url + "&end_date_local="+str(myDate)    
+    performance_url = "https://www.strava.com/api/v3/segment_efforts?segment_id=" + str(segment_strava_id)
+    performance_url = performance_url + "&access_token=" + str(access_token)
+    performance_url = performance_url + "&start_date_local=" + "2010-10-01T00:00:30+01:00"
+    performance_url = performance_url + "&end_date_local=" + str(myDate)
     performance_url = performance_url + "&per_page=200"
-    performance_url = performance_url + "&access_token="+ str(access_token)
         
-    performanceResponse = requests.get(performance_url, headers=header, params=param).json()
+    performanceResponse = requests.get(performance_url, params=param).json()
 
     ret = 0        
 
