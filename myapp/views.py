@@ -625,7 +625,13 @@ def connected_map(request):
             
             # Recherche des Segments
             ### f_debug_trace("views.py","connected_map","Activity Segemnts Performance, strava_id ="+str(strava_id)) 
-            segment_explorer(None, access_token, strava_id, my_strava_user_id)
+            segment_explorer(
+                None,
+                access_token,
+                strava_id,
+                my_strava_user_id,
+                activity_type=sport_type,
+            )
 
         ### End Treatement des segments
                         
@@ -817,7 +823,13 @@ def act_map(request, act_id):
             # Appeler segment_explorer en arrière-plan (non-bloquant)
             try:
                 # Exécuter segment_explorer sans bloquer (si possible, utiliser Celery)
-                segment_explorer(None, access_token, strava_id, my_strava_user_id)
+                segment_explorer(
+                    None,
+                    access_token,
+                    strava_id,
+                    my_strava_user_id,
+                    activity_type=myActivity.act_type,
+                )
             except Exception as e:
                 f_debug_trace("views.py", "act_map", f"Erreur segment_explorer: {str(e)}")
                 pass  # Continuer même si segment_explorer échoue
@@ -1435,13 +1447,25 @@ class PerformListView(MobileTemplateMixin, generic.ListView):
     template_name = "perform_list.html"                 # Specify your own template name/location
     def get_queryset(self):                
         strava_user_id = self.request.session.get('strava_user_id')             
-        perfList = Perform.objects.filter(strava_user_id=strava_user_id).order_by("-perf_date")
+        cyclist_segment_ids = Segment.objects.filter(
+            activity_type="riding"
+        ).values("segment_id")
+        perfList = Perform.objects.filter(
+            strava_user_id=strava_user_id,
+            segment_id__in=cyclist_segment_ids,
+        ).order_by("-perf_date")
         return perfList
 
 def m_perform_list(request):
     """Vue pour afficher la liste des performances en mode mobile"""
     strava_user_id = request.session.get('strava_user_id')             
-    perfList = Perform.objects.filter(strava_user_id=strava_user_id).order_by("-perf_date")
+    cyclist_segment_ids = Segment.objects.filter(
+        activity_type="riding"
+    ).values("segment_id")
+    perfList = Perform.objects.filter(
+        strava_user_id=strava_user_id,
+        segment_id__in=cyclist_segment_ids,
+    ).order_by("-perf_date")
     context = {
         'perform_list': perfList
     }
@@ -1497,7 +1521,13 @@ def fVamYearView(request):
     context_object_name = 'vamyear'     # your own name for the list as a template   
     template_name = "vam.html"          # Specify your own template name/location
     strava_user_id = request.session.get('strava_user_id')        
-    listPerform = Perform.objects.filter(strava_user_id=strava_user_id).order_by('perf_date') 
+    cyclist_segment_ids = Segment.objects.filter(
+        activity_type="riding"
+    ).values("segment_id")
+    listPerform = Perform.objects.filter(
+        strava_user_id=strava_user_id,
+        segment_id__in=cyclist_segment_ids,
+    ).order_by('perf_date')
     computed_vam = compute_all_vam(listPerform)
     if len(computed_vam)==0:
         currentDateTime = datetime.datetime.now()

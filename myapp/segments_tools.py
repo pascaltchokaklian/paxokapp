@@ -5,11 +5,14 @@ from . import cols_tools
 from .models import Perform, Segment, Strava_user
 from .vars import f_debug_trace
 
+ACTIVITY_TYPES = {"Ride", "GravelRide", "Run", "Hike"}
+RUNNING_ACTIVITY_TYPES = {"Run", "Hike"}
+
 ################################################
 #   Retourne  la liste des segments pertinents
 ################################################
 
-def segment_explorer(myRectangle, access_token, strava_id, strava_user_id):
+def segment_explorer(myRectangle, access_token, strava_id, strava_user_id, activity_type=None):
     """Importe les segments réellement parcourus dans une activité Strava.
 
     ``myRectangle`` est conservé dans la signature pour compatibilité avec les
@@ -17,6 +20,9 @@ def segment_explorer(myRectangle, access_token, strava_id, strava_user_id):
     retourne directement les efforts de segment associés à cette activité.
     """
     del myRectangle
+
+    if activity_type is not None and activity_type not in ACTIVITY_TYPES:
+        return 0
 
     activity_url = f"https://www.strava.com/api/v3/activities/{strava_id}"
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -56,6 +62,24 @@ def segment_explorer(myRectangle, access_token, strava_id, strava_user_id):
             f"Erreur API Strava ({response.status_code}): {activity_response}",
         )
         return 0
+
+    strava_activity_type = (
+        activity_response.get("sport_type") or activity_response.get("type")
+        if isinstance(activity_response, dict)
+        else None
+    )
+    activity_type = strava_activity_type or activity_type
+    if activity_type not in ACTIVITY_TYPES:
+        f_debug_trace(
+            "segments_tools.py",
+            "segment_explorer",
+            f"Type d'activité Strava non pris en charge: {activity_type}",
+        )
+        return 0
+
+    segment_activity_type = (
+        "running" if activity_type in RUNNING_ACTIVITY_TYPES else "riding"
+    )
 
     segment_efforts = activity_response.get("segment_efforts") if isinstance(activity_response, dict) else None
     if segment_efforts is None:
@@ -98,10 +122,12 @@ def segment_explorer(myRectangle, access_token, strava_id, strava_user_id):
             if len(segment_list) == 1:
                 # UPDATE
                 for db_segment in segment_list:
+                    db_segment.activity_type = segment_activity_type
+                    db_segment.save(update_fields=["activity_type"])
                     segment_id = db_segment.segment_id
             else:
                 # INSERT                                
-                segment = Segment(strava_segment_id=segment_strava_id, activity_type="riding", segment_name=nameSegment, slope=avg_grade, lenght=distance, ascent=elev_difference, power=normal_power)
+                segment = Segment(strava_segment_id=segment_strava_id, activity_type=segment_activity_type, segment_name=nameSegment, slope=avg_grade, lenght=distance, ascent=elev_difference, power=normal_power)
                 segment.save()
                 # Find the new key
                 segment_list = Segment.objects.all().filter(strava_segment_id=segment_strava_id)
@@ -110,7 +136,13 @@ def segment_explorer(myRectangle, access_token, strava_id, strava_user_id):
                         segment_id = db_segment.segment_id
 
             # Performances
-            payment = save_segment_perf(segment_id, segment_strava_id, access_token, elev_difference, strava_user_id)
+            payment = save_segment_perf(
+                segment_id,
+                segment_strava_id,
+                access_token,
+                elev_difference,
+                strava_user_id,
+            )
 
             if payment == 0:
                 break
@@ -149,6 +181,8 @@ def save_segment_perf(segment_id, segment_strava_id, access_token, elev_differen
     ret = 1        
                             
     for onePerf in performanceResponse:
+        if onePerf.get("activity_type") not in ACTIVITY_TYPES:
+            continue
         
         fc_avg = 0
         fc_max = 0

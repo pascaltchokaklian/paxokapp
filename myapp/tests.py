@@ -11,6 +11,55 @@ from myapp import col_dbtools, segments_tools, views
 
 
 class SegmentExplorerResponseTests(SimpleTestCase):
+    @patch.object(segments_tools.requests, 'get')
+    def test_strava_activity_type_is_used_for_segments(self, mock_get):
+        mock_get.return_value = SimpleNamespace(
+            status_code=200,
+            json=lambda: {'sport_type': 'Run', 'segment_efforts': []},
+        )
+
+        result = segments_tools.segment_explorer(
+            None,
+            'token',
+            123,
+            456,
+            activity_type='Ride',
+        )
+
+        self.assertEqual(result, 0)
+        mock_get.assert_called_once()
+
+    @patch.object(segments_tools.requests, 'get')
+    def test_gravel_ride_activity_is_accepted(self, mock_get):
+        mock_get.return_value = SimpleNamespace(
+            status_code=200,
+            json=lambda: {'segment_efforts': []},
+        )
+
+        result = segments_tools.segment_explorer(
+            None,
+            'token',
+            123,
+            456,
+            activity_type='GravelRide',
+        )
+
+        self.assertEqual(result, 0)
+        mock_get.assert_called_once()
+
+    @patch.object(segments_tools.requests, 'get')
+    def test_non_cycling_activity_does_not_explore_segments(self, mock_get):
+        result = segments_tools.segment_explorer(
+            None,
+            'token',
+            123,
+            456,
+            activity_type='Swim',
+        )
+
+        self.assertEqual(result, 0)
+        mock_get.assert_not_called()
+
     @patch('myapp.cols_tools.refresh_access_token', return_value=True)
     @patch.object(segments_tools.Strava_user.objects, 'filter')
     @patch.object(segments_tools.requests, 'get')
