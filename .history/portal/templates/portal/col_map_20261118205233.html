@@ -1,0 +1,44 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#542b1e">
+    <title>{{ col.name }} — Carte Cent Cols</title>
+    <link rel="stylesheet" href="{% static 'portal/map.css' %}?v=25">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  </head>
+  <body class="map-page">
+    <header class="map-header">
+      <a class="map-brand" href="/" aria-label="Cent Cols, carte d’accueil">
+        <img class="map-brand-logo" src="{% static 'portal/cent-cols-logo.png' %}" alt="">
+        <span>Cent Cols</span>
+      </a>
+    </header>
+
+    <main class="map-main activities-main">
+      <a class="activities-back" href="{% url 'portal:home' %}">← Retour à la carte</a>
+      <section class="activities-heading">
+        <div>
+          <h1>{{ col.name }}</h1>
+        </div>
+      </section>
+      <div class="col-map-canvas" id="col-map" role="region" aria-label="Carte de {{ col.name }}"></div>
+    </main>
+
+    {{ position|json_script:"col-position" }}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      (function () {
+        const position = JSON.parse(document.getElementById("col-position").textContent);
+        const map = L.map("col-map").setView([position.lat, position.lon], 13);
+        L.tileLayer("https://tile.openstreetmap.de/{z}/{x}/{y}.png", {
+          maxZoom: 19,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        L.marker([position.lat, position.lon]).addTo(map);
+      })();
+    </script>
+  </body>
+</html>

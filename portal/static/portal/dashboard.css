@@ -1,0 +1,109 @@
+.dashboard-title {
+  margin: 0 0 16px;
+  color: var(--map-ink);
+}
+
+h1.dashboard-title { font-size: 24px; }
+h2.dashboard-title { font-size: 17px; }
+
+.dashboard-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.dashboard-filters label {
+  display: grid;
+  gap: 4px;
+  color: var(--map-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dashboard-filters input {
+  padding: 8px;
+  border: 1px solid var(--map-border);
+  border-radius: 6px;
+  background: #fffdfa;
+}
+
+.dashboard-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--map-border);
+  border-radius: 6px;
+  background: #fffdfa;
+}
+
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+#dashboard-performances { min-width: 800px; }
+
+.dashboard-table th,
+.dashboard-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--map-border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.dashboard-table thead th {
+  color: #fff;
+  background: #676767;
+}
+
+.dashboard-table th button {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.dashboard-table th[aria-sort="ascending"] button::after { content: " ▲"; }
+.dashboard-table th[aria-sort="descending"] button::after { content: " ▼"; }
+.dashboard-table tbody tr:nth-child(even) { background: #f7f7f7; }
+.dashboard-table tbody tr[hidden] { display: none; }
+.dashboard-history { max-width: 760px; }
+
+.power-table {
+  table-layout: fixed;
+}
+
+.power-table th,
+.power-table td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.power-table th:first-child { width: 110px; }
+.power-table th:last-child { width: 170px; }
+.power-heading-short,
+.power-date-short { display: none; }
+
+@media (max-width: 500px) {
+  .power-table th,
+  .power-table td { padding: 8px; }
+  .power-table th:first-child { width: 80px; }
+  .power-table th:last-child { width: 110px; }
+  .power-table td:first-child { text-align: right; }
+  .power-table td:last-child { text-align: center; }
+  .power-heading-full,
+  .power-date-full { display: none; }
+  .power-heading-short,
+  .power-date-short { display: inline; }
+}
+
+#history-chart {
+  display: block;
+  width: 100%;
+  max-width: 760px;
+  height: auto;
+  margin-bottom: 18px;
+  background: #161616;
+}

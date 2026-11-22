@@ -1,0 +1,325 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Coordonnées GPS</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { font-family: sans-serif; max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
+        .page-header { margin-bottom: 1.5rem; }
+        .page-header img {
+            display: block;
+            width: 100%;
+            height: clamp(150px, 30vw, 240px);
+            object-fit: cover;
+            border-radius: 0.75rem;
+        }
+        .page-header h1 { margin-bottom: 0.4rem; }
+        .page-header p { margin-top: 0; }
+        #map { height: 400px; margin-top: 1rem; }
+        #sunshine-chart { width: 100%; margin-top: 1rem; }
+        .sunshine-extremes { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .sunshine-extremes th, .sunshine-extremes td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; }
+        .sunshine-extremes th:nth-child(n+3), .sunshine-extremes td:nth-child(n+3) { text-align: center; }
+        .sun-icon { width: 1em; height: 1em; vertical-align: -0.125em; }
+        .sunshine-extremes .shortest-day { background-color: #ffcdd2; }
+        .sunshine-extremes .longest-day { background-color: #c8e6c9; }
+        .processing { display: flex; align-items: center; gap: 0.75rem; margin-top: 1rem; padding: 0.75rem; background-color: #fff8e1; }
+        .processing[hidden] { display: none; }
+        .sun-loader {
+            position: relative;
+            width: 2rem;
+            height: 2rem;
+            flex: 0 0 2rem;
+            border-radius: 50%;
+            background: conic-gradient(#f57c00, #ffca28, #fff176, #f57c00);
+            animation: sun-colors-spin 1.2s linear infinite;
+        }
+        .sun-loader::before {
+            position: absolute;
+            content: "";
+            inset: -0.35rem;
+            z-index: -1;
+            background: repeating-conic-gradient(
+                from 0deg,
+                #f9a825 0deg 10deg,
+                transparent 10deg 35deg
+            );
+        }
+        .sun-loader::after {
+            position: absolute;
+            content: "";
+            inset: 0.45rem;
+            border-radius: 50%;
+            background: #fff8e1;
+        }
+        @keyframes sun-colors-spin {
+            to { transform: rotate(360deg); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .sun-loader { animation: none; }
+        }
+        .error { color: #b00020; }
+        .errorlist { color: #b00020; padding-left: 1rem; }
+        .coordinates-row {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .coordinates-row input[type="number"] {
+            font-size: 16px;
+            padding: 0.4rem;
+            width: 100%;
+            min-width: 0;
+            max-width: 150px;
+            flex: 1 1 0;
+            box-sizing: border-box;
+        }
+        button { font-size: 16px; padding: 0.6rem 1.2rem; }
+        .location-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.75rem;
+            height: 2.75rem;
+            padding: 0;
+            border-radius: 50%;
+        }
+        .location-button img { width: 1.75rem; height: 1.75rem; object-fit: contain; }
+        .location-error { color: #b00020; margin: 0.5rem 0; }
+        @media (max-width: 480px) {
+            #map { height: 300px; }
+            .coordinates-row { flex-direction: column; align-items: stretch; }
+            .coordinates-row input[type="number"] { max-width: none; }
+            .sunshine-extremes,
+            .sunshine-extremes tbody,
+            .sunshine-extremes tr,
+            .sunshine-extremes td { display: block; }
+            .sunshine-extremes thead { display: none; }
+            .sunshine-extremes tr {
+                margin-top: 0.75rem;
+                border: 1px solid #ccc;
+            }
+            .sunshine-extremes td {
+                display: flex;
+                justify-content: space-between;
+                gap: 1rem;
+                border: 0;
+                border-bottom: 1px solid #ccc;
+                text-align: right;
+            }
+            .sunshine-extremes td::before {
+                content: attr(data-label);
+                font-weight: bold;
+                text-align: left;
+            }
+            .sunshine-extremes td:last-child { border-bottom: 0; }
+        }
+    </style>
+</head>
+<body>
+    <header class="page-header">
+        <img src="{% static 'coordinates/images/xokamap-header.jpg' %}" alt="Lever de soleil sur un massif montagneux">
+        <h1>XokaMap</h1>
+        <p>Cliquez sur la carte pour choisir un point, ou saisissez les coordonnées manuellement.</p>
+    </header>
+
+    <form id="coordinates-form" method="get">
+        <div class="coordinates-row">
+            <label for="id_latitude">Latitude :</label>
+            {{ form.latitude }}
+            <label for="id_longitude">Longitude :</label>
+            {{ form.longitude }}
+            <button type="button" id="current-location" class="location-button" aria-label="Utiliser ma position" title="Utiliser ma position">
+                <img src="{% static 'coordinates/images/position.png' %}" alt="">
+            </button>
+            <button type="submit">Afficher sur la carte</button>
+        </div>
+        {{ form.latitude.errors }}
+        {{ form.longitude.errors }}
+        <input type="hidden" id="id_zoom" name="zoom" value="{{ zoom|default:11 }}">
+    </form>
+    <p id="location-error" class="location-error" role="alert" hidden></p>
+    <div id="processing" class="processing" role="status" aria-live="polite" hidden>
+        <span class="sun-loader" role="img" aria-label="Calcul en cours"></span>
+        <span>Calcul de l'ensoleillement en cours...</span>
+    </div>
+
+    <div id="map"></div>
+    {{ latitude|json_script:"latitude-data" }}
+    {{ longitude|json_script:"longitude-data" }}
+    {{ zoom|default:11|json_script:"zoom-data" }}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const submittedLat = JSON.parse(document.getElementById('latitude-data').textContent);
+        const submittedLon = JSON.parse(document.getElementById('longitude-data').textContent);
+        const submittedZoom = JSON.parse(document.getElementById('zoom-data').textContent);
+        const hasPoint = submittedLat !== null && submittedLon !== null;
+        const coordinatesForm = document.getElementById('coordinates-form');
+        const processing = document.getElementById('processing');
+        const submitButton = coordinatesForm.querySelector('button[type="submit"]');
+        const currentLocationButton = document.getElementById('current-location');
+        const locationError = document.getElementById('location-error');
+
+        function showLocationError(message) {
+            locationError.textContent = message;
+            locationError.hidden = false;
+        }
+
+        currentLocationButton.addEventListener('click', () => {
+            locationError.hidden = true;
+            if (!window.isSecureContext) {
+                showLocationError('La géolocalisation nécessite une connexion HTTPS.');
+                return;
+            }
+            if (!navigator.geolocation) {
+                showLocationError("La géolocalisation n'est pas prise en charge par ce navigateur.");
+                return;
+            }
+
+            currentLocationButton.disabled = true;
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    document.getElementById('id_latitude').value = position.coords.latitude.toFixed(6);
+                    document.getElementById('id_longitude').value = position.coords.longitude.toFixed(6);
+                    document.getElementById('id_zoom').value = 15;
+                    coordinatesForm.requestSubmit();
+                },
+                (error) => {
+                    currentLocationButton.disabled = false;
+                    const messages = {
+                        1: "L'accès à votre position a été refusé.",
+                        2: "Votre position est indisponible.",
+                        3: "La demande de position a expiré.",
+                    };
+                    showLocationError(messages[error.code] || "Impossible d'obtenir votre position.");
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+            );
+        });
+
+        coordinatesForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            processing.hidden = false;
+            submitButton.disabled = true;
+            window.setTimeout(() => coordinatesForm.submit(), 0);
+        });
+
+        const map = L.map('map').setView(
+            hasPoint ? [submittedLat, submittedLon] : [46.6, 2.2],
+            hasPoint ? submittedZoom : 6,
+        );
+        L.tileLayer(
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+            {
+                attribution: 'Tiles &copy; Esri — Source: Esri, TomTom, Garmin, FAO, NOAA, USGS, OpenStreetMap contributors, and the GIS User Community',
+                maxZoom: 20,
+            },
+        ).addTo(map);
+        if (hasPoint) {
+            L.marker([submittedLat, submittedLon]).addTo(map);
+        }
+
+        map.on('click', (event) => {
+            document.getElementById('id_latitude').value = event.latlng.lat.toFixed(6);
+            document.getElementById('id_longitude').value = event.latlng.lng.toFixed(6);
+            document.getElementById('id_zoom').value = map.getZoom();
+            coordinatesForm.requestSubmit();
+        });
+    </script>
+
+    {% if elevation_error %}
+        <p class="error">{{ elevation_error }}</p>
+    {% endif %}
+
+    {% if sunshine_results %}
+        <h2>Durée d'ensoleillement estimée (relief pris en compte)</h2>
+        <canvas id="sunshine-chart"></canvas>
+        <table class="sunshine-extremes">
+            <thead>
+                <tr>
+                    <th>Jour</th>
+                    <th>Date</th>
+                    <th>Début <svg class="sun-icon" viewBox="0 0 24 24" role="img" aria-label="soleil"><path fill="currentColor" d="m12 2 1.2 3.7L16.8 4l-1.7 3.5L19 8l-3.7 1.2L20 12l-4.7.8L19 16l-3.9.5 1.7 3.5-3.6-1.7L12 22l-1.2-3.7L7.2 20l1.7-3.5L5 16l3.7-1.2L4 12l4.7-.8L5 8l3.9-.5L7.2 4l3.6 1.7L12 2Zm0 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg></th>
+                    <th>Fin <svg class="sun-icon" viewBox="0 0 24 24" role="img" aria-label="soleil"><path fill="currentColor" d="m12 2 1.2 3.7L16.8 4l-1.7 3.5L19 8l-3.7 1.2L20 12l-4.7.8L19 16l-3.9.5 1.7 3.5-3.6-1.7L12 22l-1.2-3.7L7.2 20l1.7-3.5L5 16l3.7-1.2L4 12l4.7-.8L5 8l3.9-.5L7.2 4l3.6 1.7L12 2Zm0 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg></th>
+                    <th>Durée</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for day in sunshine_extremes %}
+                <tr class="{{ day.css_class }}">
+                    <td data-label="Jour">{{ day.label }}</td>
+                    <td data-label="Date">{{ day.date }}</td>
+                    <td data-label="Début ☀">{{ day.start }}</td>
+                    <td data-label="Fin ☀">{{ day.end }}</td>
+                    <td data-label="Durée">{{ day.duration }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {{ sunshine_results|json_script:"sunshine-data" }}
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+        <script>
+            const sunshineData = JSON.parse(document.getElementById('sunshine-data').textContent);
+            const minimumSunshineMinutes = Math.min(
+                ...sunshineData.map((entry) => entry.minutes),
+            );
+            const maximumSunshineMinutes = Math.max(
+                ...sunshineData.map((entry) => entry.minutes),
+            );
+            const chartMinimum = Math.max(0, Math.floor(minimumSunshineMinutes / 60) * 60 - 60);
+            const chartMaximum = Math.max(
+                chartMinimum + 60,
+                Math.min(1440, Math.ceil(maximumSunshineMinutes / 60) * 60 + 60),
+            );
+            new Chart(document.getElementById('sunshine-chart'), {
+                type: 'line',
+                data: {
+                    labels: sunshineData.map((entry) => entry.date.slice(5)),
+                    datasets: [{
+                        label: "Durée d'ensoleillement",
+                        data: sunshineData.map((entry) => entry.minutes),
+                        borderColor: '#1976d2',
+                        backgroundColor: 'rgba(25, 118, 210, 0.15)',
+                        fill: true,
+                        pointRadius: 0,
+                        tension: 0.15,
+                    }],
+                },
+                options: {
+                    interaction: { intersect: false, mode: 'index' },
+                    scales: {
+                        x: {
+                            ticks: { autoSkip: true, maxTicksLimit: 12 },
+                            title: { display: true, text: "Jours de l'année" },
+                        },
+                        y: {
+                            min: chartMinimum,
+                            max: chartMaximum,
+                            ticks: {
+                                stepSize: 60,
+                                callback: (minutes) => `${Math.floor(minutes / 60)} h`,
+                            },
+                            title: { display: true, text: "Durée d'ensoleillement" },
+                        },
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    const minutes = context.parsed.y;
+                                    return `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+        </script>
+    {% endif %}
+</body>
+</html>

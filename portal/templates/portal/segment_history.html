@@ -1,0 +1,39 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ segment.segment_name }} — Strava+</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'portal/strava-logo.svg' %}">
+    <link rel="stylesheet" href="{% static 'portal/map.css' %}?v=31">
+    <link rel="stylesheet" href="{% static 'portal/dashboard.css' %}?v=1">
+    <script src="{% static 'portal/dashboard.js' %}?v=1" defer></script>
+  </head>
+  <body class="map-page">
+    <script>document.body.classList.toggle("embedded", window.self !== window.top);</script>
+    <header class="map-header">
+      <div class="map-header-actions">
+        <span class="map-header-greeting">Hello {{ greeting_name }}</span>
+        <a class="applications-link" href="{% url 'portal:applications' %}">Mes applications <span aria-hidden="true">↗</span></a>
+      </div>
+    </header>
+    <main class="map-main activities-main">
+      <a class="activities-back" href="{% url 'portal:dashboard' %}">← Retour au Dashboard</a>
+      <h1 class="dashboard-title">
+        {% if segment.strava_segment_id %}
+          <a class="activity-link" href="https://www.strava.com/segments/{{ segment.strava_segment_id }}" target="_blank" rel="noopener noreferrer">{{ segment.segment_name }}</a>
+        {% else %}{{ segment.segment_name }}{% endif %}
+      </h1>
+      <h2 class="dashboard-title">Meilleurs temps par année</h2>
+      <canvas id="history-chart" width="760" height="340" role="img" aria-label="Évolution des meilleurs temps par année"></canvas>
+      {{ history|json_script:"history-data" }}
+      <div class="dashboard-table-wrap dashboard-history">
+        <table class="dashboard-table">
+          <thead><tr><th scope="col">Année</th><th scope="col">Chrono</th></tr></thead>
+          <tbody>{% for row in history %}<tr><td>{{ row.year }}</td><td>{{ row.chrono }}</td></tr>{% endfor %}</tbody>
+        </table>
+      </div>
+    </main>
+  </body>
+</html>

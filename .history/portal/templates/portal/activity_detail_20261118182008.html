@@ -1,0 +1,106 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#542b1e">
+    <title>{{ activity.name }} — Cent Cols</title>
+    <link rel="stylesheet" href="{% static 'portal/map.css' %}?v=22">
+  </head>
+  <body class="map-page">
+    <header class="map-header">
+      <a class="map-brand" href="/" aria-label="Cent Cols, carte d’accueil">
+        <img class="map-brand-logo" src="{% static 'portal/cent-cols-logo.png' %}" alt="">
+        <span>Cent Cols</span>
+      </a>
+      <div class="map-header-actions">
+        {% if personalized %}
+          <span class="map-header-greeting">Hello {{ greeting_name }}</span>
+        {% endif %}
+        <a class="applications-link" href="{% url 'portal:applications' %}">
+          Mes applications <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="map-main activities-main">
+      {% if activity.cols %}
+        <a class="activities-back" href="{% url 'portal:col_activities' col_code=activity.cols.0.code %}">← Retour aux activités du col</a>
+      {% else %}
+        <a class="activities-back" href="/">← Retour à la carte</a>
+      {% endif %}
+
+      <section class="activities-heading performance-heading">
+        <div>
+          <p class="activities-eyebrow">PERFORMANCE SPORTIVE</p>
+          <h1>{{ activity.name }}</h1>
+          <a class="activity-export" href="{% url 'portal:activity_export_text' strava_id=activity.strava_id %}">
+            <span aria-hidden="true">↓</span> Exporter en texte
+          </a>
+          <p class="performance-date">{{ activity.start_date|date:"d/m/Y" }}</p>
+        </div>
+      </section>
+
+      <section class="performance-stats" aria-label="Résumé de l’activité">
+        <div class="performance-stat">
+          <span class="performance-stat-label">Distance</span>
+          <span class="performance-stat-value">{% if activity.distance_km != None %}{{ activity.distance_km|floatformat:2 }} km{% else %}—{% endif %}</span>
+        </div>
+        <div class="performance-stat">
+          <span class="performance-stat-label">Dénivelé</span>
+          <span class="performance-stat-value">{% if activity.elevation_gain_m != None %}{{ activity.elevation_gain_m }} m{% else %}—{% endif %}</span>
+        </div>
+        <div class="performance-stat">
+          <span class="performance-stat-label">Durée</span>
+          <span class="performance-stat-value">{% if activity.duration %}{{ activity.duration }}{% else %}—{% endif %}</span>
+        </div>
+        <div class="performance-stat">
+          <span class="performance-stat-label">Vitesse moyenne</span>
+          <span class="performance-stat-value">{% if activity.average_speed_kmh != None %}{{ activity.average_speed_kmh|floatformat:1 }} km/h{% else %}—{% endif %}</span>
+        </div>
+      </section>
+
+      <p class="performance-col-count">Nombre de cols passés: {{ activity.cols|length }}</p>
+      {% if activity.cols %}
+        <ul class="performance-col-list">
+          {% for col in activity.cols %}
+            <li>
+              <a href="{% url 'portal:col_activities' col_code=col.code %}">{{ col.name }}</a>
+              {% if col.altitude != None %} - {{ col.altitude|floatformat:0 }} m{% endif %} [{{ col.col_count }}]
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% if profile_points %}
+        <h2 class="profile-title">Profil d’altitudes</h2>
+        <svg class="altitude-profile" viewBox="0 0 1000 330" role="img" aria-label="Profil d’altitude de {{ activity.name }}">
+          <line class="profile-grid" x1="48" y1="80" x2="952" y2="80"></line>
+          <line class="profile-grid" x1="48" y1="142" x2="952" y2="142"></line>
+          <line class="profile-grid" x1="48" y1="204" x2="952" y2="204"></line>
+          <line class="profile-axis" x1="48" y1="266" x2="952" y2="266"></line>
+          <line class="profile-axis" x1="48" y1="30" x2="48" y2="266"></line>
+          {% for area in profile_areas %}
+            <polygon class="{% if area.climb %}profile-area-climb{% else %}profile-area{% endif %}" points="{{ area.points }}"></polygon>
+          {% endfor %}
+          <polyline class="profile-line" fill="none" points="{{ profile_line_points_attr }}"></polyline>
+          <text x="48" y="292">0 km</text>
+          <text x="952" y="292" text-anchor="end">{{ activity.distance_km|floatformat:0 }} km</text>
+          <text x="48" y="22">{{ altitude_bounds.1 }} m</text>
+          <text x="48" y="284">{{ altitude_bounds.0 }} m</text>
+          <text x="16" y="150" transform="rotate(-90 16 150)">Altitude (m)</text>
+          <text x="500" y="320" text-anchor="middle">Distance (km)</text>
+        </svg>
+      {% else %}
+        <p class="profile-unavailable">Profil d’altitudes indisponible pour cette activité.</p>
+        {% if strava_auth_configured %}
+          <form class="map-strava-form" method="post" action="{% url 'social:begin' 'strava' %}">
+            {% csrf_token %}
+            <button class="strava-connect" type="submit">Autoriser l’accès au profil d’altitude</button>
+          </form>
+        {% endif %}
+      {% endif %}
+    </main>
+  </body>
+</html>

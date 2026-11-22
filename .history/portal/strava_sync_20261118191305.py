@@ -1,0 +1,193 @@
+import logging
+import sqlite3
+import time
+from math import acos, cos, degrees, radians, sin
+
+import requests
+from django.conf import settings
+from social_django.utils import load_strategy
+
+from .map_data import _parse_database_datetime
+
+
+logger = logging.getLogger(__name__)
+
+ACTIVITIES_URL = 'https://www.strava.com/api/v3/athlete/activities'
+ONE_DAY_SECONDS = 86400
+
+
+def _access_token(social_auth):
+    if float(social_auth.extra_data.get('expires', 0)) <= time.time() + 60:
+        social_auth.refresh_token(load_strategy())
+        social_auth.refresh_from_db()
+    return social_auth.extra_data['access_token']
+
+
+def _latest_start_timestamp(connection, strava_user_id):
+    row = connection.execute(
+        'SELECT MAX(act_start_date) FROM myapp_activity WHERE strava_user_id = ?',
+        (strava_user_id,),
+    ).fetchone()
+    parsed = _parse_database_datetime(row[0])
+    return int(parsed.timestamp()) if parsed else None
+
+
+def _store_new_activity(connection, strava_user_id, activity):
+    strava_id = int(activity['id'])
+    exists = connection.execute(
+        'SELECT 1 FROM myapp_activity WHERE strava_id = ?',
+        (strava_id,),
+    ).fetchone()
+    if exists:
+        return False
+
+    connection.execute(
+        'INSERT INTO myapp_activity (strava_user_id, strava_id, act_name, act_start_date, '
+        'act_dist, act_den, act_type, act_time, act_power, act_status, act_normal_power, act_trainer) '
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        (
+            strava_user_id,
+            strava_id,
+            activity.get('name'),
+            activity.get('start_date'),
+            activity.get('distance'),
+            activity.get('total_elevation_gain'),
+            activity.get('sport_type'),
+            activity.get('moving_time'),
+            activity.get('average_watts'),
+            1,
+            activity.get('weighted_average_watts'),
+            1 if activity.get('trainer') else 0,
+        ),
+    )
+    return True
+
+
+def _decode_polyline(encoded):
+    points = []
+    index = lat = lng = 0
+    while index < len(encoded):
+        deltas = []
+        for _ in range(2):
+            shift = result = 0
+            while True:
+                byte = ord(encoded[index]) - 63
+                index += 1
+                result |= (byte & 0x1F) << shift
+                shift += 5
+                if byte < 0x20:
+                    break
+            deltas.append(~(result >> 1) if result & 1 else result >> 1)
+        lat += deltas[0]
+        lng += deltas[1]
+        points.append((lat / 1e5, lng / 1e5))
+    return points
+
+
+def _distance_km(lat1, lon1, lat2, lon2):
+    cos_value = sin(radians(lat1)) * sin(radians(lat2)) + cos(radians(lat1)) * cos(radians(lat2)) * cos(radians(lon1 - lon2))
+    cos_value = max(-1.0, min(1.0, cos_value))
+    return 60 * 1.1515 * degrees(acos(cos_value)) * 1.609344
+
+
+def _load_cols(connection):
+    return connection.execute(
+        'SELECT col_code, col_lat, col_lon FROM myapp_col '
+        'WHERE col_lat IS NOT NULL AND col_lon IS NOT NULL'
+    ).fetchall()
+
+
+def _visited_col_codes(cols, points):
+    if not points:
+        return set()
+    min_lat = min(lat for lat, _ in points)
+    max_lat = max(lat for lat, _ in points)
+    min_lon = min(lon for _, lon in points)
+    max_lon = max(lon for _, lon in points)
+    candidates = [
+        (code, col_lat, col_lon)
+        for code, col_lat, col_lon in cols
+        if min_lat <= col_lat <= max_lat and min_lon <= col_lon <= max_lon
+    ]
+
+    visited = set()
+    for lat, lon in points:
+        for code, col_lat, col_lon in candidates:
+            if _distance_km(col_lat, col_lon, lat, lon) < 0.250:
+                visited.add(code)
+    return visited
+
+
+def _store_col_perform(connection, strava_id, col_code):
+    connection.execute(
+        'INSERT INTO myapp_col_perform (strava_id, col_code) SELECT ?, ? '
+        'WHERE NOT EXISTS (SELECT 1 FROM myapp_col_perform WHERE strava_id = ? AND col_code = ?)',
+        (strava_id, col_code, strava_id, col_code),
+    )
+
+
+def _rebuild_col_counters(connection, strava_user_id):
+    counts = dict(connection.execute(
+        'SELECT cp.col_code, COUNT(DISTINCT cp.strava_id) FROM myapp_col_perform cp '
+        'JOIN myapp_activity a ON a.strava_id = cp.strava_id '
+        'WHERE a.strava_user_id = ? GROUP BY cp.col_code',
+        (strava_user_id,),
+    ).fetchall())
+    existing = {
+        code for (code,) in connection.execute(
+            'SELECT col_code FROM myapp_col_counter WHERE strava_user_id = ?',
+            (strava_user_id,),
+        )
+    }
+
+    for code, count in counts.items():
+        if code in existing:
+            connection.execute(
+                'UPDATE myapp_col_counter SET col_count = ? WHERE strava_user_id = ? AND col_code = ?',
+                (count, strava_user_id, code),
+            )
+        else:
+            connection.execute(
+                'INSERT INTO myapp_col_counter (col_code, strava_user_id, col_count, year_col_count) '
+                'VALUES (?, ?, ?, 0)',
+                (code, strava_user_id, count),
+            )
+
+    for code in existing - counts.keys():
+        connection.execute(
+            'UPDATE myapp_col_counter SET col_count = 0 WHERE strava_user_id = ? AND col_code = ?',
+            (strava_user_id, code),
+        )
+
+
+def sync_strava_activities(social_auth):
+    strava_user_id = int(social_auth.uid)
+    headers = {'Authorization': f'Bearer {_access_token(social_auth)}'}
+    connection = sqlite3.connect(settings.CENTCOLS_DB_PATH)
+    try:
+        params = {'per_page': 200}
+        latest = _latest_start_timestamp(connection, strava_user_id)
+        if latest is not None:
+            params['after'] = latest - ONE_DAY_SECONDS
+
+        response = requests.get(ACTIVITIES_URL, headers=headers, params=params, timeout=15)
+        response.raise_for_status()
+        activities = response.json()
+
+        cols = _load_cols(connection)
+        added = 0
+        for activity in activities:
+            if not _store_new_activity(connection, strava_user_id, activity):
+                continue
+            added += 1
+            encoded = (activity.get('map') or {}).get('summary_polyline') or ''
+            points = _decode_polyline(encoded) if encoded else []
+            for col_code in _visited_col_codes(cols, points):
+                _store_col_perform(connection, int(activity['id']), col_code)
+
+        if added:
+            _rebuild_col_counters(connection, strava_user_id)
+        connection.commit()
+    finally:
+        connection.close()
+    return added

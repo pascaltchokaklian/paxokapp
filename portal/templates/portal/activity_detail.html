@@ -1,0 +1,169 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#542b1e">
+    <title>{{ activity.name }} — Cent Cols</title>
+    <link rel="icon" type="image/png" href="{% static 'portal/cent-cols-logo.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'portal/cent-cols-logo.png' %}">
+    <link rel="stylesheet" href="{% static 'portal/map.css' %}?v=26">
+    {% if route_points %}
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+      <script src="{% static 'portal/activity_map.js' %}?v=2" defer></script>
+    {% endif %}
+  </head>
+  <body class="map-page">
+    <script>document.body.classList.toggle("embedded", window.self !== window.top);</script>
+    <header class="map-header">
+      <a class="map-brand" href="/" aria-label="Cent Cols, carte d’accueil">
+        {% if not back_to_all %}<img class="map-brand-logo" src="{% static 'portal/cent-cols-logo.png' %}" alt="">{% endif %}
+        <span>Cent Cols</span>
+      </a>
+      <div class="map-header-actions">
+        {% if personalized %}
+          <span class="map-header-greeting">Hello {{ greeting_name }}</span>
+        {% endif %}
+        <a class="applications-link" href="{% url 'portal:applications' %}">
+          Mes applications <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="map-main activities-main">
+      {% if back_to_all %}
+        <a class="activities-back" href="{% url 'portal:all_activities' %}">← Retour aux activités Strava+</a>
+      {% elif activity.cols %}
+        <a class="activities-back" href="{% url 'portal:col_activities' col_code=activity.cols.0.code %}">← Retour aux activités du col</a>
+      {% else %}
+        <a class="activities-back" href="/">← Retour à la carte</a>
+      {% endif %}
+
+      <section class="activities-heading performance-heading">
+        <div>
+          <div class="performance-title-row">
+            <h1>{{ activity.name }}</h1>
+            {% if not back_to_all %}
+              <a class="activity-export" href="{% url 'portal:activity_export_text' strava_id=activity.strava_id %}">
+                <span aria-hidden="true">↓</span> Exporter en texte
+              </a>
+            {% endif %}
+          </div>
+          <p class="performance-date">{{ activity.start_date|date:"d/m/Y" }}</p>
+        </div>
+      </section>
+
+      <section class="performance-stats" aria-label="Résumé de l’activité">
+        <div class="performance-stat">
+          <span class="performance-stat-label">Distance</span>
+          <span class="performance-stat-value">{% if activity.distance_km != None %}{{ activity.distance_km|floatformat:2 }} km{% else %}—{% endif %}</span>
+        </div>
+        <div class="performance-stat">
+          <span class="performance-stat-label">Dénivelé</span>
+          <span class="performance-stat-value">{% if activity.elevation_gain_m != None %}{{ activity.elevation_gain_m }} m{% else %}—{% endif %}</span>
+        </div>
+        <div class="performance-stat">
+          <span class="performance-stat-label">Durée</span>
+          <span class="performance-stat-value">{% if activity.duration %}{{ activity.duration }}{% else %}—{% endif %}</span>
+        </div>
+        <div class="performance-stat">
+          <span class="performance-stat-label">Vitesse moyenne</span>
+          <span class="performance-stat-value">{% if activity.average_speed_kmh != None %}{{ activity.average_speed_kmh|floatformat:1 }} km/h{% else %}—{% endif %}</span>
+        </div>
+        {% if back_to_all %}
+          <div class="performance-stat">
+            <span class="performance-stat-label">Puissance moyenne</span>
+            <span class="performance-stat-value">{% if activity.average_power_w != None %}{{ activity.average_power_w|floatformat:0 }} W{% else %}—{% endif %}</span>
+          </div>
+          <div class="performance-stat">
+            <span class="performance-stat-label">Puissance normalisée</span>
+            <span class="performance-stat-value">{% if activity.normalized_power_w != None %}{{ activity.normalized_power_w|floatformat:0 }} W{% else %}—{% endif %}</span>
+          </div>
+        {% endif %}
+      </section>
+
+      {% if back_to_all and climb_total_km %}
+        <p class="performance-climb">Montées {{ climb_total_km }} km — pente moyenne {{ climb_avg_gradient }} %{% if climb_avg_power %} — puissance moy. {{ climb_avg_power }} W{% endif %}</p>
+      {% endif %}
+
+      {% if back_to_all and activity_info %}
+        <ul class="performance-info-list">
+          {% for info in activity_info %}
+            <li>{{ info }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% if back_to_all and performances %}
+        <h2 class="profile-title">Performances</h2>
+        <table class="performance-table">
+          <thead>
+            <tr><th>Segment</th><th class="num">Temps</th><th class="num">VAM</th><th class="num">Rang</th><th class="num">Top</th></tr>
+          </thead>
+          <tbody>
+            {% for performance in performances %}
+              <tr>
+                <td>{{ performance.name }}</td>
+                <td class="num">{{ performance.chrono }}</td>
+                <td class="num">{{ performance.vam }}</td>
+                <td class="num">{{ performance.place }}</td>
+                <td class="num">{{ performance.percent }} %</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+
+      {% if not back_to_all %}
+        <p class="performance-col-count">Nombre de cols passés: {{ activity.cols|length }}</p>
+        {% if activity.cols %}
+          <ul class="performance-col-list">
+            {% for col in activity.cols %}
+              <li>
+                <a href="{% url 'portal:col_activities' col_code=col.code %}">{{ col.name }}</a>
+                {% if col.altitude != None %} - {{ col.altitude|floatformat:0 }} m{% endif %} [{{ col.col_count }}]
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endif %}
+
+      {% if route_points %}
+        <h2 class="profile-title">Tracé</h2>
+        <div id="activity-map" class="activity-route-map" aria-label="Tracé de {{ activity.name }}"></div>
+        {{ route_points|json_script:"route-points" }}
+        {{ route_cols|json_script:"route-cols" }}
+      {% endif %}
+
+      {% if profile_points %}
+        <h2 class="profile-title">Profil d’altitudes</h2>
+        <svg class="altitude-profile" viewBox="0 0 1000 330" role="img" aria-label="Profil d’altitude de {{ activity.name }}">
+          <line class="profile-grid" x1="48" y1="80" x2="952" y2="80"></line>
+          <line class="profile-grid" x1="48" y1="142" x2="952" y2="142"></line>
+          <line class="profile-grid" x1="48" y1="204" x2="952" y2="204"></line>
+          <line class="profile-axis" x1="48" y1="266" x2="952" y2="266"></line>
+          <line class="profile-axis" x1="48" y1="30" x2="48" y2="266"></line>
+          {% for area in profile_areas %}
+            <polygon class="{% if area.climb %}profile-area-climb{% else %}profile-area{% endif %}" points="{{ area.points }}"></polygon>
+          {% endfor %}
+          <text x="48" y="292">0 km</text>
+          <text x="952" y="292" text-anchor="end">{{ activity.distance_km|floatformat:0 }} km</text>
+          <text x="48" y="22">{{ altitude_bounds.1 }} m</text>
+          <text x="42" y="270" text-anchor="end">{{ altitude_bounds.0 }} m</text>
+          <text x="16" y="150" transform="rotate(-90 16 150)">Altitude (m)</text>
+          <text x="500" y="320" text-anchor="middle">Distance (km)</text>
+        </svg>
+      {% else %}
+        <p class="profile-unavailable">Profil d’altitudes indisponible pour cette activité.</p>
+        {% if strava_auth_configured %}
+          <form class="map-strava-form" method="post" action="{% url 'social:begin' 'strava' %}" target="_top">
+            {% csrf_token %}
+            <button class="strava-connect" type="submit">Autoriser l’accès au profil d’altitude</button>
+          </form>
+        {% endif %}
+      {% endif %}
+    </main>
+  </body>
+</html>

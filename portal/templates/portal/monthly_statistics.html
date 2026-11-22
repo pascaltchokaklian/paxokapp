@@ -1,0 +1,83 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#542b1e">
+    <title>Statistiques mensuelles vélo — Strava+</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'portal/strava-logo.svg' %}">
+    <link rel="stylesheet" href="{% static 'portal/map.css' %}?v=31">
+  </head>
+  <body class="map-page">
+    <script>document.body.classList.toggle("embedded", window.self !== window.top);</script>
+    <header class="map-header">
+      <div class="map-header-actions">
+        {% if personalized %}
+          <span class="map-header-greeting">Hello {{ greeting_name }}</span>
+        {% endif %}
+        <a class="applications-link" href="{% url 'portal:applications' %}">
+          Mes applications <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="map-main activities-main">
+      <nav class="strava-view-menu" aria-label="Vues Strava+">
+        <a href="{% url 'portal:all_activities' %}">Activités</a>
+        <a href="{% url 'portal:dashboard' %}">Dashboard</a>
+        <a href="{% url 'portal:power_records' %}">Puissances</a>
+        <a class="active" href="{% url 'portal:monthly_statistics' %}" aria-current="page">Statistiques mensuelles vélo</a>
+      </nav>
+
+      {% if not personalized %}
+        <p class="passed-cols-empty">Connectez-vous à Strava pour consulter vos statistiques.</p>
+        {% if strava_auth_configured %}
+          <form class="map-strava-form" method="post" action="{% url 'social:begin' 'strava' %}" target="_top">
+            {% csrf_token %}
+            <button class="strava-connect" type="submit">Se connecter à Strava</button>
+          </form>
+        {% endif %}
+      {% elif statistics %}
+        <div class="passed-cols-table-wrap monthly-statistics-wrap" role="region" aria-label="Statistiques mensuelles" tabindex="0">
+          <table class="passed-cols-table monthly-statistics-table">
+            <thead>
+              <tr>
+                <th scope="col">Mois</th>
+                <th class="passed-number" scope="col">Activités</th>
+                <th class="passed-number" scope="col">KM</th>
+                <th class="passed-number" scope="col">Dénivelé</th>
+                <th class="passed-number" scope="col">Temps</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for statistic in statistics %}
+                <tr>
+                  <th scope="row">{{ statistic.label }}</th>
+                  <td class="passed-number">
+                    <span class="passed-cell-label">Activités</span>
+                    <span>{{ statistic.active_days }}</span>
+                  </td>
+                  <td class="passed-number">
+                    <span class="passed-cell-label">KM</span>
+                    <span>{{ statistic.distance_km }}</span>
+                  </td>
+                  <td class="passed-number">
+                    <span class="passed-cell-label">Dénivelé</span>
+                    <span>{{ statistic.elevation_m }}</span>
+                  </td>
+                  <td class="passed-number">
+                    <span class="passed-cell-label">Temps</span>
+                    <span>{{ statistic.duration }}</span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="passed-cols-empty">Aucune activité vélo enregistrée.</p>
+      {% endif %}
+    </main>
+  </body>
+</html>

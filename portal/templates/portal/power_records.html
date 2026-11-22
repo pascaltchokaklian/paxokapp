@@ -1,0 +1,55 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Puissances — Strava+</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'portal/strava-logo.svg' %}">
+    <link rel="stylesheet" href="{% static 'portal/map.css' %}?v=31">
+    <link rel="stylesheet" href="{% static 'portal/dashboard.css' %}?v=6">
+  </head>
+  <body class="map-page">
+    <script>document.body.classList.toggle("embedded", window.self !== window.top);</script>
+    <header class="map-header">
+      <div class="map-header-actions">
+        {% if personalized %}<span class="map-header-greeting">Hello {{ greeting_name }}</span>{% endif %}
+        <a class="applications-link" href="{% url 'portal:applications' %}">Mes applications <span aria-hidden="true">↗</span></a>
+      </div>
+    </header>
+    <main class="map-main activities-main">
+      <nav class="strava-view-menu" aria-label="Vues Strava+">
+        <a href="{% url 'portal:all_activities' %}">Activités</a>
+        <a href="{% url 'portal:dashboard' %}">Dashboard</a>
+        <a class="active" href="{% url 'portal:power_records' %}" aria-current="page">Puissances</a>
+        <a href="{% url 'portal:monthly_statistics' %}">Statistiques mensuelles vélo</a>
+      </nav>
+      <h1 class="dashboard-title">Puissances normalisées par activité</h1>
+      {% if not personalized %}
+        <p class="passed-cols-empty">Connectez-vous à Strava pour consulter vos puissances.</p>
+        {% if strava_auth_configured %}
+          <form class="map-strava-form" method="post" action="{% url 'social:begin' 'strava' %}" target="_top">
+            {% csrf_token %}<button class="strava-connect" type="submit">Se connecter à Strava</button>
+          </form>
+        {% endif %}
+      {% elif activities %}
+        <div class="dashboard-table-wrap" role="region" aria-label="Puissances par activité" tabindex="0">
+          <table class="dashboard-table power-table">
+            <thead><tr><th scope="col">Date</th><th scope="col">Activité</th><th scope="col"><span class="power-heading-full">Puissance normalisée</span><span class="power-heading-short">Puissance</span></th></tr></thead>
+            <tbody>
+              {% for activity in activities %}
+                <tr>
+                  <td><span class="power-date-full">{{ activity.start_date|date:"d/m/Y" }}</span><span class="power-date-short">{{ activity.start_date|date:"j N" }}</span></td>
+                  <td><a class="activity-link" href="{% url 'portal:activity_detail' strava_id=activity.strava_id %}?from=all">{{ activity.name }}</a></td>
+                  <td>{% if activity.normalized_power_w != None %}{{ activity.normalized_power_w }} W{% else %}—{% endif %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="passed-cols-empty">Aucune activité vélo avec une puissance normalisée positive.</p>
+      {% endif %}
+    </main>
+  </body>
+</html>

@@ -1,0 +1,87 @@
+{% load static l10n %}
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard — Strava+</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'portal/strava-logo.svg' %}">
+    <link rel="stylesheet" href="{% static 'portal/map.css' %}?v=31">
+    <link rel="stylesheet" href="{% static 'portal/dashboard.css' %}?v=1">
+    <script src="{% static 'portal/dashboard.js' %}?v=1" defer></script>
+  </head>
+  <body class="map-page">
+    <script>document.body.classList.toggle("embedded", window.self !== window.top);</script>
+    <header class="map-header">
+      <div class="map-header-actions">
+        {% if personalized %}<span class="map-header-greeting">Hello {{ greeting_name }}</span>{% endif %}
+        <a class="applications-link" href="{% url 'portal:applications' %}">Mes applications <span aria-hidden="true">↗</span></a>
+      </div>
+    </header>
+    <main class="map-main activities-main">
+      <nav class="strava-view-menu" aria-label="Vues Strava+">
+        <a href="{% url 'portal:all_activities' %}">Activités</a>
+        <a class="active" href="{% url 'portal:dashboard' %}" aria-current="page">Dashboard</a>
+        <a href="{% url 'portal:power_records' %}">Puissances</a>
+        <a href="{% url 'portal:monthly_statistics' %}">Statistiques mensuelles vélo</a>
+      </nav>
+      {% if not personalized %}
+        <p class="passed-cols-empty">Connectez-vous à Strava pour consulter votre tableau de bord.</p>
+        {% if strava_auth_configured %}
+          <form class="map-strava-form" method="post" action="{% url 'social:begin' 'strava' %}" target="_top">
+            {% csrf_token %}
+            <button class="strava-connect" type="submit">Se connecter à Strava</button>
+          </form>
+        {% endif %}
+      {% else %}
+        <h1 class="dashboard-title">Tableau de bord</h1>
+        <section class="performance-stats" aria-label="Indicateurs du tableau de bord">
+          <div class="performance-stat"><span class="performance-stat-label">Cols franchis</span><span class="performance-stat-value">{{ summary.col_count }}</span></div>
+          <div class="performance-stat"><span class="performance-stat-label">Cols à 2 000 m et plus</span><span class="performance-stat-value">{{ summary.high_col_count }}</span></div>
+          <div class="performance-stat"><span class="performance-stat-label">Vélo cette année</span><span class="performance-stat-value">{{ summary.bike_year_km }} km</span></div>
+          <div class="performance-stat"><span class="performance-stat-label">Course cette année</span><span class="performance-stat-value">{{ summary.run_year_km }} km</span></div>
+          <div class="performance-stat"><span class="performance-stat-label">Vélo sur 4 semaines</span><span class="performance-stat-value">{{ summary.bike_four_weeks_km }} km</span></div>
+          <div class="performance-stat"><span class="performance-stat-label">Dénivelé vélo sur 4 semaines</span><span class="performance-stat-value">{{ summary.elevation_four_weeks }} m</span></div>
+        </section>
+        <h2 class="dashboard-title">Liste des performances</h2>
+        {% if performances %}
+          <div class="dashboard-filters">
+            <label>Date <input type="search" id="performance-date-filter" placeholder="Rechercher une date"></label>
+            <label>Segment <input type="search" id="performance-segment-filter" placeholder="Rechercher un segment"></label>
+          </div>
+          <div class="dashboard-table-wrap" role="region" aria-label="Liste des performances" tabindex="0">
+            <table class="dashboard-table" id="dashboard-performances">
+              <thead><tr>
+                <th scope="col" aria-sort="descending"><button type="button" data-sort-column="0" data-sort-type="text">Date</button></th>
+                <th scope="col"><button type="button" data-sort-column="1" data-sort-type="text">Segment</button></th>
+                <th scope="col"><button type="button" data-sort-column="2" data-sort-type="number">Long. (km)</button></th>
+                <th scope="col"><button type="button" data-sort-column="3" data-sort-type="number">Pente</button></th>
+                <th scope="col"><button type="button" data-sort-column="4" data-sort-type="number">VAM</button></th>
+                <th scope="col"><button type="button" data-sort-column="5" data-sort-type="number">FC</button></th>
+                <th scope="col"><button type="button" data-sort-column="6" data-sort-type="number">Power</button></th>
+                <th scope="col"><button type="button" data-sort-column="7" data-sort-type="number">Chrono</button></th>
+              </tr></thead>
+              <tbody>
+                {% for performance in performances %}
+                  <tr>
+                    <td data-sort="{{ performance.date|date:'Y-m-d H:i:s' }}">{{ performance.date|date:"d/m/Y" }}</td>
+                    <td data-sort="{{ performance.name }}"><a class="activity-link" href="{% url 'portal:segment_history' segment_id=performance.segment_id %}">{{ performance.name }}</a></td>
+                    <td data-sort="{{ performance.length|default_if_none:''|unlocalize }}">{% if performance.length != None %}{{ performance.length|floatformat:1 }}{% else %}—{% endif %}</td>
+                    <td data-sort="{{ performance.slope|default_if_none:''|unlocalize }}">{% if performance.slope != None %}{{ performance.slope|floatformat:1 }} %{% else %}—{% endif %}</td>
+                    <td data-sort="{{ performance.vam|default_if_none:''|unlocalize }}">{{ performance.vam|default_if_none:"—" }}</td>
+                    <td data-sort="{{ performance.heart_rate|default_if_none:''|unlocalize }}">{{ performance.heart_rate|default_if_none:"—" }}</td>
+                    <td data-sort="{{ performance.power|default_if_none:''|unlocalize }}">{{ performance.power|default_if_none:"—" }}</td>
+                    <td data-sort="{{ performance.seconds|unlocalize }}">{{ performance.chrono }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <p id="performance-no-match" class="passed-cols-empty" hidden>Aucune performance ne correspond à la recherche.</p>
+        {% else %}
+          <p class="passed-cols-empty">Aucune performance vélo enregistrée.</p>
+        {% endif %}
+      {% endif %}
+    </main>
+  </body>
+</html>

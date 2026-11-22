@@ -1,0 +1,155 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#542b1e">
+    <meta name="description" content="Carte interactive des cols du Club des Cent Cols.">
+    <title>Cent Cols — Carte</title>
+    <link rel="stylesheet" href="{% static 'portal/map.css' %}?v=22">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" defer></script>
+    <script src="{% static 'portal/map.js' %}?v=8" defer></script>
+  </head>
+  <body class="map-page">
+    <header class="map-header">
+      <a class="map-brand" href="/" aria-label="Cent Cols, carte d’accueil">
+        <img class="map-brand-logo" src="{% static 'portal/cent-cols-logo.png' %}" alt="">
+        <span>Cent Cols</span>
+      </a>
+      <div class="map-header-actions">
+        {% if personalized %}
+          <span class="map-header-greeting">Hello {{ greeting_name }}</span>
+        {% endif %}
+        <a class="applications-link" href="{% url 'portal:applications' %}">
+          Mes applications <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="map-main">
+      <section class="map-intro" aria-label="Carte interactive des cols">
+        <div>
+          <div class="map-strava-action">
+            {% if strava_auth_configured %}
+            <form class="map-strava-form" method="post" action="{% if personalized %}{% url 'portal:sync_strava' %}{% else %}{% url 'social:begin' 'strava' %}{% endif %}" target="_top">
+              {% csrf_token %}
+              <button class="strava-connect" type="submit">{% if personalized %}Mettre à jour depuis Strava{% else %}Se connecter à Strava{% endif %}</button>
+            </form>
+            {% else %}
+              <button class="strava-connect" type="button" disabled title="Configurez STRAVA_CLIENT_ID et STRAVA_CLIENT_SECRET pour activer la connexion.">{% if personalized %}Mettre à jour depuis Strava{% else %}Se connecter à Strava{% endif %}</button>
+            {% endif %}
+          </div>
+        </div>
+        <div class="map-total">
+          <strong id="map-total-count">{{ cols_count }}</strong>
+          <span>cols affichés</span>
+        </div>
+      </section>
+
+      <nav class="map-view-menu" aria-label="Vues des cols">
+        <button class="map-tab" id="map-tab" type="button" aria-pressed="true">Carte</button>
+        <button class="map-tab" id="passed-cols-tab" type="button" aria-pressed="false">
+          Cols franchis
+        </button>
+      </nav>
+
+      <section class="map-panel" id="map-panel" aria-label="Carte des cols">
+        <section class="map-filters" aria-label="Filtres par pays et département">
+          <label class="map-filter">
+            <span>Pays</span>
+            <select id="country-filter">
+              <option value="">Tous les pays</option>
+            </select>
+          </label>
+          <label class="map-filter">
+            <span>Département</span>
+            <select id="department-filter" disabled>
+              <option value="">Choisissez un pays</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="map-card" aria-label="Carte des cols">
+          <div id="map" aria-label="Carte interactive des cols"></div>
+          <div class="map-legend" aria-label="Légende">
+            <span><i class="legend-marker marker-green" aria-hidden="true"></i>Franchi</span>
+            <span><i class="legend-marker marker-red" aria-hidden="true"></i>Non franchi</span>
+          </div>
+          <p class="map-error" id="map-error" role="status" hidden></p>
+        </section>
+      </section>
+
+      <section class="passed-cols-panel" id="passed-cols-panel" aria-label="Liste des cols franchis" hidden>
+        {% if passed_cols %}
+          <div class="passed-filter-bar" aria-label="Filtres des cols franchis">
+            <span class="passed-count-summary"><span id="passed-visible-count">{{ passed_count }}</span> cols</span>
+            <label class="passed-year-filter" for="passed-year-only">
+              <input id="passed-year-only" type="checkbox" autocomplete="off">
+              <span>Franchis en {{ current_year }}</span>
+            </label>
+          </div>
+          <div class="passed-cols-table-wrap" role="region" aria-label="Liste des cols franchis, défilement horizontal" tabindex="0">
+            <table class="passed-cols-table">
+              <thead>
+                <tr>
+                  <th scope="col">Nom</th>
+                  <th scope="col">Altitude</th>
+                  <th scope="col">Nombre de passages</th>
+                  <th scope="col">Passages {{ current_year }}</th>
+                  <th scope="col">Dernier passage</th>
+                  <th scope="col">Pays</th>
+                  <th scope="col">Département</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for col in passed_cols %}
+                  <tr data-col-code="{{ col.code }}" data-col-count="{{ col.col_count }}" data-year-count="{{ col.year_col_count }}">
+                    <th scope="row">
+                      <span class="passed-cell-label">Nom</span>
+                      <a class="passed-col-link" href="{% url 'portal:col_activities' col_code=col.code %}">{{ col.name }}</a>
+                    </th>
+                    <td class="passed-number">
+                      <span class="passed-cell-label">Altitude</span>
+                      <span>{% if col.altitude %}{{ col.altitude|floatformat:0 }} m{% else %}—{% endif %}</span>
+                    </td>
+                    <td class="passed-number">
+                      <span class="passed-cell-label">Nombre de passages</span>
+                      <span>{{ col.col_count }}</span>
+                    </td>
+                    <td class="passed-number">
+                      <span class="passed-cell-label">Passages {{ current_year }}</span>
+                      <span>{{ col.year_col_count }}</span>
+                    </td>
+                    <td>
+                      <span class="passed-cell-label">Dernier passage</span>
+                      <span>{% if col.last_passage_date %}{{ col.last_passage_date|date:"d/m/Y" }}{% else %}—{% endif %}</span>
+                    </td>
+                    <td>
+                      <span class="passed-cell-label">Pays</span>
+                      <span>{{ col.country_name }}</span>
+                    </td>
+                    <td>
+                      <span class="passed-cell-label">Département</span>
+                      <span>{{ col.department_name }}</span>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <p class="passed-cols-empty" id="passed-filter-empty" hidden>Aucun col ne correspond à ces filtres.</p>
+        {% elif personalized %}
+          <p class="passed-cols-empty">Aucun col franchi n’est enregistré pour ce compte.</p>
+        {% else %}
+          <p class="passed-cols-empty">Connectez-vous à Strava pour afficher vos cols franchis.</p>
+        {% endif %}
+      </section>
+    </main>
+    {{ cols|json_script:"map-cols" }}
+  </body>
+</html>

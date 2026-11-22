@@ -1,0 +1,70 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#542b1e">
+    <meta name="description" content="Carte interactive des cols du Club des Cent Cols.">
+    <title>Cent Cols — Carte</title>
+    <link rel="stylesheet" href="{% static 'portal/map.css' %}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" defer></script>
+    <script src="{% static 'portal/map.js' %}" defer></script>
+  </head>
+  <body class="map-page">
+    <header class="map-header">
+      <a class="map-brand" href="/" aria-label="Cent Cols, carte d’accueil">
+        <span class="map-brand-mark" aria-hidden="true">CC</span>
+        <span>Cent Cols</span>
+      </a>
+      <a class="applications-link" href="{% url 'portal:applications' %}">
+        Mes applications <span aria-hidden="true">↗</span>
+      </a>
+    </header>
+
+    <main class="map-main">
+      <section class="map-intro" aria-labelledby="map-title">
+        <div>
+          <p class="map-eyebrow">CARTE INTERACTIVE</p>
+          <h1 id="map-title">Les cols, en un coup d’œil</h1>
+          {% if personalized %}
+            <p class="map-description">Vos cols franchis apparaissent en vert.</p>
+          {% endif %}
+        </div>
+        <div class="map-total">
+          <strong id="map-total-count">{{ cols_count }}</strong>
+          <span>cols affichés</span>
+        </div>
+      </section>
+
+      <section class="map-filters" aria-label="Filtres par pays et département">
+        <label class="map-filter">
+          <span>Pays</span>
+          <select id="country-filter">
+            <option value="">Tous les pays</option>
+          </select>
+        </label>
+        <label class="map-filter">
+          <span>Département</span>
+          <select id="department-filter" disabled>
+            <option value="">Choisissez un pays</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="map-card" aria-label="Carte des cols">
+        <div id="map" aria-label="Carte interactive des cols"></div>
+        <div class="map-legend" aria-label="Légende">
+          <span><i class="legend-marker marker-green" aria-hidden="true"></i>Franchi</span>
+          <span><i class="legend-marker marker-red" aria-hidden="true"></i>Non franchi</span>
+        </div>
+        <p class="map-error" id="map-error" role="status" hidden></p>
+      </section>
+    </main>
+    {{ cols|json_script:"map-cols" }}
+  </body>
+</html>

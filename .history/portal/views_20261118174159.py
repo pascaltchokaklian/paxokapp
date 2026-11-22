@@ -1,0 +1,216 @@
+import math
+
+import requests
+from django.conf import settings
+from django.http import Http404
+from django.shortcuts import redirect, render
+from django.utils import timezone
+
+
+from .map_data import get_activity_details, get_col_activities, get_map_cols
+
+
+def home(request):
+    strava_user_id = request.session.get('strava_user_id')
+    cols = get_map_cols(strava_user_id)
+    passed_cols = [col for col in cols if col['passed']]
+    passed_cols.sort(
+        key=lambda col: (
+            -col['col_count'],
+            (col['name'] or '').casefold(),
+        )
+    )
+    passed_count = len(passed_cols)
+    greeting_name = ''
+    if request.user.is_authenticated:
+        greeting_name = (
+            request.user.get_full_name().strip()
+            or request.user.get_username()
+        )
+
+    return render(
+        request,
+        'portal/map.html',
+        {
+            'cols': cols,
+            'cols_count': len(cols),
+            'passed_count': passed_count,
+            'passed_cols': passed_cols,
+            'current_year': timezone.localdate().year,
+            'personalized': strava_user_id is not None,
+            'greeting_name': greeting_name,
+            'strava_auth_configured': bool(
+                settings.SOCIAL_AUTH_STRAVA_KEY
+                and settings.SOCIAL_AUTH_STRAVA_SECRET
+            ),
+        },
+    )
+
+
+def strava_connected(request):
+    if not request.user.is_authenticated:
+        request.session.pop('strava_user_id', None)
+        return redirect('portal:home')
+
+    social_auth = request.user.social_auth.filter(provider='strava').first()
+    try:
+        strava_user_id = int(social_auth.uid)
+    except (AttributeError, TypeError, ValueError):
+        request.session.pop('strava_user_id', None)
+        return redirect('portal:home')
+
+    request.session['strava_user_id'] = strava_user_id
+    return redirect('portal:home')
+
+
+def applications(request):
+    greeting_name = ''
+    if request.user.is_authenticated:
+        greeting_name = (
+            request.user.get_full_name().strip()
+            or request.user.get_username()
+        )
+
+    return render(
+        request,
+        'portal/applications.html',
+        {
+            'personalized': request.session.get('strava_user_id') is not None,
+            'greeting_name': greeting_name,
+        },
+    )
+
+
+def col_activities(request, col_code):
+    strava_user_id = request.session.get('strava_user_id')
+    col, activities = get_col_activities(col_code, strava_user_id)
+    if col is None:
+        raise Http404('Col not found')
+
+    return render(
+        request,
+        'portal/col_activities.html',
+        {
+            'col': col,
+            'activities': activities,
+            'personalized': strava_user_id is not None,
+            'greeting_name': request.user.get_full_name().strip()
+            or request.user.get_username()
+            if request.user.is_authenticated
+            else '',
+            'strava_auth_configured': bool(
+                settings.SOCIAL_AUTH_STRAVA_KEY
+                and settings.SOCIAL_AUTH_STRAVA_SECRET
+            ),
+        },
+    )
+
+
+def _activity_altitude_profile(strava_id, access_token):
+    if not access_token:
+        return [], [], None
+
+    try:
+        response = requests.get(
+            f'https://www.strava.com/api/v3/activities/{strava_id}/streams',
+            headers={'Authorization': f'Bearer {access_token}'},
+            params={'keys': 'distance,altitude', 'key_by_type': 'true'},
+            timeout=10,
+        )
+        response.raise_for_status()
+        streams = response.json()
+    except (requests.RequestException, ValueError):
+        return [], [], None
+
+    distances = streams.get('distance', {}).get('data', [])
+    altitudes = streams.get('altitude', {}).get('data', [])
+    raw_points = []
+    for distance, altitude in zip(distances, altitudes):
+        try:
+            distance = float(distance)
+            altitude = float(altitude)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(distance) and math.isfinite(altitude):
+            raw_points.append((distance, altitude))
+    if len(raw_points) < 2:
+        return [], [], None
+
+    step = max(1, math.ceil(len(raw_points) / 500))
+    sampled = raw_points[::step]
+    if sampled[-1] != raw_points[-1]:
+        sampled.append(raw_points[-1])
+
+    minimum_altitude = min(point[1] for point in sampled)
+    maximum_altitude = max(point[1] for point in sampled)
+    altitude_range = maximum_altitude - minimum_altitude or 1
+    total_distance = raw_points[-1][0] or 1
+    profile_points = []
+    for distance, altitude in sampled:
+        profile_points.append(
+            {
+                'x': round(48 + 904 * distance / total_distance, 2),
+                'y': round(266 - 224 * (altitude - minimum_altitude) / altitude_range, 2),
+            }
+        )
+
+    profile_segments = []
+    for index, (start, end) in enumerate(zip(sampled, sampled[1:])):
+        start_point = profile_points[index]
+        end_point = profile_points[index + 1]
+        distance_delta = end[0] - start[0]
+        altitude_delta = end[1] - start[1]
+        profile_segments.append(
+            {
+                'x1': start_point['x'],
+                'y1': start_point['y'],
+                'x2': end_point['x'],
+                'y2': end_point['y'],
+                'climb': distance_delta > 0 and altitude_delta / distance_delta > 0.04,
+            }
+        )
+
+    return profile_points, profile_segments, (
+        round(minimum_altitude),
+        round(maximum_altitude),
+    )
+
+
+def activity_detail(request, strava_id):
+    strava_user_id = request.session.get('strava_user_id')
+    activity = get_activity_details(strava_id, strava_user_id)
+    if activity is None:
+        raise Http404('Activity not found')
+
+    social_auth = None
+    if request.user.is_authenticated:
+        social_auth = request.user.social_auth.filter(provider='strava').first()
+    access_token = social_auth.extra_data.get('access_token') if social_auth else None
+    profile_points, profile_segments, altitude_bounds = _activity_altitude_profile(
+        strava_id,
+        access_token,
+    )
+
+    greeting_name = ''
+    if request.user.is_authenticated:
+        greeting_name = (
+            request.user.get_full_name().strip()
+            or request.user.get_username()
+        )
+
+    return render(
+        request,
+        'portal/activity_detail.html',
+        {
+            'activity': activity,
+            'profile_points': profile_points,
+            'profile_segments': profile_segments,
+            'altitude_bounds': altitude_bounds,
+            'personalized': True,
+            'greeting_name': greeting_name,
+            'strava_auth_configured': bool(
+                settings.SOCIAL_AUTH_STRAVA_KEY
+                and settings.SOCIAL_AUTH_STRAVA_SECRET
+            ),
+        },
+    )

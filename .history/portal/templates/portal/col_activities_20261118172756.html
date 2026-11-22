@@ -1,0 +1,74 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#542b1e">
+    <title>{{ col.col_name }} — Activités Cent Cols</title>
+    <link rel="stylesheet" href="{% static 'portal/map.css' %}?v=16">
+  </head>
+  <body class="map-page">
+    <header class="map-header">
+      <a class="map-brand" href="/" aria-label="Cent Cols, carte d’accueil">
+        <img class="map-brand-logo" src="{% static 'portal/cent-cols-logo.png' %}" alt="">
+        <span>Cent Cols</span>
+      </a>
+      <div class="map-header-actions">
+        {% if personalized %}
+          <span class="map-header-greeting">Hello {{ greeting_name }}</span>
+        {% endif %}
+        <a class="applications-link" href="{% url 'portal:applications' %}">
+          Mes applications <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="map-main activities-main">
+      <a class="activities-back" href="/">← Retour à la carte</a>
+      <section class="activities-heading">
+        <div>
+          <p class="activities-eyebrow">COL FRANCHI</p>
+          <h1>{{ col.col_name }}</h1>
+        </div>
+      </section>
+
+      {% if not personalized %}
+        <p class="passed-cols-empty">Connectez-vous à Strava pour consulter les activités associées à ce col.</p>
+        {% if strava_auth_configured %}
+          <form class="map-strava-form" method="post" action="{% url 'social:begin' 'strava' %}">
+            {% csrf_token %}
+            <button class="strava-connect" type="submit">Se connecter à Strava</button>
+          </form>
+        {% endif %}
+      {% elif activities %}
+        <div class="passed-cols-table-wrap activities-table-wrap" role="region" aria-label="Activités au col {{ col.col_name }}" tabindex="0">
+          <table class="passed-cols-table activities-table">
+            <thead>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Activité</th>
+                <th scope="col">Distance</th>
+                <th scope="col">Durée</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for activity in activities %}
+                <tr>
+                  <td>{{ activity.start_date|date:"d/m/Y" }}</td>
+                  <td>
+                    <a class="activity-link" href="https://www.strava.com/activities/{{ activity.strava_id }}" target="_blank" rel="noopener noreferrer">{{ activity.name }}</a>
+                  </td>
+                  <td>{% if activity.distance_km != None %}{{ activity.distance_km|floatformat:1 }} km{% else %}—{% endif %}</td>
+                  <td>{% if activity.duration %}{{ activity.duration }}{% else %}—{% endif %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="passed-cols-empty">Aucune activité enregistrée pour ce col.</p>
+      {% endif %}
+    </main>
+  </body>
+</html>
