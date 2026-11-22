@@ -222,12 +222,13 @@ class PortalMapTests(TestCase):
             response,
             'rel="apple-touch-icon" href="/static/portal/cent-cols-logo.png"',
         )
-        self.assertContains(response, '/static/portal/map.js?v=27')
-        self.assertContains(response, '/static/portal/map.css?v=31')
+        self.assertContains(response, '/static/portal/map.js?v=29')
+        self.assertContains(response, '/static/portal/map.css?v=32')
         self.assertContains(response, 'id="department-filter"')
         self.assertContains(response, 'id="passed-cols-tab"')
         self.assertContains(response, 'id="monthly-col-stats-tab"')
         self.assertContains(response, 'Connectez-vous à Strava pour afficher vos cols franchis.')
+        self.assertNotContains(response, 'id="passed-map"')
         self.assertContains(response, '/static/portal/map.js')
 
         applications_response = self.client.get('/applications/')
@@ -293,6 +294,9 @@ class PortalMapTests(TestCase):
         response = self.client.get('/')
         self.assertContains(response, '"passed": true')
         self.assertContains(response, 'id="passed-visible-count">2</span> cols')
+        self.assertContains(response, 'id="passed-map"')
+        self.assertContains(response, 'id="passed-list-view" type="button" aria-controls="passed-list" aria-pressed="true"')
+        self.assertContains(response, 'id="passed-map-panel" aria-label="Carte des cols franchis" hidden')
         self.assertContains(response, 'data-col-code="FR-04-0001"')
         self.assertContains(response, 'data-col-code="FR-01-0003"')
         self.assertContains(

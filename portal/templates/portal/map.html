@@ -9,13 +9,13 @@
     <title>Cent Cols — Carte</title>
     <link rel="icon" type="image/png" href="{% static 'portal/cent-cols-logo.png' %}">
     <link rel="apple-touch-icon" href="{% static 'portal/cent-cols-logo.png' %}">
-    <link rel="stylesheet" href="{% static 'portal/map.css' %}?v=31">
+    <link rel="stylesheet" href="{% static 'portal/map.css' %}?v=32">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" defer></script>
-    <script src="{% static 'portal/map.js' %}?v=27" defer></script>
+    <script src="{% static 'portal/map.js' %}?v=29" defer></script>
   </head>
   <body class="map-page">
     <header class="map-header">
@@ -98,7 +98,15 @@
               <span>Franchis en {{ current_year }}</span>
             </label>
           </div>
-          <div class="passed-cols-table-wrap" role="region" aria-label="Liste des cols franchis, défilement horizontal" tabindex="0">
+          <div class="map-view-menu" role="group" aria-label="Affichage des cols franchis">
+            <button class="map-tab" id="passed-list-view" type="button" aria-controls="passed-list" aria-pressed="true">Liste</button>
+            <button class="map-tab" id="passed-map-view" type="button" aria-controls="passed-map-panel" aria-pressed="false">Carte</button>
+          </div>
+          <section class="map-card passed-map-card" id="passed-map-panel" aria-label="Carte des cols franchis" hidden>
+            <div id="passed-map" role="region" aria-label="Carte interactive des cols franchis"></div>
+            <p class="map-error" id="passed-map-error" role="status" hidden></p>
+          </section>
+          <div class="passed-cols-table-wrap" id="passed-list" role="region" aria-label="Liste des cols franchis, défilement horizontal" tabindex="0">
             <table class="passed-cols-table">
               <thead>
                 <tr>

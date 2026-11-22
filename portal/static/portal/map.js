@@ -19,7 +19,16 @@
   const passedYearOnly = document.getElementById("passed-year-only");
   const passedVisibleCount = document.getElementById("passed-visible-count");
   const passedFilterEmpty = document.getElementById("passed-filter-empty");
+  const passedMapElement = document.getElementById("passed-map");
+  const passedMapError = document.getElementById("passed-map-error");
+  const passedMapPanel = document.getElementById("passed-map-panel");
+  const passedList = document.getElementById("passed-list");
+  const passedListView = document.getElementById("passed-list-view");
+  const passedMapView = document.getElementById("passed-map-view");
   let map = null;
+  let passedMap = null;
+  let passedLayer = null;
+  let passedMarkers = [];
   let currentBounds = [];
   let mapVisibleCount = Number(totalElement.textContent);
   let activeView = "map";
@@ -62,6 +71,36 @@
         fitCurrentBounds();
       });
     }
+    if (view === "passed" && passedMapPanel && !passedMapPanel.hidden) {
+      showPassedMap();
+    }
+  }
+
+  function showPassedMap() {
+    window.requestAnimationFrame(function () {
+      if (activeView !== "passed" || passedMapPanel.hidden || !window.L || !L.markerClusterGroup) {
+        return;
+      }
+      ensurePassedMap();
+      passedMap.invalidateSize();
+      updatePassedMap();
+    });
+  }
+
+  if (passedListView && passedMapView) {
+    passedListView.addEventListener("click", function () {
+      passedList.hidden = false;
+      passedMapPanel.hidden = true;
+      passedListView.setAttribute("aria-pressed", "true");
+      passedMapView.setAttribute("aria-pressed", "false");
+    });
+    passedMapView.addEventListener("click", function () {
+      passedList.hidden = true;
+      passedMapPanel.hidden = false;
+      passedListView.setAttribute("aria-pressed", "false");
+      passedMapView.setAttribute("aria-pressed", "true");
+      showPassedMap();
+    });
   }
 
   mapTab.addEventListener("click", function () {
@@ -132,6 +171,9 @@
     passedVisibleCount.textContent = String(visibleCount);
     refreshTotal();
     passedFilterEmpty.hidden = visibleCount > 0;
+    if (passedMap && activeView === "passed" && !passedMapPanel.hidden) {
+      updatePassedMap();
+    }
   }
 
   if (passedYearOnly) {
@@ -150,23 +192,30 @@
   if (!window.L || !L.markerClusterGroup) {
     errorElement.hidden = false;
     errorElement.textContent = "La carte n’a pas pu être chargée. Vérifiez votre connexion internet puis actualisez la page.";
+    if (passedMapError) {
+      passedMapError.hidden = false;
+      passedMapError.textContent = errorElement.textContent;
+    }
     return;
   }
 
   const cols = JSON.parse(dataElement.textContent);
   map = L.map(mapElement, { preferCanvas: true }).setView([45.5, 5], 6);
 
-  const tileLayer = L.tileLayer("/map-tiles/{z}/{x}/{y}.png?source=osmfr-hot", {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &middot; Tiles style by <a href="https://www.hotosm.org/">HOT</a>, hosted by <a href="https://www.openstreetmap.fr/">OpenStreetMap France</a>'
-  }).addTo(map);
-  tileLayer.on("tileerror", function () {
-    errorElement.hidden = false;
-    errorElement.textContent = "Le fond de carte n’a pas pu être chargé. Vérifiez votre connexion internet puis actualisez la page.";
-  });
-  tileLayer.on("load", function () {
-    errorElement.hidden = true;
-  });
+  function addTileLayer(targetMap, targetError) {
+    const tileLayer = L.tileLayer("/map-tiles/{z}/{x}/{y}.png?source=osmfr-hot", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &middot; Tiles style by <a href="https://www.hotosm.org/">HOT</a>, hosted by <a href="https://www.openstreetmap.fr/">OpenStreetMap France</a>'
+    }).addTo(targetMap);
+    tileLayer.on("tileerror", function () {
+      targetError.hidden = false;
+      targetError.textContent = "Le fond de carte n’a pas pu être chargé. Vérifiez votre connexion internet puis actualisez la page.";
+    });
+    tileLayer.on("load", function () {
+      targetError.hidden = true;
+    });
+  }
+  addTileLayer(map, errorElement);
 
   const typeNames = {
     R: "Route",
@@ -254,6 +303,50 @@
       content.appendChild(activitiesLink);
     }
     return content;
+  }
+
+  function ensurePassedMap() {
+    if (passedMap) {
+      return;
+    }
+    passedMap = L.map(passedMapElement, { preferCanvas: true }).setView([45.5, 5], 6);
+    addTileLayer(passedMap, passedMapError);
+    passedLayer = L.markerClusterGroup({
+      chunkedLoading: true,
+      showCoverageOnHover: false
+    }).addTo(passedMap);
+    passedMarkers = cols.filter(function (col) {
+      return col.passed;
+    }).map(function (col) {
+      const marker = L.marker([col.latitude, col.longitude], {
+        icon: createIcon(true),
+        title: col.name,
+        alt: col.name
+      });
+      marker.bindPopup(createPopup(col));
+      return { col: col, marker: marker };
+    });
+  }
+
+  function updatePassedMap() {
+    const visibleCodes = new Set(
+      Array.from(document.querySelectorAll("#passed-cols-panel tbody tr"))
+        .filter(function (row) { return !row.hidden; })
+        .map(function (row) { return row.dataset.colCode; })
+    );
+    const bounds = [];
+    passedLayer.clearLayers();
+    passedMarkers.forEach(function (entry) {
+      if (visibleCodes.has(entry.col.code)) {
+        passedLayer.addLayer(entry.marker);
+        bounds.push([entry.col.latitude, entry.col.longitude]);
+      }
+    });
+    if (bounds.length > 1) {
+      passedMap.fitBounds(bounds, { padding: [24, 24], maxZoom: 7 });
+    } else if (bounds.length === 1) {
+      passedMap.setView(bounds[0], 9);
+    }
   }
 
   const markers = cols.map(function (col) {
@@ -361,6 +454,9 @@
     if (!mapPanel.hidden) {
       map.invalidateSize();
       fitCurrentBounds();
+    }
+    if (passedMap && !passedColsPanel.hidden && !passedMapPanel.hidden) {
+      passedMap.invalidateSize();
     }
   });
 
