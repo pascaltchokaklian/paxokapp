@@ -106,7 +106,7 @@ SOCIAL_AUTH_STRAVA_KEY = (
 SOCIAL_AUTH_STRAVA_SECRET = (
     os.environ.get('STRAVA_CLIENT_SECRET') or _legacy_strava_client_secret
 )
-SOCIAL_AUTH_STRAVA_SCOPE = ['read', 'activity:read_all']
+SOCIAL_AUTH_STRAVA_SCOPE = ['read', 'activity:read_all', 'activity:write']
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/connected/'
 SOCIAL_AUTH_RAISE_EXCEPTIONS = False
 

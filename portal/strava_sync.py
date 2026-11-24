@@ -1,4 +1,5 @@
 import logging
+import re
 import sqlite3
 import time
 from collections import Counter
@@ -8,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 from django.conf import settings
+from django.utils import timezone as django_timezone
 from django.utils.dateparse import parse_datetime
 from social_django.utils import load_strategy
 
@@ -22,6 +24,12 @@ SEGMENT_EFFORTS_URL = 'https://www.strava.com/api/v3/segment_efforts'
 MIN_SEGMENT_DISTANCE_M = 3000
 MIN_SEGMENT_GRADE = 5
 ONE_DAY_SECONDS = 86400
+COLS_DESCRIPTION_PATTERN = re.compile(
+    r'\[Paxoka - cols franchis\]\n'
+    r'Cols distincts : \d+\n'
+    r'Cols distincts en \d{4} : \d+'
+    r'(?:\n\[/Paxoka\])?'
+)
 
 
 def _access_token(social_auth):
@@ -191,6 +199,39 @@ def _rebuild_col_counters(connection, strava_user_id):
             )
 
 
+def _update_activity_col_descriptions(connection, strava_user_id, activity_ids, headers):
+    if not activity_ids:
+        return
+
+    now = django_timezone.localtime()
+    year_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    next_year = year_start.replace(year=year_start.year + 1)
+    total, yearly = connection.execute(
+        'SELECT COUNT(DISTINCT cp.col_code), '
+        'COUNT(DISTINCT CASE WHEN datetime(a.act_start_date) >= datetime(?) '
+        'AND datetime(a.act_start_date) < datetime(?) THEN cp.col_code END) '
+        'FROM myapp_col_perform cp '
+        'JOIN myapp_activity a ON a.strava_id = cp.strava_id '
+        'WHERE a.strava_user_id = ?',
+        (year_start.isoformat(), next_year.isoformat(), strava_user_id),
+    ).fetchone()
+    block = (
+        f'[Paxoka - cols franchis]\nCols distincts : {total}\n'
+        f'Cols distincts en {now.year} : {yearly}'
+    )
+    for activity_id in activity_ids:
+        url = ACTIVITY_URL.format(activity_id)
+        response = requests.get(url, headers=headers, timeout=15)
+        response.raise_for_status()
+        description = response.json()['description'] or ''
+        if COLS_DESCRIPTION_PATTERN.search(description):
+            description = COLS_DESCRIPTION_PATTERN.sub(block, description, count=1)
+        else:
+            description = f'{description}\n\n{block}' if description else block
+        response = requests.put(url, headers=headers, data={'description': description}, timeout=15)
+        response.raise_for_status()
+
+
 def _local_segment_id(connection, segment):
     row = connection.execute(
         'SELECT segment_id FROM myapp_segment WHERE strava_segment_id = ?',
@@ -308,9 +349,11 @@ def sync_strava_activities(social_auth):
 
         cols = _load_cols(connection)
         added = 0
+        new_activity_ids = []
         for activity in activities:
             if _store_new_activity(connection, strava_user_id, activity):
                 added += 1
+                new_activity_ids.append(int(activity['id']))
                 try:
                     _import_activity_segments(connection, strava_user_id, int(activity['id']), headers)
                 except requests.RequestException:
@@ -324,6 +367,7 @@ def sync_strava_activities(social_auth):
                 _store_col_perform(connection, strava_id, col_code)
 
         _rebuild_col_counters(connection, strava_user_id)
+        _update_activity_col_descriptions(connection, strava_user_id, new_activity_ids, headers)
         connection.commit()
     finally:
         connection.close()

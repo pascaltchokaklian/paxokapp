@@ -40,7 +40,7 @@ Ouvrez ensuite <http://127.0.0.1:8080>.
 
 Le serveur du portail lit la base Cent Cols en mode SQLite lecture seule. Par défaut, il utilise `C:\Users\pasca\Dev\python\centcols\paxokapp\db.sqlite3`. Pour sélectionner une autre copie, définissez `CENTCOLS_DB_PATH` avant de lancer Django.
 
-La connexion Strava utilise OAuth. Définissez `STRAVA_CLIENT_ID` et `STRAVA_CLIENT_SECRET` dans l’environnement, puis appliquez les migrations Django. Déclarez cette URL de callback dans la configuration de l’application Strava : `http://127.0.0.1:8080/oauth/complete/strava/`. Après connexion, l’ID de l’athlète est enregistré en session et sert à afficher ses cols franchis en vert. Le portail demande uniquement l’accès `read` nécessaire à l’identification.
+La connexion Strava utilise OAuth. Définissez `STRAVA_CLIENT_ID` et `STRAVA_CLIENT_SECRET` dans l’environnement, puis appliquez les migrations Django. Déclarez cette URL de callback dans la configuration de l’application Strava : `http://127.0.0.1:8080/oauth/complete/strava/`. Après connexion, l’ID de l’athlète est enregistré en session et sert à afficher ses cols franchis en vert. Le portail demande l’accès aux activités et l’autorisation de les modifier : lors d’une synchronisation, il ajoute aux descriptions des nouvelles activités les nombres de cols distincts au total et pour l’année en cours, sans supprimer le texte existant. Les comptes déjà connectés doivent se reconnecter à Strava et accepter cette autorisation.
 
 Pour un déploiement, définissez `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=false` et `DJANGO_ALLOWED_HOSTS` dans l’environnement du serveur.
 

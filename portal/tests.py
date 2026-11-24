@@ -5,8 +5,10 @@ from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
+from urllib.parse import parse_qs, urlparse
 from zoneinfo import ZoneInfo
 
+import requests
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.sessions.middleware import SessionMiddleware
@@ -18,7 +20,7 @@ from django.urls import reverse
 from social_django.models import UserSocialAuth
 
 from .map_data import get_map_cols
-from .strava_sync import import_segment_efforts
+from .strava_sync import import_segment_efforts, sync_strava_activities
 from .views import strava_connected
 
 
@@ -741,6 +743,126 @@ class PortalMapTests(TestCase):
             connection.close()
         self.assertEqual(segments, [(10, 'Segment 10')])
         self.assertEqual(performs, [(1, 1800, 600), (4, 1500, 720)])
+
+    def test_sync_updates_only_new_activity_descriptions_with_distinct_totals(self):
+        connection = sqlite3.connect(settings.CENTCOLS_DB_PATH)
+        try:
+            connection.execute('ALTER TABLE myapp_activity ADD COLUMN act_status INTEGER')
+            connection.execute('ALTER TABLE myapp_activity ADD COLUMN act_trainer INTEGER')
+            connection.commit()
+        finally:
+            connection.close()
+
+        activity = {
+            'id': 7004, 'name': 'Nouvelle sortie',
+            'start_date': '2026-12-31T23:30:00Z', 'sport_type': 'Ride',
+        }
+        activities_response = Mock()
+        activities_response.json.return_value = [activity, {'id': 7001}]
+        detail_response = Mock()
+        detail_response.json.return_value = {'description': '194 charge d’entraînement\n-- de COROS'}
+        auth = SimpleNamespace(uid='42')
+        now = datetime(2027, 1, 2, 12, tzinfo=ZoneInfo('Europe/Paris'))
+
+        with patch('portal.strava_sync._access_token', return_value='token'), \
+                patch('portal.strava_sync._import_activity_segments'), \
+                patch('portal.strava_sync._visited_col_codes', return_value={'FR-04-0001', 'FR-01-0003'}), \
+                patch('portal.strava_sync.django_timezone.localtime', return_value=now), \
+                patch('portal.strava_sync.requests.get', side_effect=[
+                    activities_response, detail_response, activities_response,
+                ]), \
+                patch('portal.strava_sync.requests.put') as update:
+            self.assertEqual(sync_strava_activities(auth), 1)
+            self.assertEqual(sync_strava_activities(auth), 0)
+
+        update.assert_called_once_with(
+            'https://www.strava.com/api/v3/activities/7004',
+            headers={'Authorization': 'Bearer token'},
+            data={'description': (
+                '194 charge d’entraînement\n-- de COROS\n\n'
+                '[Paxoka - cols franchis]\nCols distincts : 2\n'
+                'Cols distincts en 2027 : 2'
+            )},
+            timeout=15,
+        )
+
+    def test_sync_failure_rolls_back_import_and_retry_does_not_duplicate_description(self):
+        connection = sqlite3.connect(settings.CENTCOLS_DB_PATH)
+        try:
+            connection.execute('ALTER TABLE myapp_activity ADD COLUMN act_status INTEGER')
+            connection.execute('ALTER TABLE myapp_activity ADD COLUMN act_trainer INTEGER')
+            connection.commit()
+        finally:
+            connection.close()
+
+        activity = {'id': 7004, 'start_date': '2027-01-01T10:00:00Z', 'sport_type': 'Ride'}
+        activities_response = Mock()
+        activities_response.json.return_value = [activity]
+        detail_response = Mock()
+        detail_response.json.side_effect = [
+            {'description': (
+                'Texte personnel\n\n[Paxoka - cols franchis]\nCols distincts : 10\n'
+                'Cols distincts en 2026 : 5\n[/Paxoka]'
+            )},
+            {'description': (
+                'Texte personnel\n\n[Paxoka - cols franchis]\nCols distincts : 10\n'
+                'Cols distincts en 2026 : 5'
+            )},
+        ]
+        failed_response = Mock()
+        failed_response.raise_for_status.side_effect = requests.HTTPError('write failed')
+        auth = SimpleNamespace(uid='42')
+        now = datetime(2027, 1, 2, 12, tzinfo=ZoneInfo('Europe/Paris'))
+
+        with patch('portal.strava_sync._access_token', return_value='token'), \
+                patch('portal.strava_sync._import_activity_segments'), \
+                patch('portal.strava_sync._visited_col_codes', return_value=set()), \
+                patch('portal.strava_sync.django_timezone.localtime', return_value=now), \
+                patch('portal.strava_sync.requests.get', side_effect=[
+                    activities_response, detail_response, activities_response, detail_response,
+                ]), \
+                patch('portal.strava_sync.requests.put', side_effect=[failed_response, Mock()]) as update:
+            with self.assertRaises(requests.HTTPError):
+                sync_strava_activities(auth)
+            connection = sqlite3.connect(settings.CENTCOLS_DB_PATH)
+            try:
+                self.assertIsNone(connection.execute(
+                    'SELECT strava_id FROM myapp_activity WHERE strava_id = 7004'
+                ).fetchone())
+            finally:
+                connection.close()
+            self.assertEqual(sync_strava_activities(auth), 1)
+
+        description = update.call_args.kwargs['data']['description']
+        self.assertNotIn('[/Paxoka]', update.call_args_list[0].kwargs['data']['description'])
+        self.assertEqual(description.count('[Paxoka - cols franchis]'), 1)
+        self.assertIn('Texte personnel\n\n', description)
+        self.assertIn('Cols distincts : 1\nCols distincts en 2027 : 0', description)
+        self.assertNotIn('[/Paxoka]', description)
+
+    @override_settings(SOCIAL_AUTH_STRAVA_KEY='client-id', SOCIAL_AUTH_STRAVA_SECRET='secret')
+    def test_strava_reconnection_requests_activity_write_scope(self):
+        response = self.client.post(reverse('social:begin', args=['strava']))
+
+        self.assertEqual(response.status_code, 302)
+        scope = parse_qs(urlparse(response['Location']).query)['scope'][0].split(',')
+        self.assertIn('activity:write', scope)
+        self.assertIn('activity:read_all', scope)
+
+    @override_settings(SOCIAL_AUTH_STRAVA_KEY='client-id', SOCIAL_AUTH_STRAVA_SECRET='secret')
+    def test_sync_error_is_shown_with_reconnect_option(self):
+        user = User.objects.create_user(username='sync-error')
+        UserSocialAuth.objects.create(user=user, provider='strava', uid='42')
+        self.client.force_login(user)
+        session = self.client.session
+        session['strava_user_id'] = 42
+        session.save()
+
+        with patch('portal.views.sync_strava_activities', side_effect=requests.HTTPError('write failed')):
+            response = self.client.post(reverse('portal:sync_strava'), follow=True)
+
+        self.assertContains(response, 'La synchronisation Strava a échoué')
+        self.assertContains(response, 'Reconnecter Strava')
 
     def test_activity_detail_shows_legacy_records_and_performances(self):
         connection = sqlite3.connect(settings.CENTCOLS_DB_PATH)

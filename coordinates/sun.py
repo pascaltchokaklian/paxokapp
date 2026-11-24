@@ -1,13 +1,18 @@
 """Sunshine duration calculation accounting for the surrounding terrain horizon."""
 import datetime
+import math
 import warnings
 from zoneinfo import ZoneInfo
 
+import pysolar
 from pysolar.solar import get_position
 from timezonefinder import TimezoneFinder
 
 STEP_MINUTES_DEFAULT = 5
 TIMEZONE_FINDER = TimezoneFinder()
+
+# These calculations use scalar datetimes; NumPy's scalar operations are slower.
+pysolar.use_math()
 
 
 def _solar_position(lat, lon, moment):
@@ -20,6 +25,21 @@ def _solar_position(lat, lon, moment):
             module=r'pysolar\.solartime',
         )
         return get_position(lat, lon, moment)
+
+
+def _may_be_sunny(lat, lon, moment):
+    """Conservatively rule out times when the sun is well below the horizon."""
+    utc_hour = moment.hour + moment.minute / 60 + moment.second / 3600
+    mean_hour_angle = ((utc_hour - 12) * 15 + lon + 180) % 360 - 180
+    # Allow 45 minutes for the equation of time and a generous declination bound.
+    closest_hour_angle = max(0, abs(mean_hour_angle) - 11.25)
+    latitude = math.radians(lat)
+    horizontal = math.cos(latitude) * math.cos(math.radians(closest_hour_angle))
+    max_sine_altitude = (
+        abs(math.sin(latitude)) * math.sin(math.radians(24))
+        + (horizontal if horizontal >= 0 else horizontal * math.cos(math.radians(24)))
+    )
+    return max_sine_altitude >= math.sin(math.radians(-2))
 
 
 def _horizon_angle_at(horizon_profile, azimuth):
@@ -61,6 +81,8 @@ def sunshine_details_for_date(
     minutes_in_day = int((day_end_utc - day_start_utc).total_seconds() // 60)
     for minute in range(0, minutes_in_day, step_minutes):
         moment = day_start_utc + datetime.timedelta(minutes=minute)
+        if not _may_be_sunny(lat, lon, moment):
+            continue
         azimuth, altitude = _solar_position(lat, lon, moment)
         if altitude <= 0:
             continue

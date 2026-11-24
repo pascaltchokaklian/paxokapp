@@ -1,15 +1,18 @@
 import json
 import math
+import sqlite3
 import time
 
 import requests
 from django.conf import settings
+from django.contrib import messages
 import logging
 
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from social_core.exceptions import AuthException
 
 from .map_data import (
     get_activity_details,
@@ -149,8 +152,13 @@ def sync_strava(request):
 
     try:
         sync_strava_activities(social_auth)
-    except Exception:
+    except (requests.RequestException, sqlite3.Error, AuthException):
         logger.exception('Synchronisation Strava echouee')
+        messages.error(
+            request,
+            'La synchronisation Strava a échoué. Vérifiez votre connexion et '
+            'autorisez la modification des activités en vous reconnectant à Strava.',
+        )
 
     if request.POST.get('next') == 'activities':
         return redirect('portal:all_activities')

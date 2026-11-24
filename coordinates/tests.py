@@ -12,7 +12,7 @@ from .elevation import (
     OPEN_TOPO_DATA_ELEVATION_URL,
     get_elevation_profile,
 )
-from .sun import daily_sunshine, sunshine_duration_for_date, timezone_at
+from .sun import daily_sunshine, sunshine_details_for_date, sunshine_duration_for_date, timezone_at
 
 
 class ElevationProfileTests(TestCase):
@@ -111,6 +111,30 @@ class ElevationProfileTests(TestCase):
 
 
 class DailySunshineTests(TestCase):
+    def test_night_filter_preserves_daily_results(self):
+        horizon = {index * 10.0: (index % 5) * 3.0 - 4.0 for index in range(36)}
+        cases = [
+            (48.8566, 2.3522, datetime.date(2026, 3, 29), 'Europe/Paris'),
+            (48.8566, 2.3522, datetime.date(2026, 10, 25), 'Europe/Paris'),
+            (69.65, 18.96, datetime.date(2026, 6, 21), 'Europe/Oslo'),
+            (69.65, 18.96, datetime.date(2026, 12, 21), 'Europe/Oslo'),
+            (-33.87, 151.21, datetime.date(2026, 12, 21), 'Australia/Sydney'),
+            (0.0, -179.9, datetime.date(2026, 1, 1), 'Pacific/Honolulu'),
+        ]
+        for latitude, longitude, day, zone in cases:
+            with self.subTest(latitude=latitude, longitude=longitude, day=day):
+                args = (latitude, longitude, day, horizon, ZoneInfo(zone))
+                with patch('coordinates.sun._may_be_sunny', return_value=True):
+                    expected = sunshine_details_for_date(*args)
+                self.assertEqual(sunshine_details_for_date(*args), expected)
+
+    @patch('coordinates.sun._solar_position', return_value=(180.0, 10.0))
+    def test_night_filter_avoids_unnecessary_solar_calculations(self, mock_position):
+        sunshine_details_for_date(
+            48.8566, 2.3522, datetime.date(2026, 6, 21), {0.0: 0.0},
+        )
+        self.assertLess(mock_position.call_count, 288)
+
     @patch('coordinates.sun.sunshine_details_for_date')
     def test_returns_one_duration_for_every_day_of_the_year(self, mock_duration):
         mock_duration.return_value = (datetime.timedelta(hours=8), None, None)
