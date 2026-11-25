@@ -27,6 +27,8 @@ Dans Strava+, l’onglet Dashboard présente les cols franchis, les distances an
 
 L’onglet Puissances affiche les puissances normalisées strictement positives des activités vélo enregistrées dans la base, sans recalcul ni import supplémentaire.
 
+L’onglet Année vélo présente le nombre d’activités, la distance, le dénivelé, la durée, les cinq sorties les plus longues, les plus dénivelées et les plus rapides, ainsi que la répartition des distances par mois et par jour de la semaine, depuis le début de l’année locale jusqu’à maintenant. La vitesse moyenne est calculée à partir de la distance et du temps de déplacement. Il inclut les mêmes types d’activités cyclistes que l’onglet Puissances.
+
 Créez un environnement virtuel, installez Django dedans, puis démarrez le portail sur le port 8080 :
 
 ```powershell

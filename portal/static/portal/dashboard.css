@@ -6,6 +6,23 @@
 h1.dashboard-title { font-size: 24px; }
 h2.dashboard-title { font-size: 17px; }
 
+.yearly-ranking { margin-top: 24px; }
+.yearly-date-short { display: none; }
+
+.distance-chart { margin-right: 0; margin-left: 0; }
+.distance-chart figcaption { font-size: 17px; font-weight: 700; }
+.distance-chart ul { display: grid; gap: 8px; padding: 0; list-style: none; }
+.distance-chart li {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) 78px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.distance-chart-track { height: 18px; background: #f0e9e3; }
+.distance-chart-bar { display: block; height: 100%; background: #fc4c02; }
+.distance-chart-value { text-align: right; white-space: nowrap; }
+
 .dashboard-filters {
   display: flex;
   flex-wrap: wrap;
@@ -87,6 +104,14 @@ h2.dashboard-title { font-size: 17px; }
 .power-date-short { display: none; }
 
 @media (max-width: 500px) {
+  .yearly-date-full { display: none; }
+  .yearly-date-short { display: inline; }
+  .yearly-ranking .dashboard-table th:first-child { width: 1%; }
+  .yearly-ranking .dashboard-table td:nth-child(2) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   .power-table th,
   .power-table td { padding: 8px; }
   .power-table th:first-child { width: 80px; }

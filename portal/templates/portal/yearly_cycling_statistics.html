@@ -1,0 +1,112 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Année vélo — Strava+</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'portal/strava-logo.svg' %}">
+    <link rel="stylesheet" href="{% static 'portal/map.css' %}?v=31">
+    <link rel="stylesheet" href="{% static 'portal/dashboard.css' %}?v=9">
+  </head>
+  <body class="map-page">
+    <script>document.body.classList.toggle("embedded", window.self !== window.top);</script>
+    <header class="map-header">
+      <div class="map-header-actions">
+        {% if personalized %}<span class="map-header-greeting">Hello {{ greeting_name }}</span>{% endif %}
+        <a class="applications-link" href="{% url 'portal:applications' %}">Mes applications <span aria-hidden="true">↗</span></a>
+      </div>
+    </header>
+    <main class="map-main activities-main">
+      <nav class="strava-view-menu" aria-label="Vues Strava+">
+        <a href="{% url 'portal:all_activities' %}">Activités</a>
+        <a href="{% url 'portal:dashboard' %}">Dashboard</a>
+        <a href="{% url 'portal:power_records' %}">Puissances</a>
+        <a href="{% url 'portal:monthly_statistics' %}">Statistiques mensuelles vélo</a>
+        <a class="active" href="{% url 'portal:yearly_cycling_statistics' %}" aria-current="page">Année vélo</a>
+      </nav>
+      <h1 class="dashboard-title">Année vélo {{ current_year }}</h1>
+      {% if not personalized %}
+        <p class="passed-cols-empty">Connectez-vous à Strava pour consulter vos statistiques.</p>
+        {% if strava_auth_configured %}
+          <form class="map-strava-form" method="post" action="{% url 'social:begin' 'strava' %}" target="_top">
+            {% csrf_token %}
+            <button class="strava-connect" type="submit">Se connecter à Strava</button>
+          </form>
+        {% endif %}
+      {% else %}
+        <section class="performance-stats" aria-label="Statistiques vélo de l'année">
+          <div class="performance-stat"><span class="performance-stat-label">Activités</span><span class="performance-stat-value">{{ statistics.activity_count }}</span></div>
+          <div class="performance-stat"><span class="performance-stat-label">Distance</span><span class="performance-stat-value">{{ statistics.distance_km }} km</span></div>
+          <div class="performance-stat"><span class="performance-stat-label">Dénivelé</span><span class="performance-stat-value">{{ statistics.elevation_m }} m</span></div>
+          <div class="performance-stat"><span class="performance-stat-label">Durée</span><span class="performance-stat-value">{{ statistics.duration }}</span></div>
+        </section>
+        <section class="yearly-ranking">
+        <h2 class="dashboard-title">Les 5 sorties les plus longues</h2>
+        {% if longest_activities %}
+          <div class="dashboard-table-wrap" role="region" aria-label="Sorties les plus longues" tabindex="0">
+            <table class="dashboard-table">
+              <thead><tr><th scope="col">Date</th><th scope="col">Sortie</th><th scope="col">Distance</th></tr></thead>
+              <tbody>
+                {% for activity in longest_activities %}
+                  <tr>
+                    <td><time datetime="{{ activity.start_date|date:'Y-m-d' }}"><span class="yearly-date-full">{{ activity.start_date|date:"d/m/Y" }}</span><span class="yearly-date-short">{{ activity.start_date|date:"d/m" }}</span></time></td>
+                    <td><a class="activity-link" href="{% url 'portal:activity_detail' strava_id=activity.strava_id %}?from=all">{{ activity.name }}</a></td>
+                    <td>{{ activity.distance_km|floatformat:1 }} km</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="passed-cols-empty">Aucune sortie vélo avec une distance enregistrée cette année.</p>
+        {% endif %}
+        </section>
+        <section class="yearly-ranking">
+          <h2 class="dashboard-title">Les 5 sorties avec le plus de dénivelé</h2>
+          {% if climbing_activities %}
+            <div class="dashboard-table-wrap" role="region" aria-label="Sorties avec le plus de dénivelé" tabindex="0">
+              <table class="dashboard-table">
+                <thead><tr><th scope="col">Date</th><th scope="col">Sortie</th><th scope="col">Dénivelé</th></tr></thead>
+                <tbody>
+                  {% for activity in climbing_activities %}
+                    <tr>
+                      <td><time datetime="{{ activity.start_date|date:'Y-m-d' }}"><span class="yearly-date-full">{{ activity.start_date|date:"d/m/Y" }}</span><span class="yearly-date-short">{{ activity.start_date|date:"d/m" }}</span></time></td>
+                      <td><a class="activity-link" href="{% url 'portal:activity_detail' strava_id=activity.strava_id %}?from=all">{{ activity.name }}</a></td>
+                      <td>{{ activity.elevation_gain_m }} m</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="passed-cols-empty">Aucune sortie vélo avec un dénivelé enregistré cette année.</p>
+          {% endif %}
+        </section>
+        <section class="yearly-ranking">
+          <h2 class="dashboard-title">Les 5 sorties les plus rapides</h2>
+          {% if fastest_activities %}
+            <div class="dashboard-table-wrap" role="region" aria-label="Sorties les plus rapides" tabindex="0">
+              <table class="dashboard-table">
+                <thead><tr><th scope="col">Date</th><th scope="col">Sortie</th><th scope="col">Vitesse moyenne</th></tr></thead>
+                <tbody>
+                  {% for activity in fastest_activities %}
+                    <tr>
+                      <td><time datetime="{{ activity.start_date|date:'Y-m-d' }}"><span class="yearly-date-full">{{ activity.start_date|date:"d/m/Y" }}</span><span class="yearly-date-short">{{ activity.start_date|date:"d/m" }}</span></time></td>
+                      <td><a class="activity-link" href="{% url 'portal:activity_detail' strava_id=activity.strava_id %}?from=all">{{ activity.name }}</a></td>
+                      <td>{{ activity.average_speed_kmh|floatformat:1 }} km/h</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="passed-cols-empty">Aucune sortie vélo avec une distance et une durée valides cette année.</p>
+          {% endif %}
+        </section>
+        {% include 'portal/distance_distribution.html' with title="Distance par mois" distances=monthly_distances only %}
+        {% include 'portal/distance_distribution.html' with title="Distance par jour de la semaine" distances=weekday_distances only %}
+      {% endif %}
+    </main>
+  </body>
+</html>

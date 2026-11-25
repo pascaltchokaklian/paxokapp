@@ -460,6 +460,194 @@ class PortalMapTests(TestCase):
         )
         self.assertNotContains(response, 'Mai 2026')
 
+    def test_yearly_cycling_statistics_count_activities_for_local_year_and_athlete(self):
+        connection = sqlite3.connect(settings.CENTCOLS_DB_PATH)
+        try:
+            connection.executescript(
+                '''
+                INSERT INTO myapp_activity VALUES
+                    (4, 42, 'Ride', 1000, 3600, 20, NULL, NULL, 'Avant nouvel an', '2025-12-31 22:59:59', 7004),
+                    (5, 42, 'Ride', 2000, 3660, 100, NULL, NULL, 'Nouvel an local', '2025-12-31 23:00:00', 7005),
+                    (6, 42, 'MountainBikeRide', 3000, 1200, 200, NULL, NULL, 'VTT', '2026-06-14 09:00:00', 7006),
+                    (7, 42, 'VirtualRide', NULL, NULL, NULL, NULL, NULL, 'Sans données', '2026-06-14 10:00:00', 7007),
+                    (8, 42, 'Ride', 100000, 3600, 5000, NULL, NULL, 'Futur', '2026-06-30 10:00:01', 7008),
+                    (9, 42, 'Ride', 100000, 3600, 5000, NULL, NULL, 'Année suivante', '2027-01-01 10:00:00', 7009);
+                '''
+            )
+            connection.commit()
+        finally:
+            connection.close()
+
+        session = self.client.session
+        session['strava_user_id'] = 42
+        session.save()
+        now = datetime(2026, 6, 30, 12, tzinfo=ZoneInfo('Europe/Paris'))
+        with patch('portal.views.timezone.localtime', return_value=now):
+            response = self.client.get(reverse('portal:yearly_cycling_statistics'))
+
+        self.assertEqual(response.context['statistics'], {
+            'activity_count': 4,
+            'distance_km': 30,
+            'elevation_m': 950,
+            'duration': '2h51',
+        })
+        self.assertContains(response, 'Année vélo 2026')
+        self.assertContains(response, '30 km')
+        self.assertContains(response, '950 m')
+        self.assertContains(response, '2h51')
+
+    def test_yearly_cycling_statistics_empty_and_public_views(self):
+        url = reverse('portal:yearly_cycling_statistics')
+        response = self.client.get(url)
+        self.assertContains(response, 'Connectez-vous à Strava')
+        self.assertNotContains(response, 'performance-stats')
+        self.assertNotContains(response, 'Les 5 sorties les plus longues')
+        self.assertNotContains(response, 'Distance par mois')
+
+        session = self.client.session
+        session['strava_user_id'] = 123
+        session.save()
+        response = self.client.get(url)
+        self.assertEqual(response.context['statistics'], {
+            'activity_count': 0,
+            'distance_km': 0,
+            'elevation_m': 0,
+            'duration': '0h00',
+        })
+        self.assertContains(response, 'Aucune sortie vélo avec une distance enregistrée cette année.')
+        self.assertContains(response, 'Aucune sortie vélo avec un dénivelé enregistré cette année.')
+        self.assertContains(response, 'Aucune sortie vélo avec une distance et une durée valides cette année.')
+        self.assertTrue(all(item['distance_km'] == 0 and item['bar_width'] == 0
+                            for item in response.context['monthly_distances'] + response.context['weekday_distances']))
+
+        for name in ('all_activities', 'dashboard', 'power_records', 'monthly_statistics'):
+            with self.subTest(page=name):
+                self.assertContains(self.client.get(reverse(f'portal:{name}')), f'href="{url}"')
+
+    def test_yearly_longest_cycling_activities_are_ranked_and_filtered(self):
+        connection = sqlite3.connect(settings.CENTCOLS_DB_PATH)
+        try:
+            connection.executescript(
+                '''
+                INSERT INTO myapp_activity VALUES
+                    (4, 42, 'Ride', 70000, 3600, 0, NULL, NULL, 'Nouvel an local', '2025-12-31 23:00:00', 7004),
+                    (5, 42, 'MountainBikeRide', 60000, 3600, 0, NULL, NULL, 'VTT', '2026-03-01 10:00:00', 7005),
+                    (6, 42, 'VirtualRide', 50000, 3600, 0, NULL, NULL, 'Vélo virtuel', '2026-04-01 10:00:00', 7006),
+                    (7, 42, 'Ride', 40000, 3600, 0, NULL, NULL, 'Sortie moyenne', '2026-05-01 10:00:00', 7007),
+                    (8, 42, 'Ride', 30000, 3600, 0, NULL, NULL, 'Cinquième sortie', '2026-06-01 10:00:00', 7008),
+                    (9, 42, 'Ride', NULL, 3600, 0, NULL, NULL, 'Distance absente', '2026-06-02 10:00:00', 7009),
+                    (10, 42, 'Ride', 999000, 3600, 0, NULL, NULL, 'Année précédente', '2025-12-31 22:59:59', 7010),
+                    (11, 42, 'Ride', 999000, 3600, 0, NULL, NULL, 'Futur', '2026-07-01 10:00:00', 7011),
+                    (12, 42, 'Run', 999000, 3600, 0, NULL, NULL, 'Course', '2026-06-01 10:00:00', 7012),
+                    (13, 99, 'Ride', 999000, 3600, 0, NULL, NULL, 'Autre athlète', '2026-06-01 10:00:00', 7013);
+                '''
+            )
+            connection.commit()
+        finally:
+            connection.close()
+
+        session = self.client.session
+        session['strava_user_id'] = 42
+        session.save()
+        now = datetime(2026, 6, 30, 12, tzinfo=ZoneInfo('Europe/Paris'))
+        with patch('portal.views.timezone.now', return_value=now):
+            response = self.client.get(reverse('portal:yearly_cycling_statistics'))
+
+        self.assertEqual(
+            [activity['name'] for activity in response.context['longest_activities']],
+            ['Nouvel an local', 'VTT', 'Vélo virtuel', 'Sortie moyenne', 'Cinquième sortie'],
+        )
+        self.assertContains(response, '01/01/2026')
+        self.assertContains(response, '70,0 km')
+        self.assertContains(response, reverse('portal:activity_detail', args=[7004]))
+        for excluded in ('Année précédente', 'Futur', 'Course', 'Autre athlète'):
+            self.assertNotContains(response, excluded)
+
+    def test_yearly_climbing_and_speed_rankings(self):
+        connection = sqlite3.connect(settings.CENTCOLS_DB_PATH)
+        try:
+            connection.executescript(
+                '''
+                INSERT INTO myapp_activity VALUES
+                    (4, 42, 'Ride', 60000, 3600, 300, NULL, NULL, 'Rapide', '2026-01-02 10:00:00', 7004),
+                    (5, 42, 'MountainBikeRide', 50000, 3600, 1200, NULL, NULL, 'Montagne', '2026-02-02 10:00:00', 7005),
+                    (6, 42, 'VirtualRide', 40000, 3600, 1100, NULL, NULL, 'Virtuelle', '2026-03-02 10:00:00', 7006),
+                    (7, 42, 'Ride', 30000, 3600, 1000, NULL, NULL, 'Quatrième', '2026-04-02 10:00:00', 7007),
+                    (8, 42, 'Ride', 20000, 3600, 900, NULL, NULL, 'Cinquième', '2026-05-02 10:00:00', 7008),
+                    (9, 42, 'Ride', 10000, 3600, 800, NULL, NULL, 'Sixième', '2026-06-02 10:00:00', 7009),
+                    (10, 42, 'Ride', 900000, 0, NULL, NULL, NULL, 'Durée zéro', '2026-06-03 10:00:00', 7010),
+                    (11, 42, 'Ride', 900000, NULL, NULL, NULL, NULL, 'Durée absente', '2026-06-04 10:00:00', 7011),
+                    (12, 42, 'Ride', NULL, 3600, NULL, NULL, NULL, 'Données absentes', '2026-06-05 10:00:00', 7012),
+                    (13, 42, 'Ride', 900000, 3600, 9999, NULL, NULL, 'Année précédente', '2025-12-31 22:59:59', 7013),
+                    (14, 42, 'Ride', 900000, 3600, 9999, NULL, NULL, 'Futur', '2026-07-01 10:00:00', 7014),
+                    (15, 42, 'Run', 900000, 3600, 9999, NULL, NULL, 'Course', '2026-06-01 10:00:00', 7015),
+                    (16, 99, 'Ride', 900000, 3600, 9999, NULL, NULL, 'Autre athlète', '2026-06-01 10:00:00', 7016);
+                '''
+            )
+            connection.commit()
+        finally:
+            connection.close()
+
+        session = self.client.session
+        session['strava_user_id'] = 42
+        session.save()
+        now = datetime(2026, 6, 30, 12, tzinfo=ZoneInfo('Europe/Paris'))
+        with patch('portal.views.timezone.now', return_value=now):
+            response = self.client.get(reverse('portal:yearly_cycling_statistics'))
+
+        climbing = response.context['climbing_activities']
+        fastest = response.context['fastest_activities']
+        self.assertEqual([activity['name'] for activity in climbing],
+                         ['Montagne', 'Virtuelle', 'Quatrième', 'Cinquième', 'Sixième'])
+        self.assertEqual([activity['name'] for activity in fastest],
+                         ['Rapide', 'Montagne', 'Virtuelle', 'Quatrième', 'Cinquième'])
+        self.assertEqual(fastest[0]['average_speed_kmh'], 60)
+        self.assertContains(response, '<time datetime="2026-02-02"><span class="yearly-date-full">02/02/2026</span><span class="yearly-date-short">02/02</span></time>', count=3, html=True)
+        self.assertContains(response, '1200 m')
+        self.assertContains(response, '60,0 km/h')
+        self.assertContains(response, reverse('portal:activity_detail', args=[7005]))
+        for excluded in ('Année précédente', 'Futur', 'Course', 'Autre athlète'):
+            self.assertNotContains(response, excluded)
+
+    def test_yearly_distance_charts_group_by_local_month_and_weekday(self):
+        connection = sqlite3.connect(settings.CENTCOLS_DB_PATH)
+        try:
+            connection.executescript(
+                '''
+                INSERT INTO myapp_activity VALUES
+                    (4, 42, 'Ride', 10000, 3600, 0, NULL, NULL, 'Nouvel an local', '2025-12-31 23:00:00', 7004),
+                    (5, 42, 'GravelRide', 5000, 1800, 0, NULL, NULL, 'Avril local', '2026-03-31 22:30:00', 7005),
+                    (6, 42, 'Ride', NULL, 3600, 0, NULL, NULL, 'Distance absente', '2026-04-01 10:00:00', 7006),
+                    (7, 42, 'Ride', 100000, 3600, 0, NULL, NULL, 'Avant nouvel an', '2025-12-31 22:59:59', 7007),
+                    (8, 42, 'Ride', 100000, 3600, 0, NULL, NULL, 'Futur', '2026-07-01 10:00:00', 7008),
+                    (9, 42, 'Run', 100000, 3600, 0, NULL, NULL, 'Course', '2026-04-01 10:00:00', 7009),
+                    (10, 99, 'Ride', 100000, 3600, 0, NULL, NULL, 'Autre athlète', '2026-04-01 10:00:00', 7010);
+                '''
+            )
+            connection.commit()
+        finally:
+            connection.close()
+
+        session = self.client.session
+        session['strava_user_id'] = 42
+        session.save()
+        now = datetime(2026, 6, 30, 12, tzinfo=ZoneInfo('Europe/Paris'))
+        with patch('portal.views.timezone.now', return_value=now):
+            response = self.client.get(reverse('portal:yearly_cycling_statistics'))
+
+        monthly = response.context['monthly_distances']
+        weekdays = response.context['weekday_distances']
+        self.assertEqual(len(monthly), 12)
+        self.assertEqual(len(weekdays), 7)
+        self.assertEqual([item['distance_km'] for item in monthly],
+                         [10, 0, 0, 5, 0, 25, 0, 0, 0, 0, 0, 0])
+        self.assertEqual([item['distance_km'] for item in weekdays], [0, 0, 5, 10, 0, 0, 25])
+        self.assertEqual([monthly[index]['bar_width'] for index in (0, 3, 5)], [40, 20, 100])
+        self.assertContains(response, 'Distance par mois')
+        self.assertContains(response, 'Distance par jour de la semaine')
+        self.assertContains(response, 'width: 40.0%')
+        self.assertContains(response, '10,0 km')
+
     def test_dashboard_and_segment_history_use_only_current_athletes_data(self):
         connection = sqlite3.connect(settings.CENTCOLS_DB_PATH)
         try:

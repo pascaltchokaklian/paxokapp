@@ -26,6 +26,7 @@ from .map_data import (
     get_monthly_statistics,
     get_segment_history,
     get_user_view_region,
+    get_yearly_cycling_statistics,
     save_user_view_region,
 )
 from .strava_sync import import_segment_efforts, sync_strava_activities
@@ -237,6 +238,27 @@ def dashboard(request):
     return render(request, 'portal/dashboard.html', {
         'summary': summary,
         'performances': performances,
+        'personalized': strava_user_id is not None,
+        'greeting_name': (request.user.get_full_name().strip() or request.user.get_username())
+        if request.user.is_authenticated else '',
+        'strava_auth_configured': bool(settings.SOCIAL_AUTH_STRAVA_KEY and settings.SOCIAL_AUTH_STRAVA_SECRET),
+    })
+
+
+def yearly_cycling_statistics(request):
+    strava_user_id = request.session.get('strava_user_id')
+    now = timezone.localtime()
+    statistics, longest_activities, climbing_activities, fastest_activities, monthly_distances, weekday_distances = (
+        get_yearly_cycling_statistics(strava_user_id, now)
+    )
+    return render(request, 'portal/yearly_cycling_statistics.html', {
+        'statistics': statistics,
+        'longest_activities': longest_activities,
+        'climbing_activities': climbing_activities,
+        'fastest_activities': fastest_activities,
+        'monthly_distances': monthly_distances,
+        'weekday_distances': weekday_distances,
+        'current_year': now.year,
         'personalized': strava_user_id is not None,
         'greeting_name': (request.user.get_full_name().strip() or request.user.get_username())
         if request.user.is_authenticated else '',

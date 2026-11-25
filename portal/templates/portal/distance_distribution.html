@@ -1,0 +1,13 @@
+{% load l10n %}
+<figure class="yearly-ranking distance-chart">
+  <figcaption class="dashboard-title">{{ title }}</figcaption>
+  <ul>
+    {% for item in distances %}
+      <li>
+        <span class="distance-chart-label">{{ item.label }}</span>
+        <span class="distance-chart-track" aria-hidden="true"><span class="distance-chart-bar" style="width: {{ item.bar_width|unlocalize }}%"></span></span>
+        <span class="distance-chart-value">{{ item.distance_km|floatformat:1 }} km</span>
+      </li>
+    {% endfor %}
+  </ul>
+</figure>

@@ -48,6 +48,10 @@ MONTH_NAMES_FR = (
     'Décembre',
 )
 
+WEEKDAY_NAMES_FR = (
+    'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche',
+)
+
 
 def _parse_database_datetime(value):
     if not value:
@@ -445,6 +449,111 @@ def get_monthly_statistics(strava_user_id):
             }
         )
     return statistics
+
+
+def get_yearly_cycling_statistics(strava_user_id, now):
+    if strava_user_id is None:
+        return None, [], [], [], [], []
+
+    year_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    year_start = year_start.astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+    now_utc = now.astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+    placeholders = ', '.join('?' for _ in POWER_CYCLING_ACTIVITY_TYPES)
+    activity_filter = f'''
+        strava_user_id = ?
+        AND act_type IN ({placeholders})
+        AND datetime(act_start_date) >= ?
+        AND datetime(act_start_date) <= ?
+    '''
+    parameters = (strava_user_id, *POWER_CYCLING_ACTIVITY_TYPES, year_start, now_utc)
+    connection = _legacy_connection()
+    try:
+        totals = connection.execute(
+            f'''
+            SELECT COUNT(*) AS activity_count,
+                COALESCE(SUM(act_dist), 0) AS distance_m,
+                COALESCE(SUM(act_den), 0) AS elevation_m,
+                COALESCE(SUM(act_time), 0) AS duration_seconds
+            FROM myapp_activity
+            WHERE {activity_filter}
+            ''',
+            parameters,
+        ).fetchone()
+        rankings = []
+        for condition, order in (
+            ('act_dist IS NOT NULL', 'act_dist'),
+            ('act_den IS NOT NULL AND act_den >= 0', 'act_den'),
+            ('act_dist > 0 AND act_time > 0', 'average_speed_kmh'),
+        ):
+            rankings.append(connection.execute(
+                f'''
+                SELECT strava_id, act_name, act_start_date, act_type, act_dist, act_den,
+                    act_power, act_normal_power, act_time,
+                    act_dist * 3.6 / NULLIF(act_time, 0) AS average_speed_kmh
+                FROM myapp_activity
+                WHERE {activity_filter} AND {condition}
+                ORDER BY {order} DESC, datetime(act_start_date) DESC, strava_id DESC
+                LIMIT 5
+                ''',
+                parameters,
+            ).fetchall())
+        distance_rows = connection.execute(
+            f'''
+            SELECT act_start_date, act_dist
+            FROM myapp_activity
+            WHERE {activity_filter} AND act_dist IS NOT NULL
+            ''',
+            parameters,
+        ).fetchall()
+    finally:
+        connection.close()
+
+    hours, minutes = divmod(int(totals['duration_seconds']) // 60, 60)
+    statistics = {
+        'activity_count': totals['activity_count'],
+        'distance_km': round(float(totals['distance_m']) / 1000),
+        'elevation_m': int(totals['elevation_m']),
+        'duration': f'{hours}h{minutes:02d}',
+    }
+    activity_rankings = []
+    for rows in rankings:
+        activities = []
+        for row in rows:
+            activity = _activity_summary(row)
+            start_date = activity['start_date']
+            if start_date.tzinfo is None:
+                start_date = start_date.replace(tzinfo=timezone.utc)
+            activity['start_date'] = start_date.astimezone(now.tzinfo)
+            activity['average_speed_kmh'] = row['average_speed_kmh']
+            activities.append(activity)
+        activity_rankings.append(activities)
+    monthly_distances = [0.0] * 12
+    weekday_distances = [0.0] * 7
+    for row in distance_rows:
+        start_date = _parse_database_datetime(row['act_start_date'])
+        if start_date.tzinfo is None:
+            start_date = start_date.replace(tzinfo=timezone.utc)
+        local_date = start_date.astimezone(now.tzinfo)
+        distance = float(row['act_dist'])
+        monthly_distances[local_date.month - 1] += distance
+        weekday_distances[local_date.weekday()] += distance
+
+    def distribution(labels, distances):
+        maximum = max(distances)
+        return [
+            {
+                'label': label,
+                'distance_km': distance / 1000,
+                'bar_width': max(0, distance / maximum * 100) if maximum > 0 else 0,
+            }
+            for label, distance in zip(labels, distances)
+        ]
+
+    return (
+        statistics, *activity_rankings,
+        distribution(MONTH_NAMES_FR, monthly_distances),
+        distribution(WEEKDAY_NAMES_FR, weekday_distances),
+    )
 
 
 def get_dashboard_data(strava_user_id, now):
