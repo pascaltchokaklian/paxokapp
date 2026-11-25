@@ -7,7 +7,6 @@ h1.dashboard-title { font-size: 24px; }
 h2.dashboard-title { font-size: 17px; }
 
 .yearly-ranking { margin-top: 24px; }
-.yearly-date-short { display: none; }
 
 .distance-chart { margin-right: 0; margin-left: 0; }
 .distance-chart figcaption { font-size: 17px; font-weight: 700; }
@@ -104,10 +103,8 @@ h2.dashboard-title { font-size: 17px; }
 .power-date-short { display: none; }
 
 @media (max-width: 500px) {
-  .yearly-date-full { display: none; }
-  .yearly-date-short { display: inline; }
-  .yearly-ranking .dashboard-table th:first-child { width: 1%; }
-  .yearly-ranking .dashboard-table td:nth-child(2) {
+  .yearly-ranking .dashboard-table th:last-child { width: 1%; }
+  .yearly-ranking .dashboard-table .yearly-activity-name {
     white-space: normal;
     overflow-wrap: anywhere;
   }

@@ -7,7 +7,14 @@
     <title>Année vélo — Strava+</title>
     <link rel="icon" type="image/svg+xml" href="{% static 'portal/strava-logo.svg' %}">
     <link rel="stylesheet" href="{% static 'portal/map.css' %}?v=31">
-    <link rel="stylesheet" href="{% static 'portal/dashboard.css' %}?v=9">
+    <link rel="stylesheet" href="{% static 'portal/dashboard.css' %}?v=11">
+    <style>
+      .yearly-mobile-column { display: none; }
+      @media (max-width: 500px) {
+        .yearly-desktop-column { display: none; }
+        .yearly-mobile-column { display: table-cell; }
+      }
+    </style>
   </head>
   <body class="map-page">
     <script>document.body.classList.toggle("embedded", window.self !== window.top);</script>
@@ -46,13 +53,15 @@
         {% if longest_activities %}
           <div class="dashboard-table-wrap" role="region" aria-label="Sorties les plus longues" tabindex="0">
             <table class="dashboard-table">
-              <thead><tr><th scope="col">Date</th><th scope="col">Sortie</th><th scope="col">Distance</th></tr></thead>
+              <thead><tr><th class="yearly-desktop-column" scope="col">Date</th><th class="yearly-mobile-column" scope="col">Distance</th><th scope="col">Sortie</th><th class="yearly-desktop-column" scope="col">Distance</th><th class="yearly-mobile-column" scope="col">Date</th></tr></thead>
               <tbody>
                 {% for activity in longest_activities %}
                   <tr>
-                    <td><time datetime="{{ activity.start_date|date:'Y-m-d' }}"><span class="yearly-date-full">{{ activity.start_date|date:"d/m/Y" }}</span><span class="yearly-date-short">{{ activity.start_date|date:"d/m" }}</span></time></td>
-                    <td><a class="activity-link" href="{% url 'portal:activity_detail' strava_id=activity.strava_id %}?from=all">{{ activity.name }}</a></td>
-                    <td>{{ activity.distance_km|floatformat:1 }} km</td>
+                    <td class="yearly-desktop-column"><time datetime="{{ activity.start_date|date:'Y-m-d' }}">{{ activity.start_date|date:"d/m/Y" }}</time></td>
+                    <td class="yearly-mobile-column">{{ activity.distance_km|floatformat:1 }} km</td>
+                    <td class="yearly-activity-name"><a class="activity-link" href="{% url 'portal:activity_detail' strava_id=activity.strava_id %}?from=all">{{ activity.name }}</a></td>
+                    <td class="yearly-desktop-column">{{ activity.distance_km|floatformat:1 }} km</td>
+                    <td class="yearly-mobile-column"><time datetime="{{ activity.start_date|date:'Y-m-d' }}">{{ activity.start_date|date:"d-m" }}</time></td>
                   </tr>
                 {% endfor %}
               </tbody>
@@ -67,13 +76,15 @@
           {% if climbing_activities %}
             <div class="dashboard-table-wrap" role="region" aria-label="Sorties avec le plus de dénivelé" tabindex="0">
               <table class="dashboard-table">
-                <thead><tr><th scope="col">Date</th><th scope="col">Sortie</th><th scope="col">Dénivelé</th></tr></thead>
+                <thead><tr><th class="yearly-desktop-column" scope="col">Date</th><th class="yearly-mobile-column" scope="col">Dénivelé</th><th scope="col">Sortie</th><th class="yearly-desktop-column" scope="col">Dénivelé</th><th class="yearly-mobile-column" scope="col">Date</th></tr></thead>
                 <tbody>
                   {% for activity in climbing_activities %}
                     <tr>
-                      <td><time datetime="{{ activity.start_date|date:'Y-m-d' }}"><span class="yearly-date-full">{{ activity.start_date|date:"d/m/Y" }}</span><span class="yearly-date-short">{{ activity.start_date|date:"d/m" }}</span></time></td>
-                      <td><a class="activity-link" href="{% url 'portal:activity_detail' strava_id=activity.strava_id %}?from=all">{{ activity.name }}</a></td>
-                      <td>{{ activity.elevation_gain_m }} m</td>
+                      <td class="yearly-desktop-column"><time datetime="{{ activity.start_date|date:'Y-m-d' }}">{{ activity.start_date|date:"d/m/Y" }}</time></td>
+                      <td class="yearly-mobile-column">{{ activity.elevation_gain_m }} m</td>
+                      <td class="yearly-activity-name"><a class="activity-link" href="{% url 'portal:activity_detail' strava_id=activity.strava_id %}?from=all">{{ activity.name }}</a></td>
+                      <td class="yearly-desktop-column">{{ activity.elevation_gain_m }} m</td>
+                      <td class="yearly-mobile-column"><time datetime="{{ activity.start_date|date:'Y-m-d' }}">{{ activity.start_date|date:"d-m" }}</time></td>
                     </tr>
                   {% endfor %}
                 </tbody>
@@ -88,13 +99,15 @@
           {% if fastest_activities %}
             <div class="dashboard-table-wrap" role="region" aria-label="Sorties les plus rapides" tabindex="0">
               <table class="dashboard-table">
-                <thead><tr><th scope="col">Date</th><th scope="col">Sortie</th><th scope="col">Vitesse moyenne</th></tr></thead>
+                <thead><tr><th class="yearly-desktop-column" scope="col">Date</th><th class="yearly-mobile-column" scope="col">Vitesse moyenne</th><th scope="col">Sortie</th><th class="yearly-desktop-column" scope="col">Vitesse moyenne</th><th class="yearly-mobile-column" scope="col">Date</th></tr></thead>
                 <tbody>
                   {% for activity in fastest_activities %}
                     <tr>
-                      <td><time datetime="{{ activity.start_date|date:'Y-m-d' }}"><span class="yearly-date-full">{{ activity.start_date|date:"d/m/Y" }}</span><span class="yearly-date-short">{{ activity.start_date|date:"d/m" }}</span></time></td>
-                      <td><a class="activity-link" href="{% url 'portal:activity_detail' strava_id=activity.strava_id %}?from=all">{{ activity.name }}</a></td>
-                      <td>{{ activity.average_speed_kmh|floatformat:1 }} km/h</td>
+                      <td class="yearly-desktop-column"><time datetime="{{ activity.start_date|date:'Y-m-d' }}">{{ activity.start_date|date:"d/m/Y" }}</time></td>
+                      <td class="yearly-mobile-column">{{ activity.average_speed_kmh|floatformat:1 }} km/h</td>
+                      <td class="yearly-activity-name"><a class="activity-link" href="{% url 'portal:activity_detail' strava_id=activity.strava_id %}?from=all">{{ activity.name }}</a></td>
+                      <td class="yearly-desktop-column">{{ activity.average_speed_kmh|floatformat:1 }} km/h</td>
+                      <td class="yearly-mobile-column"><time datetime="{{ activity.start_date|date:'Y-m-d' }}">{{ activity.start_date|date:"d-m" }}</time></td>
                     </tr>
                   {% endfor %}
                 </tbody>

@@ -602,7 +602,8 @@ class PortalMapTests(TestCase):
         self.assertEqual([activity['name'] for activity in fastest],
                          ['Rapide', 'Montagne', 'Virtuelle', 'Quatrième', 'Cinquième'])
         self.assertEqual(fastest[0]['average_speed_kmh'], 60)
-        self.assertContains(response, '<time datetime="2026-02-02"><span class="yearly-date-full">02/02/2026</span><span class="yearly-date-short">02/02</span></time>', count=3, html=True)
+        self.assertContains(response, '<td class="yearly-desktop-column"><time datetime="2026-02-02">02/02/2026</time></td>', count=3, html=True)
+        self.assertContains(response, '<td class="yearly-mobile-column"><time datetime="2026-02-02">02-02</time></td>', count=3, html=True)
         self.assertContains(response, '1200 m')
         self.assertContains(response, '60,0 km/h')
         self.assertContains(response, reverse('portal:activity_detail', args=[7005]))
