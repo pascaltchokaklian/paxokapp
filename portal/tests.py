@@ -649,6 +649,41 @@ class PortalMapTests(TestCase):
         self.assertContains(response, 'width: 40.0%')
         self.assertContains(response, '10,0 km')
 
+    def test_annual_cycling_totals_include_gravel_but_exclude_electric_bikes(self):
+        connection = sqlite3.connect(settings.CENTCOLS_DB_PATH)
+        try:
+            connection.executescript(
+                '''
+                INSERT INTO myapp_activity VALUES
+                    (4, 42, 'GravelRide', 31000, 3600, 100, NULL, NULL, 'Gravel', '2026-06-15 10:00:00', 7004),
+                    (5, 42, 'EBikeRide', 16000, 3600, 100, NULL, NULL, 'VAE', '2026-06-16 10:00:00', 7005),
+                    (6, 42, 'EMountainBikeRide', 18000, 3600, 100, NULL, NULL, 'VTT électrique', '2026-06-17 10:00:00', 7006),
+                    (7, 42, 'GravelRide', 100000, 3600, 100, NULL, NULL, 'Gravel futur', '2026-07-01 10:00:00', 7007),
+                    (8, 99, 'GravelRide', 100000, 3600, 100, NULL, NULL, 'Gravel autre athlète', '2026-06-15 10:00:00', 7008);
+                '''
+            )
+            connection.commit()
+        finally:
+            connection.close()
+
+        session = self.client.session
+        session['strava_user_id'] = 42
+        session.save()
+        now = datetime(2026, 6, 30, 12, tzinfo=ZoneInfo('Europe/Paris'))
+        with patch('portal.views.timezone.localtime', return_value=now):
+            dashboard = self.client.get(reverse('portal:dashboard'))
+            yearly = self.client.get(reverse('portal:yearly_cycling_statistics'))
+
+        self.assertEqual(dashboard.context['summary']['bike_year_km'], 56)
+        self.assertEqual(dashboard.context['summary']['bike_four_weeks_km'], 25)
+        self.assertEqual(yearly.context['statistics']['distance_km'], 56)
+        self.assertEqual(yearly.context['statistics']['activity_count'], 2)
+        self.assertEqual(
+            [activity['name'] for activity in yearly.context['longest_activities']],
+            ['Gravel', 'Sortie du dimanche'],
+        )
+        self.assertEqual(yearly.context['monthly_distances'][5]['distance_km'], 56)
+
     def test_dashboard_and_segment_history_use_only_current_athletes_data(self):
         connection = sqlite3.connect(settings.CENTCOLS_DB_PATH)
         try:

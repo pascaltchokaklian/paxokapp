@@ -23,11 +23,11 @@ Le bandeau de la page Applications demande d’abord l’autorisation du navigat
 
 XokaMap est accessible depuis le portail sur `/xokamap/`.
 
-Dans Strava+, l’onglet Dashboard présente les cols franchis, les distances annuelles et les totaux vélo des 28 derniers jours, ainsi que les performances sur segments cyclistes. Les distances vélo utilisent les activités de type `Ride` comme dans l’application modèle. La liste est filtrable et triable ; chaque segment ouvre l’historique des meilleurs temps par année.
+Dans Strava+, l’onglet Dashboard présente les cols franchis, les distances annuelles et les totaux vélo des 28 derniers jours, ainsi que les performances sur segments cyclistes. La distance vélo annuelle inclut les activités `Ride` et `GravelRide`, mais pas les vélos électriques ; les totaux des 28 derniers jours utilisent uniquement les activités `Ride`. La liste est filtrable et triable ; chaque segment ouvre l’historique des meilleurs temps par année.
 
 L’onglet Puissances affiche les puissances normalisées strictement positives des activités vélo enregistrées dans la base, sans recalcul ni import supplémentaire.
 
-L’onglet Année vélo présente le nombre d’activités, la distance, le dénivelé, la durée, les cinq sorties les plus longues, les plus dénivelées et les plus rapides, ainsi que la répartition des distances par mois et par jour de la semaine, depuis le début de l’année locale jusqu’à maintenant. La vitesse moyenne est calculée à partir de la distance et du temps de déplacement. Il inclut les mêmes types d’activités cyclistes que l’onglet Puissances.
+L’onglet Année vélo présente le nombre d’activités, la distance, le dénivelé, la durée, les cinq sorties les plus longues, les plus dénivelées et les plus rapides, ainsi que la répartition des distances par mois et par jour de la semaine, depuis le début de l’année locale jusqu’à maintenant. La vitesse moyenne est calculée à partir de la distance et du temps de déplacement. Il inclut les mêmes types d’activités cyclistes que l’onglet Puissances, sauf les vélos électriques (`EBikeRide` et `EMountainBikeRide`).
 
 Créez un environnement virtuel, installez Django dedans, puis démarrez le portail sur le port 8080 :
 

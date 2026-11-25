@@ -32,6 +32,10 @@ CYCLING_ACTIVITY_TYPES = ('Ride', 'VirtualRide', 'EBikeRide')
 POWER_CYCLING_ACTIVITY_TYPES = CYCLING_ACTIVITY_TYPES + (
     'MountainBikeRide', 'GravelRide', 'EMountainBikeRide', 'Handcycle', 'Velomobile',
 )
+YEARLY_CYCLING_ACTIVITY_TYPES = tuple(
+    activity_type for activity_type in POWER_CYCLING_ACTIVITY_TYPES
+    if activity_type not in ('EBikeRide', 'EMountainBikeRide')
+)
 
 MONTH_NAMES_FR = (
     'Janvier',
@@ -458,14 +462,14 @@ def get_yearly_cycling_statistics(strava_user_id, now):
     year_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
     year_start = year_start.astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
     now_utc = now.astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
-    placeholders = ', '.join('?' for _ in POWER_CYCLING_ACTIVITY_TYPES)
+    placeholders = ', '.join('?' for _ in YEARLY_CYCLING_ACTIVITY_TYPES)
     activity_filter = f'''
         strava_user_id = ?
         AND act_type IN ({placeholders})
         AND datetime(act_start_date) >= ?
         AND datetime(act_start_date) <= ?
     '''
-    parameters = (strava_user_id, *POWER_CYCLING_ACTIVITY_TYPES, year_start, now_utc)
+    parameters = (strava_user_id, *YEARLY_CYCLING_ACTIVITY_TYPES, year_start, now_utc)
     connection = _legacy_connection()
     try:
         totals = connection.execute(
@@ -579,7 +583,7 @@ def get_dashboard_data(strava_user_id, now):
         totals = connection.execute(
             '''
             SELECT
-                COALESCE(SUM(CASE WHEN act_type = 'Ride' AND datetime(act_start_date) >= ? THEN act_dist END), 0) AS bike_year,
+                COALESCE(SUM(CASE WHEN act_type IN ('Ride', 'GravelRide') AND datetime(act_start_date) >= ? THEN act_dist END), 0) AS bike_year,
                 COALESCE(SUM(CASE WHEN act_type = 'Run' AND datetime(act_start_date) >= ? THEN act_dist END), 0) AS run_year,
                 COALESCE(SUM(CASE WHEN act_type = 'Ride' AND datetime(act_start_date) >= ? THEN act_dist END), 0) AS bike_four_weeks,
                 COALESCE(SUM(CASE WHEN act_type = 'Ride' AND datetime(act_start_date) >= ? THEN act_den END), 0) AS elevation_four_weeks
